@@ -45,6 +45,7 @@ import {
   Users,
   Video,
   Wind,
+  Stethoscope,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -64,6 +65,7 @@ import { toast } from "sonner";
 import { ListenerSessionRoomModal } from "./ListenerSessionRoomModal";
 import { MemberIntakeViewModal } from "./MemberIntakeViewModal";
 import { ListenerReviewModal } from "./ListenerReviewModal";
+import { InPersonConsultationModal } from "./InPersonConsultationModal";
 
 export interface ListenerDashboardViewProps {
   listenerName?: string;
@@ -83,8 +85,8 @@ export interface TQueueMember {
 const INITIAL_QUEUE_MEMBERS: TQueueMember[] = [
   {
     id: "req-1",
-    displayName: "Ananya",
-    topic: "Work anxiety & feeling chronically overwhelmed with deadlines",
+    displayName: "Ananya Sharma",
+    topic: "Persistent tension headaches (3 days) & situational workplace fatigue (May 11th Intake)",
     waitingMinutes: 3,
     channel: "video",
     urgency: "routine",
@@ -92,21 +94,21 @@ const INITIAL_QUEUE_MEMBERS: TQueueMember[] = [
   },
   {
     id: "req-2",
-    displayName: "Rohan",
-    topic: "Exam stress & disrupted sleep cycle",
+    displayName: "Rohan Verma",
+    topic: "In-Person Consultation (Ambient Capture & Waveform Demo)",
     waitingMinutes: 7,
-    channel: "chat",
+    channel: "voice",
     urgency: "routine",
     status: "waiting",
   },
   {
     id: "req-3",
-    displayName: "Simran",
-    topic: "Feeling isolated & emotionally drained after city relocation",
+    displayName: "Simran Kaur",
+    topic: "Completed Consultation • SOAP Note & FHIR extractions (Acetaminophen, CBC)",
     waitingMinutes: 12,
-    channel: "voice",
+    channel: "chat",
     urgency: "support",
-    status: "waiting",
+    status: "completed",
   },
 ];
 
@@ -212,6 +214,7 @@ export function ListenerDashboardView({
   const [isIntakeModalOpen, setIsIntakeModalOpen] = useState(false);
   const [isRoomModalOpen, setIsRoomModalOpen] = useState(false);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [isInPersonModalOpen, setIsInPersonModalOpen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Active selections
@@ -500,24 +503,92 @@ export function ListenerDashboardView({
 
   return (
     <div className="space-y-6">
+      {/* ── YOUTUBE VIDEO PARITY DEMO FLOW BAR ── */}
+      <div className="p-3.5 rounded-2xl border border-emerald-500/40 bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-transparent dark:from-emerald-950/40 dark:via-teal-950/20 dark:to-transparent flex flex-wrap items-center justify-between gap-3 shadow-xs">
+        <div className="flex items-center gap-2.5">
+          <div className="size-8 rounded-xl bg-emerald-700 text-white flex items-center justify-center font-bold text-xs shadow-xs">
+            DEMO
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-foreground">
+                DrGodly Product Demo Workflow (Doctor / Listener Mode)
+              </span>
+              <Badge className="bg-emerald-700 text-white text-[10px] px-2 py-0.5 rounded-full">
+                Video Parity
+              </Badge>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Live CDS Copilot (Suggested Questions) • In-Person Ambient Recording (Waveform) • SOAP & FHIR Extractions
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            size="sm"
+            onClick={() => setIsInPersonModalOpen(true)}
+            className="text-xs h-8 rounded-xl bg-[#236B54] hover:bg-[#1a5240] text-white font-semibold gap-1.5 shadow-sm"
+          >
+            <Stethoscope className="size-3.5" />
+            <span>4. In-Person Consultation (Ambient Capture)</span>
+          </Button>
+
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              const waiting = queue[0] || INITIAL_QUEUE_MEMBERS[0];
+              handleStartCall(waiting);
+            }}
+            className="text-xs h-8 rounded-xl border-emerald-400/60 bg-background/80 hover:bg-emerald-50 dark:hover:bg-emerald-950 text-emerald-900 dark:text-emerald-300 font-medium gap-1.5"
+          >
+            <Headphones className="size-3.5 text-emerald-600" />
+            <span>3. Telehealth + CDS Copilot</span>
+          </Button>
+
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              const comp = queue.find(q => q.status === "completed") || queue[0];
+              handleOpenReview(comp);
+            }}
+            className="text-xs h-8 rounded-xl border-blue-400/60 bg-background/80 hover:bg-blue-50 dark:hover:bg-blue-950 text-blue-900 dark:text-blue-300 font-medium gap-1.5"
+          >
+            <FileText className="size-3.5 text-blue-600" />
+            <span>5. Review SOAP & FHIR</span>
+          </Button>
+        </div>
+      </div>
+
       {/* ── 1. Header & Status Toggle ── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <span className="flex size-2 rounded-full bg-emerald-500 animate-pulse" />
             <p className="text-xs font-semibold uppercase tracking-wider text-emerald-800 dark:text-emerald-400">
-              Peer Listener Sanctuary Workspace
+              Doctor & Listener Clinical Hub
             </p>
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl font-serif">
-            Consultations & Live Queue
+            Consultations & Ambient Capture
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Volunteer Listener: <strong className="text-foreground">{activeListenerName}</strong> • Offer warm, empathetic peer support while upholding active listening boundaries.
+            Practitioner: <strong className="text-foreground">{activeListenerName}</strong> • Ambient AI Data Capture & Clinical Decision Support.
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2.5 flex-wrap">
+          <Button
+            size="sm"
+            onClick={() => setIsInPersonModalOpen(true)}
+            className="rounded-xl text-xs h-9 px-3.5 font-semibold bg-[#236B54] hover:bg-[#1a5240] text-white gap-2 shadow-xs"
+          >
+            <Stethoscope className="size-4" />
+            <span>In-Person Consultation (Ambient Capture)</span>
+          </Button>
+
           <Button
             size="icon"
             variant="outline"
@@ -536,7 +607,7 @@ export function ListenerDashboardView({
               className="rounded-xl text-xs h-9 px-3 gap-1.5 border-border/60 font-medium"
             >
               <Sliders className="size-3.5 text-muted-foreground" />
-              <span>Practice Settings</span>
+              <span>Settings</span>
             </Button>
           </Link>
 
@@ -549,7 +620,7 @@ export function ListenerDashboardView({
             }`}
           >
             <Radio className={`size-3 ${isAvailable ? "text-emerald-600 animate-pulse" : "text-muted-foreground"}`} />
-            {isAvailable ? "Available to Listen" : "Offline / Paused"}
+            {isAvailable ? "Available" : "Offline"}
           </Badge>
 
           <Button
@@ -1175,6 +1246,13 @@ export function ListenerDashboardView({
         onOpenChange={setIsReviewModalOpen}
         session={selectedSessionForReview}
         onSaved={handleRefresh}
+      />
+
+      <InPersonConsultationModal
+        open={isInPersonModalOpen}
+        onOpenChange={setIsInPersonModalOpen}
+        patientName="Ananya Sharma"
+        onCompleted={handleRefresh}
       />
     </div>
   );

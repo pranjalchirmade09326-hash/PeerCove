@@ -588,6 +588,47 @@ export function MindspaceWorkspaceIndex() {
   return (
     <div className="space-y-6 py-2">
       <DemoBanner />
+
+      {/* ── DRGODLY PRODUCT DEMO SHOWCASE BANNER ── */}
+      <Card className="border-2 border-emerald-500/50 bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-transparent dark:from-emerald-950/40 dark:via-teal-950/20 dark:to-transparent rounded-3xl p-5 shadow-sm">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="flex size-2.5 rounded-full bg-emerald-500 animate-ping" />
+              <Badge className="bg-emerald-700 text-white text-[11px] font-semibold px-2.5 py-0.5 rounded-full">
+                DrGodly Product Demo Parity
+              </Badge>
+              <span className="text-xs font-semibold text-emerald-800 dark:text-emerald-300">
+                End-to-End Workflow Ready
+              </span>
+            </div>
+            <h2 className="text-lg font-bold text-foreground">
+              Clinical Telehealth & Ambient AI Voice Capture Demo
+            </h2>
+            <p className="text-xs text-muted-foreground max-w-2xl">
+              Experience all 5 video screens: Patient Intake Chatbot → Appointment Booking (May 11th) → Telehealth + CDS AI Copilot → In-Person Ambient Recording → Auto SOAP & FHIR Extractions (Acetaminophen & CBC).
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <Link
+              href="/mindspace/member"
+              className="inline-flex items-center gap-2 rounded-xl bg-[#236B54] hover:bg-[#1a5240] text-white px-4 py-2.5 text-xs font-semibold shadow-xs"
+            >
+              <span>1. Patient Intake Chatbot</span>
+              <ArrowRight className="size-3.5" />
+            </Link>
+            <Link
+              href="/mindspace/listener"
+              className="inline-flex items-center gap-2 rounded-xl border border-emerald-500/40 bg-background/80 hover:bg-emerald-50 dark:hover:bg-emerald-950 text-emerald-900 dark:text-emerald-200 px-4 py-2.5 text-xs font-semibold"
+            >
+              <span>2. Doctor Ambient Capture</span>
+              <ArrowRight className="size-3.5" />
+            </Link>
+          </div>
+        </div>
+      </Card>
+
       <div className="space-y-2">
         <p className="text-sm font-medium text-primary">MindSpace role workspaces</p>
         <h1 className="text-3xl font-semibold tracking-tight">Choose a workspace</h1>

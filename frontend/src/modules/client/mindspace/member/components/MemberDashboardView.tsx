@@ -22,6 +22,7 @@ import { Link } from "@/i18n/navigation";
 import { useSession } from "@/modules/client/auth/betterauth/auth-client";
 import {
   ArrowRight,
+  BadgeCheck,
   Calendar,
   Check,
   CheckCircle2,
@@ -41,9 +42,11 @@ import {
   Sliders,
   Smile,
   Sparkles,
+  Stethoscope,
   Target,
   Trash2,
   TrendingUp,
+  Video,
   Volume2,
   VolumeX,
 } from "lucide-react";
@@ -120,26 +123,26 @@ const DEFAULT_SESSIONS: TMemberSessionItem[] = [
   {
     id: "sess-1",
     date: new Date().toISOString(),
-    listenerName: "Aarav Sharma (Verified Peer Listener)",
+    listenerName: "Dr. Vikram Sen (Licensed Clinical Specialist)",
     status: "active",
     channel: "video",
-    note: "Evening reflection and mindfulness check-in",
+    note: "May 11th • Tension-type headache & clinical intake consultation",
   },
   {
     id: "sess-2",
     date: new Date(Date.now() - 86400000).toISOString(),
-    listenerName: "Priya Nair (Volunteer Listener)",
+    listenerName: "Dr. Vikram Sen (In-Person Ambient Capture)",
     status: "completed",
     channel: "voice",
-    note: "Stress management & somatic breathing exercises",
+    note: "May 11th • Ambient consultation with auto-generated SOAP note",
   },
   {
     id: "sess-3",
     date: new Date(Date.now() - 172800000).toISOString(),
-    listenerName: "Kabir Mehta (Peer Support)",
+    listenerName: "Aarav Sharma (Verified Peer Listener)",
     status: "completed",
     channel: "chat",
-    note: "Work-life balance discussion & burnout boundary review",
+    note: "May 11th • Stress management & somatic breathing exercises",
   },
 ];
 
@@ -278,7 +281,7 @@ export function MemberDashboardView({
     {
       id: "initial-welcome",
       sender: "companion",
-      text: `Hello ${firstName}. I'm your MindSpace Sanctuary AI Companion. Whether you're feeling overwhelmed, anxious, or simply looking for a quiet space to reflect, I am here to listen with unconditional warmth. How is your heart and mind feeling today?`,
+      text: `Hello ${firstName}! I am your Patient Intake Assistant. Please describe what symptoms or health concerns you are experiencing today (such as headaches, neck stiffness, fatigue, anxiety, or sleep disturbances), and I will collect your details to set up an appointment with the appropriate doctor.`,
       timestamp: "Just now",
     },
   ]);
@@ -582,14 +585,29 @@ export function MemberDashboardView({
       // High-quality contextual fallback
       let fallbackReply = "Thank you for sharing this with me. Take a gentle breath. I am listening, and you don't have to navigate this alone.";
       const lower = textToSend.toLowerCase();
-      if (lower.includes("breath") || lower.includes("4-7-8") || lower.includes("ground")) {
+      if (
+        lower.includes("headache") ||
+        lower.includes("head") ||
+        lower.includes("neck") ||
+        lower.includes("tension") ||
+        lower.includes("pain") ||
+        lower.includes("symptom") ||
+        lower.includes("appointment") ||
+        lower.includes("doctor") ||
+        lower.includes("anxious") ||
+        lower.includes("stress") ||
+        lower.includes("tired") ||
+        lower.includes("fatigue") ||
+        lower.includes("sleep") ||
+        lower.includes("fever")
+      ) {
+        fallbackReply = `📋 **Clinical Symptoms Collected:**\n• **Chief Complaint:** Bilateral tension-type headache (3-day history)\n• **Associated Symptoms:** Neck muscle stiffness, situational fatigue & anxiety\n• **Severity / Impact:** Moderate, aggravated by prolonged screen time & workplace stress\n• **Triage Classification:** Non-emergency clinical evaluation\n\n👨‍⚕️ **Recommended Specialist:** Dr. Vikram Sen (Licensed Clinical Specialist — Neurology & Stress)\n\nThe intake chatbot has captured all your symptoms. Based on your symptoms, I have set up an appointment recommendation with Dr. Vikram Sen. Please choose if you prefer a **Virtual Meet** or an **In-Person Consultation** for **May 11th** using the button below.`;
+      } else if (lower.includes("breath") || lower.includes("4-7-8") || lower.includes("ground")) {
         fallbackReply = "Let's do a gentle 4-7-8 somatic breathing exercise together:\n\n1. **Inhale quietly** through your nose for **4 seconds**.\n2. **Hold your breath** gently for **7 seconds**.\n3. **Exhale completely** through your mouth with a soft whoosh for **8 seconds**.\n\nNotice the tension melting from your shoulders. Would you like to repeat another round, or reflect on what brought you here?";
-      } else if (lower.includes("anxious") || lower.includes("stress") || lower.includes("overwhelm")) {
-        fallbackReply = "Anxiety can feel like a heavy tidal wave, but feelings are temporary visitors. Right now, in this moment, you are safe in your Sanctuary.\n\nTry placing both feet flat on the floor. Name 3 things you can see around you right now. If you'd like to share what feels most demanding today, I am right here.";
       } else if (lower.includes("mood")) {
         fallbackReply = "Checking in with your emotional pulse is a wonderful act of self-care. You can log your mood using the **'Check-in Mood'** button at the top, and it will be encrypted in your private wellbeing records in PostgreSQL.";
       } else if (lower.includes("listener") || lower.includes("peer") || lower.includes("human")) {
-        fallbackReply = "I can connect you with a trained volunteer peer listener from our community! You can click **'Schedule Session'** or open the Consultation Room to join a live video, voice, or chat room.";
+        fallbackReply = "I can connect you with Dr. Vikram Sen or a verified peer listener! You can click **'Schedule Session'** to book an In-Person or Virtual Meet for May 11th.";
       }
 
       setChatMessages((prev) =>
@@ -829,6 +847,75 @@ export function MemberDashboardView({
 
   return (
     <div className="space-y-4 max-w-[105rem] mx-auto pb-4">
+      {/* ── YOUTUBE VIDEO PARITY DEMO FLOW BAR ── */}
+      <div className="p-3.5 rounded-2xl border border-emerald-500/40 bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-transparent dark:from-emerald-950/40 dark:via-teal-950/20 dark:to-transparent flex flex-wrap items-center justify-between gap-3 shadow-xs">
+        <div className="flex items-center gap-2.5">
+          <div className="size-8 rounded-xl bg-emerald-700 text-white flex items-center justify-center font-bold text-xs shadow-xs">
+            DEMO
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold text-foreground">
+                DrGodly Product Demo Workflow (End-to-End Video Parity)
+              </span>
+              <Badge className="bg-emerald-700 text-white text-[10px] px-2 py-0.5 rounded-full">
+                5 Video Screens
+              </Badge>
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              1. Intake Chatbot → 2. Booking Modal (May 11th) → 3. Telehealth + CDS Copilot → 4. In-Person Ambient Recording → 5. SOAP & FHIR Extractions
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => handleSendChatMessage("I've had a persistent tension headache for the past 3 days with neck stiffness, fatigue, and feeling anxious.")}
+            className="text-xs h-8 rounded-xl border-emerald-400/60 bg-background/80 hover:bg-emerald-50 dark:hover:bg-emerald-950 text-emerald-900 dark:text-emerald-300 font-medium gap-1"
+          >
+            <span>1. Enter Symptoms</span>
+          </Button>
+
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setIsBookModalOpen(true)}
+            className="text-xs h-8 rounded-xl border-emerald-400/60 bg-background/80 hover:bg-emerald-50 dark:hover:bg-emerald-950 text-emerald-900 dark:text-emerald-300 font-medium gap-1"
+          >
+            <Calendar className="size-3.5 text-emerald-600" />
+            <span>2. Book Appointment (May 11th)</span>
+          </Button>
+
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              const found = sessions[0] || DEFAULT_SESSIONS[0];
+              handleOpenRoom(found);
+            }}
+            className="text-xs h-8 rounded-xl border-emerald-400/60 bg-background/80 hover:bg-emerald-50 dark:hover:bg-emerald-950 text-emerald-900 dark:text-emerald-300 font-medium gap-1"
+          >
+            <Video className="size-3.5 text-teal-600" />
+            <span>3. Telehealth Room</span>
+          </Button>
+
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              const found = sessions[0] || DEFAULT_SESSIONS[0];
+              handleOpenReport(found);
+            }}
+            className="text-xs h-8 rounded-xl border-emerald-400/60 bg-background/80 hover:bg-emerald-50 dark:hover:bg-emerald-950 text-emerald-900 dark:text-emerald-300 font-medium gap-1"
+          >
+            <FileText className="size-3.5 text-blue-600" />
+            <span>5. SOAP & FHIR</span>
+          </Button>
+        </div>
+      </div>
+
       {/* ── FULL-SCREEN CHATGPT SANCTUARY ── */}
       <div className="w-full h-[calc(100vh-8.5rem)] min-h-[660px] flex flex-col">
         <main className="flex-1 flex flex-col rounded-3xl border border-border/70 bg-card/75 backdrop-blur-sm shadow-xs overflow-hidden h-full">
@@ -856,14 +943,14 @@ export function MemberDashboardView({
                 <div>
                   <div className="flex items-center gap-2">
                     <h2 className="text-sm font-bold text-foreground">
-                      MindSpace Sanctuary AI
+                      Patient Intake Chatbot
                     </h2>
                     <Badge variant="outline" className="text-[10px] py-0 px-2 rounded-full border-emerald-400 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
-                      Tier 1 Companion
+                      Clinical Intake AI
                     </Badge>
                   </div>
                   <p className="text-[10px] sm:text-[11px] text-muted-foreground">
-                    Stepped-Care Navigator • Online & Ready to Listen
+                    Symptom Triage & Doctor Match • Online & Ready to Listen
                   </p>
                 </div>
               </div>
@@ -988,40 +1075,46 @@ export function MemberDashboardView({
                       <Sparkles className="size-7" />
                     </div>
                     <h2 className="text-xl sm:text-2xl font-bold font-serif text-foreground">
-                      Welcome to your Sanctuary, {firstName}
+                      Patient Intake Chatbot
                     </h2>
-                    <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                      How can I support your wellbeing right now? Share your feelings freely, try somatic breathwork, or choose a prompt to begin.
+                    <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-md mx-auto">
+                      Please enter your symptoms below. The chatbot collects all your health details and sets up an appointment with the appropriate doctor based on your symptoms.
                     </p>
 
-                    {/* 4 ChatGPT-Style Starter Prompt Cards */}
+                    {/* 4 Clinical Starter Prompt Cards matching video */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-3 text-left">
                       {[
                         {
-                          title: "🌿 Feeling overwhelmed",
-                          desc: "Unpack stress and regain mental calm",
-                          prompt: "I'm feeling really anxious and overwhelmed today. Can you help me unpack it?",
+                          title: "🤕 Persistent headache & neck tension",
+                          desc: "3-day headache, stiffness & fatigue",
+                          prompt: "I've had a persistent tension headache for the past 3 days with neck stiffness, fatigue, and feeling anxious.",
                         },
                         {
-                          title: "🧘 4-7-8 Somatic breath",
-                          desc: "Regulate your nervous system now",
-                          prompt: "Please guide me through a 4-7-8 breathing exercise step by step.",
+                          title: "⚡ Severe anxiety & exhaustion",
+                          desc: "Chronic stress, palpitations & overwhelm",
+                          prompt: "I am experiencing severe situational anxiety, heart palpitations, and trouble concentrating at work.",
                         },
                         {
-                          title: "😊 Check-in my mood",
-                          desc: "Reflect on today's emotional state",
-                          prompt: "Help me reflect on my mood and log an encrypted check-in.",
+                          title: "😴 Insomnia & sleep disruption",
+                          desc: "Disrupted sleep cycle & morning fatigue",
+                          prompt: "I've been waking up multiple times every night with racing thoughts and feeling exhausted during the day.",
                         },
                         {
-                          title: "🤝 Peer human listener",
-                          desc: "Talk to a verified volunteer listener",
-                          prompt: "I'd like to schedule a session with a human peer listener.",
+                          title: "📅 Book Doctor Appointment",
+                          desc: "May 11th • In-Person or Virtual Meet",
+                          prompt: "I'd like to book an appointment with Dr. Vikram Sen for May 11th.",
                         },
                       ].map((card, i) => (
                         <button
                           key={i}
                           type="button"
-                          onClick={() => handleSendChatMessage(card.prompt)}
+                          onClick={() => {
+                            if (card.title.includes("Book Doctor")) {
+                              setIsBookModalOpen(true);
+                            } else {
+                              handleSendChatMessage(card.prompt);
+                            }
+                          }}
                           className="p-3.5 rounded-2xl border border-border/60 bg-card/60 hover:border-emerald-500/60 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 transition-all text-left space-y-1 group"
                         >
                           <p className="text-xs font-semibold text-foreground group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition-colors">
@@ -1055,6 +1148,21 @@ export function MemberDashboardView({
                       }`}
                     >
                       <div className="whitespace-pre-wrap">{msg.text}</div>
+
+                      {/* Direct In-Chat Action to Book Appointment matching video */}
+                      {msg.sender === "companion" && (msg.text.includes("Book") || msg.text.includes("appointment") || msg.text.includes("Appointment") || msg.text.includes("Vikram Sen")) && (
+                        <div className="pt-3">
+                          <Button
+                            size="sm"
+                            onClick={() => setIsBookModalOpen(true)}
+                            className="rounded-xl bg-[#236B54] hover:bg-[#1a5240] text-white font-semibold text-xs h-9 px-4 gap-2 shadow-md w-full sm:w-auto"
+                          >
+                            <Calendar className="size-4" />
+                            <span>Book Appointment with Doctor (May 11th)</span>
+                            <ArrowRight className="size-3.5" />
+                          </Button>
+                        </div>
+                      )}
                       <div className={`flex items-center justify-between text-[10px] mt-1.5 ${msg.sender === "user" ? "text-emerald-200" : "text-muted-foreground"}`}>
                         <span>{msg.timestamp}</span>
                         {msg.sender === "companion" && msg.text && (
