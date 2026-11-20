@@ -847,75 +847,6 @@ export function MemberDashboardView({
 
   return (
     <div className="space-y-4 max-w-[105rem] mx-auto pb-4">
-      {/* ── YOUTUBE VIDEO PARITY DEMO FLOW BAR ── */}
-      <div className="p-3.5 rounded-2xl border border-emerald-500/40 bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-transparent dark:from-emerald-950/40 dark:via-teal-950/20 dark:to-transparent flex flex-wrap items-center justify-between gap-3 shadow-xs">
-        <div className="flex items-center gap-2.5">
-          <div className="size-8 rounded-xl bg-emerald-700 text-white flex items-center justify-center font-bold text-xs shadow-xs">
-            DEMO
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-foreground">
-                DrGodly Product Demo Workflow (End-to-End Video Parity)
-              </span>
-              <Badge className="bg-emerald-700 text-white text-[10px] px-2 py-0.5 rounded-full">
-                5 Video Screens
-              </Badge>
-            </div>
-            <p className="text-[11px] text-muted-foreground">
-              1. Intake Chatbot → 2. Booking Modal (May 11th) → 3. Telehealth + CDS Copilot → 4. In-Person Ambient Recording → 5. SOAP & FHIR Extractions
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 flex-wrap">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => handleSendChatMessage("I've had a persistent tension headache for the past 3 days with neck stiffness, fatigue, and feeling anxious.")}
-            className="text-xs h-8 rounded-xl border-emerald-400/60 bg-background/80 hover:bg-emerald-50 dark:hover:bg-emerald-950 text-emerald-900 dark:text-emerald-300 font-medium gap-1"
-          >
-            <span>1. Enter Symptoms</span>
-          </Button>
-
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setIsBookModalOpen(true)}
-            className="text-xs h-8 rounded-xl border-emerald-400/60 bg-background/80 hover:bg-emerald-50 dark:hover:bg-emerald-950 text-emerald-900 dark:text-emerald-300 font-medium gap-1"
-          >
-            <Calendar className="size-3.5 text-emerald-600" />
-            <span>2. Book Appointment (May 11th)</span>
-          </Button>
-
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              const found = sessions[0] || DEFAULT_SESSIONS[0];
-              handleOpenRoom(found);
-            }}
-            className="text-xs h-8 rounded-xl border-emerald-400/60 bg-background/80 hover:bg-emerald-50 dark:hover:bg-emerald-950 text-emerald-900 dark:text-emerald-300 font-medium gap-1"
-          >
-            <Video className="size-3.5 text-teal-600" />
-            <span>3. Telehealth Room</span>
-          </Button>
-
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              const found = sessions[0] || DEFAULT_SESSIONS[0];
-              handleOpenReport(found);
-            }}
-            className="text-xs h-8 rounded-xl border-emerald-400/60 bg-background/80 hover:bg-emerald-50 dark:hover:bg-emerald-950 text-emerald-900 dark:text-emerald-300 font-medium gap-1"
-          >
-            <FileText className="size-3.5 text-blue-600" />
-            <span>5. SOAP & FHIR</span>
-          </Button>
-        </div>
-      </div>
-
       {/* ── FULL-SCREEN CHATGPT SANCTUARY ── */}
       <div className="w-full h-[calc(100vh-8.5rem)] min-h-[660px] flex flex-col">
         <main className="flex-1 flex flex-col rounded-3xl border border-border/70 bg-card/75 backdrop-blur-sm shadow-xs overflow-hidden h-full">
@@ -970,16 +901,6 @@ export function MemberDashboardView({
               </Button>
 
               <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsMoodModalOpen(true)}
-                className="rounded-xl border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 font-semibold h-8 px-2.5 text-xs gap-1"
-              >
-                <Smile className="size-3 text-emerald-600" />
-                <span>Mood Check-in</span>
-              </Button>
-
-              <Button
                 size="sm"
                 onClick={() => setIsBookModalOpen(true)}
                 className="rounded-xl bg-[#236B54] hover:bg-[#1a5240] text-white font-semibold h-8 px-3 text-xs gap-1 shadow-xs"
@@ -997,31 +918,6 @@ export function MemberDashboardView({
               >
                 <PhoneCall className="size-3" />
                 <span>Crisis 24/7</span>
-              </Button>
-
-              <div className="h-4 w-px bg-border/60 mx-1 hidden sm:block" />
-
-              <Button
-                variant={activeCenterView === "chat" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => setActiveCenterView(activeCenterView === "chat" ? "analytics" : "chat")}
-                className={`rounded-xl text-xs h-8 px-3 font-semibold ${
-                  activeCenterView === "analytics"
-                    ? "bg-[#236B54] text-white"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {activeCenterView === "chat" ? (
-                  <>
-                    <TrendingUp className="size-3 mr-1" />
-                    Analytics
-                  </>
-                ) : (
-                  <>
-                    <MessageSquare className="size-3 mr-1" />
-                    Chat Sanctuary
-                  </>
-                )}
               </Button>
             </div>
           </div>

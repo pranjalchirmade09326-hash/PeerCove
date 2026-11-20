@@ -469,19 +469,49 @@ class OperationsService(BaseService):
         ]
 
     async def create_safety_case(self, payload: Dict[str, Any]) -> dict:
+        member_id = payload.get("member_id") or payload.get("memberId")
+        source_type = payload.get("source_type") or payload.get("sourceType", "intake_screener")
+
+        # Parse source_record_id into UUID if present
+        source_rec_raw = payload.get("source_record_id") or payload.get("sourceRecordId")
+        source_record_id = None
+        if source_rec_raw:
+            if isinstance(source_rec_raw, uuid.UUID):
+                source_record_id = source_rec_raw
+            else:
+                try:
+                    source_record_id = uuid.UUID(str(source_rec_raw))
+                except (ValueError, AttributeError):
+                    source_record_id = uuid.uuid5(uuid.NAMESPACE_DNS, str(source_rec_raw))
+
+        trigger_code = payload.get("trigger_code") or payload.get("triggerCode", "high_distress_alert")
+        policy_version = payload.get("policy_version") or payload.get("policyVersion", "v1.0")
+        priority_code = payload.get("priority_code") or payload.get("priorityCode", "p1_urgent")
+        jurisdiction = payload.get("jurisdiction") or payload.get("jurisdiction", "IN")
+        case_state = payload.get("case_state") or payload.get("caseState", "new")
+
         sc = SafetyCase(
-            member_id=payload.get("memberId"),
-            source_type=payload.get("sourceType", "intake_screener"),
-            trigger_code=payload.get("triggerCode", "high_distress_alert"),
-            policy_version=payload.get("policyVersion", "v1.0"),
-            case_state="new",
-            priority_code=payload.get("priorityCode", "p1_urgent"),
-            jurisdiction=payload.get("jurisdiction", "IN")
+            member_id=member_id,
+            source_type=source_type,
+            source_record_id=source_record_id,
+            trigger_code=trigger_code,
+            policy_version=policy_version,
+            case_state=case_state,
+            priority_code=priority_code,
+            jurisdiction=jurisdiction,
+            created_at=datetime.now(timezone.utc),
         )
         self.db.add(sc)
         await self.db.commit()
         await self.db.refresh(sc)
-        return {"status": "created", "id": str(sc.id)}
+        return {
+            "status": "created",
+            "id": str(sc.id),
+            "case_id": str(sc.id),
+            "source_record_id": str(sc.source_record_id) if sc.source_record_id else None,
+            "member_id": sc.member_id,
+            "priority_code": sc.priority_code,
+        }
 
     async def get_safety_case_actions(self, case_id: str) -> list[dict]:
         case_uuid = uuid.UUID(case_id)

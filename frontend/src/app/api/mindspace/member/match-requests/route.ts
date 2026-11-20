@@ -27,7 +27,12 @@ export async function POST(req: Request) {
     body = {};
   }
 
-  const topicInput = body.support_topic || body.supportTopic || "general";
+  const topicInput =
+    body.support_topic !== undefined
+      ? body.support_topic
+      : body.supportTopic !== undefined
+        ? body.supportTopic
+        : "general";
   const topicResult = validateTopic(topicInput);
   if (!topicResult.valid) {
     return NextResponse.json({ error: topicResult.error }, { status: 400 });
@@ -44,7 +49,7 @@ export async function POST(req: Request) {
   const notes = sanitizeNotes(body.notes);
 
   try {
-    const { request } = await createMindspaceApiClient();
+    const { request, identity } = await createMindspaceApiClient();
     const data = await request("/api/v1/peer/match-requests", {
       method: "POST",
       body: JSON.stringify({

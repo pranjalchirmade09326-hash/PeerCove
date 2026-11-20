@@ -43,6 +43,8 @@ export interface MemberMatchRequestResponse {
     display_name?: string;
     name?: string;
     rating?: number;
+    avatar?: string;
+    specialty?: string;
   } | null;
   source?: string;
 }
@@ -211,5 +213,76 @@ export class MemberQueueStateMachine {
       listener: this.matchedListener,
       conversationId: this.conversationId,
     };
+  }
+}
+
+// ── Somatic 4-7-8 Breathwork Pacer ──
+export type BreathPhase = "Inhale" | "Hold" | "Exhale";
+
+export class BreathworkPacer {
+  private isActive: boolean = false;
+  private phase: BreathPhase = "Inhale";
+  private secondsRemaining: number = 4;
+  private completedCycles: number = 0;
+
+  constructor(startActive = false) {
+    if (startActive) {
+      this.start();
+    }
+  }
+
+  public start(): void {
+    this.isActive = true;
+    this.phase = "Inhale";
+    this.secondsRemaining = 4;
+  }
+
+  public pause(): void {
+    this.isActive = false;
+  }
+
+  public resume(): void {
+    this.isActive = true;
+  }
+
+  public toggle(): boolean {
+    this.isActive = !this.isActive;
+    return this.isActive;
+  }
+
+  public reset(): void {
+    this.isActive = false;
+    this.phase = "Inhale";
+    this.secondsRemaining = 4;
+    this.completedCycles = 0;
+  }
+
+  public getStatus() {
+    return {
+      isActive: this.isActive,
+      phase: this.phase,
+      secondsRemaining: this.secondsRemaining,
+      completedCycles: this.completedCycles,
+    };
+  }
+
+  public tick(): void {
+    if (!this.isActive) return;
+
+    if (this.secondsRemaining > 1) {
+      this.secondsRemaining -= 1;
+    } else {
+      if (this.phase === "Inhale") {
+        this.phase = "Hold";
+        this.secondsRemaining = 7;
+      } else if (this.phase === "Hold") {
+        this.phase = "Exhale";
+        this.secondsRemaining = 8;
+      } else if (this.phase === "Exhale") {
+        this.phase = "Inhale";
+        this.secondsRemaining = 4;
+        this.completedCycles += 1;
+      }
+    }
   }
 }

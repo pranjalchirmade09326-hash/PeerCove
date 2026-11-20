@@ -32,11 +32,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Link } from "@/i18n/navigation";
 import { toast } from "sonner";
 
 import { MemberSessionRoomModal } from "./MemberSessionRoomModal";
 import { BookSessionModal } from "./BookSessionModal";
+import { MemberMatchingQueueModal } from "./MemberMatchingQueueModal";
 import {
   MemberQueueStateMachine,
   QueueState,
@@ -81,6 +81,7 @@ const ONLINE_LISTENERS = [
 export function MemberConsultationView() {
   const [isRoomModalOpen, setIsRoomModalOpen] = useState(false);
   const [isBookModalOpen, setIsBookModalOpen] = useState(false);
+  const [isQueueModalOpen, setIsQueueModalOpen] = useState(false);
   const [activeSession, setActiveSession] = useState<{
     id: string;
     listenerName: string;
@@ -107,16 +108,19 @@ export function MemberConsultationView() {
       return;
     }
 
-    const timer = setInterval(() => {
-      setQueueElapsedSeconds((prev) => prev + 1);
-      // Check 15-minute timeout
-      if (queueSM.current.checkTimeout(15)) {
+    const updateTimer = () => {
+      const elapsed = queueSM.current.getElapsedSeconds(Date.now());
+      setQueueElapsedSeconds(elapsed);
+      if (queueSM.current.checkTimeout(15, Date.now())) {
         setQueueState("timeout");
         toast.error("Queue Timeout Reached", {
           description: "No peer listener was able to connect within 15 minutes. Please try again or explore self-help resources.",
         });
       }
-    }, 1000);
+    };
+
+    updateTimer();
+    const timer = setInterval(updateTimer, 1000);
 
     return () => clearInterval(timer);
   }, [queueState]);
@@ -153,23 +157,8 @@ export function MemberConsultationView() {
       }
     }, 2000);
 
-    // Development & Test fallback: auto-simulate listener acceptance after 3.5s
-    const devFallbackTimer = setTimeout(() => {
-      if (queueSM.current.getState() === "queued" || queueSM.current.getState() === "matching") {
-        const convId = `live-${Date.now()}`;
-        const listenerObj = {
-          id: "l-demo-listener",
-          name: queuedDetails?.listenerName || "Aarav Sharma (Verified Peer Listener)",
-          rating: 4.9,
-        };
-        queueSM.current.match(listenerObj, convId);
-        handleMatchSuccessful(convId, listenerObj);
-      }
-    }, 3800);
-
     return () => {
       clearInterval(pollInterval);
-      clearTimeout(devFallbackTimer);
     };
   }, [queueState, activeRequestId, queuedDetails]);
 
@@ -180,6 +169,8 @@ export function MemberConsultationView() {
       description: "Listener has claimed your session. Transitioning to consultation room...",
       duration: 3500,
     });
+
+    setIsQueueModalOpen(false);
 
     setTimeout(() => {
       setActiveSession({
@@ -239,8 +230,9 @@ export function MemberConsultationView() {
     }
 
     setActiveRequestId(reqId);
+    setIsQueueModalOpen(true);
     toast.info("Peer Session Request Queued", {
-      description: "Finding available verified listener in active roster. Please stay on this screen.",
+      description: "Finding available verified listener in active roster. Opening queue room...",
     });
   };
 
@@ -323,7 +315,16 @@ export function MemberConsultationView() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2.5">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsQueueModalOpen(true)}
+                className="rounded-xl text-xs h-8 border-emerald-400 dark:border-emerald-700 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100/60"
+              >
+                <Sparkles className="size-3.5 mr-1" />
+                <span>Open Queue Room</span>
+              </Button>
               <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-background border border-border text-xs font-mono font-semibold text-emerald-700 dark:text-emerald-400">
                 <Clock className="size-3.5" />
                 <span>Elapsed: {formatTimer(queueElapsedSeconds)}</span>
@@ -477,6 +478,31 @@ export function MemberConsultationView() {
       </Card>
 
       {/* ── Modals ── */}
+      <MemberMatchingQueueModal
+        open={isQueueModalOpen}
+        onOpenChange={setIsQueueModalOpen}
+        requestId={activeRequestId}
+        initialTopic={queuedDetails?.topic || "general"}
+        initialChannel={queuedDetails?.channel || "chat"}
+        preferredListenerName={queuedDetails?.listenerName}
+        onMatched={(data) => {
+          handleMatchSuccessful(data.conversationId, data.listener);
+        }}
+        onEnterRoom={(session) => {
+          setIsQueueModalOpen(false);
+          setActiveSession(session);
+          setQueueState("idle");
+          setActiveRequestId(null);
+          setIsRoomModalOpen(true);
+        }}
+        onCancel={() => {
+          setIsQueueModalOpen(false);
+          setQueueState("idle");
+          setActiveRequestId(null);
+          setQueuedDetails(null);
+        }}
+      />
+
       <MemberSessionRoomModal
         open={isRoomModalOpen}
         onOpenChange={setIsRoomModalOpen}
@@ -490,6 +516,20 @@ export function MemberConsultationView() {
       <BookSessionModal
         open={isBookModalOpen}
         onOpenChange={setIsBookModalOpen}
+        onRequestInitiated={(matchData) => {
+          setIsBookModalOpen(false);
+          queueSM.current = new MemberQueueStateMachine("queued");
+          setQueueState("queued");
+          setQueueElapsedSeconds(0);
+          setActiveRequestId(matchData.id);
+          setQueuedDetails({
+            listenerName: "Verified Peer Listener",
+            specialty: matchData.support_topic || "Daily Stress & Burnout",
+            channel: (matchData.preferred_channel as SupportChannel) || "chat",
+            topic: (matchData.support_topic as SupportTopic) || "general",
+          });
+          setIsQueueModalOpen(true);
+        }}
         onSessionBooked={() => {
           setIsBookModalOpen(false);
           toast.success("Consultation Slot Reserved!", {

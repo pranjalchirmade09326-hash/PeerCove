@@ -1383,7 +1383,7 @@ describe("Listener Workflow Integration & E2E Tests (Tiers 1-3)", () => {
   });
 
   // ============================================================================
-  // DRGODLY / MINDSPACE VIDEO DEMO MATCHING WORKFLOWS
+  // MINDSPACE CLINICAL VIDEO DEMO MATCHING WORKFLOWS
   // ============================================================================
   describe("YouTube Demo Alignment — Ambient In-Person & Telehealth CDS & FHIR Extractions", () => {
     it("synthesizes ambient audio recording into structured SOAP note", () => {

@@ -14,6 +14,7 @@ export * from "./member/components/MemberMoodView";
 export * from "./member/components/MemberJournalView";
 export * from "./member/components/MemberGoalsView";
 export * from "./member/components/BookSessionModal";
+export * from "./member/components/MemberMatchingQueueModal";
 export * from "./member/components/MemberSessionRoomModal";
 export * from "./member/components/MemberReportModal";
 

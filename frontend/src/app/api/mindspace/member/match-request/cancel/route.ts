@@ -20,7 +20,19 @@ export async function POST(req: Request) {
       method: "POST",
     });
     return NextResponse.json(data);
-  } catch (_error: any) {
+  } catch (error: any) {
+    const isConflict =
+      error?.status === 409 ||
+      error?.detail === "REQUEST_ALREADY_CLAIMED" ||
+      (typeof error?.detail === "string" && error.detail.includes("REQUEST_ALREADY_CLAIMED")) ||
+      (typeof error?.message === "string" && error.message.includes("REQUEST_ALREADY_CLAIMED"));
+
+    if (isConflict) {
+      return NextResponse.json(
+        { detail: "REQUEST_ALREADY_CLAIMED", error: "Request already claimed by listener" },
+        { status: 409 }
+      );
+    }
     return NextResponse.json({
       id: requestId,
       status: "cancelled",

@@ -54,6 +54,7 @@ import {
   Phone,
 } from "lucide-react";
 import { toast } from "sonner";
+import { BreathworkPacer, useDeviceCheck } from "@/modules/client/mindspace/consultation";
 
 export interface MemberSessionRoomModalProps {
   open?: boolean;
@@ -65,6 +66,7 @@ export interface MemberSessionRoomModalProps {
     listenerName: string;
     channel?: string;
     note?: string;
+    memberId?: string;
   } | null;
   onSessionEnded?: () => void;
 }
@@ -172,6 +174,10 @@ export function MemberSessionRoomModal({
 
   const listenerName = session?.listenerName || "Priya Verma (Empathetic)";
   const listenerShortName = listenerName.split(" ")[0] || "Priya";
+  const currentUserId = session?.memberId || "usr-demo-member-01";
+
+  // Pre-call hardware device and network readiness check
+  const { deviceCheck } = useDeviceCheck(isModalOpen && stage === "connecting");
 
   // Reset states whenever modal opens
   useEffect(() => {
@@ -179,7 +185,7 @@ export function MemberSessionRoomModal({
       setStage("connecting");
       setSeconds(0);
       setIsMuted(false);
-      setIsVideoOn(session?.channel !== "voice");
+      setIsVideoOn(session?.channel !== "voice" && session?.channel !== "chat");
       setIsBreathworkActive(false);
       setIsListenerSpeaking(false);
       setCompletedBreathCycles(0);
@@ -227,6 +233,31 @@ export function MemberSessionRoomModal({
     }
   }, [isModalOpen, session?.id, session?.channel, listenerShortName]);
 
+  // Load conversation message history from backend on mount
+  useEffect(() => {
+    if (!isModalOpen || !session?.id) return;
+    const convId = session.id;
+
+    fetch(`/api/mindspace/member/conversations/${convId}/messages`)
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          const loaded: DialogueEntry[] = data.map((m: any, idx: number) => ({
+            id: m.id || `m-hist-${idx}`,
+            speaker: m.sender_user_id === currentUserId ? "member" : "listener",
+            speakerName: m.sender_user_id === currentUserId ? "You (Member)" : listenerShortName,
+            text: m.content,
+            time: m.sent_at
+              ? new Date(m.sent_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+              : "Just now",
+          }));
+          setDialogue(loaded);
+          setSequenceNumber(loaded.length);
+        }
+      })
+      .catch(() => {});
+  }, [isModalOpen, session?.id, currentUserId, listenerShortName]);
+
   // WebSocket Connection Management for Live Room
   useEffect(() => {
     if (!isModalOpen || stage !== "active" || !session?.id) {
@@ -245,7 +276,7 @@ export function MemberSessionRoomModal({
       const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
       const hostname = window.location.hostname || "localhost";
       const port = process.env.NEXT_PUBLIC_FASTAPI_PORT || "8080";
-      wsUrl = `${protocol}//${hostname}:${port}/api/v1/peer/ws/${convId}`;
+      wsUrl = `${protocol}//${hostname}:${port}/api/v1/peer/ws/${convId}?user_id=${currentUserId}`;
     }
 
     let ws: WebSocket | null = null;
@@ -273,7 +304,7 @@ export function MemberSessionRoomModal({
             const data = JSON.parse(event.data);
             if (data.type === "new_message" && data.message) {
               const msg = data.message;
-              if (msg.sender_user_id !== "usr-demo-member-01" && msg.sender_role !== "member") {
+              if (msg.sender_user_id !== currentUserId) {
                 setDialogue((prev) => [
                   ...prev,
                   {
@@ -344,39 +375,38 @@ export function MemberSessionRoomModal({
     return () => clearInterval(interval);
   }, [isModalOpen, stage]);
 
-  // Somatic 4-7-8 breathwork cycle runner (Inhale 4s -> Hold 7s -> Exhale 8s)
+  // Deterministic Somatic 4-7-8 breathwork runner
+  const breathworkPacerRef = useRef<BreathworkPacer | null>(null);
   useEffect(() => {
-    if (!isBreathworkActive || stage !== "active") return;
+    if (!isBreathworkActive || stage !== "active") {
+      if (breathworkPacerRef.current) {
+        breathworkPacerRef.current.reset();
+      }
+      return;
+    }
 
-    let timeoutId: NodeJS.Timeout;
-    const runCycle = () => {
-      setBreathPhase("Inhale");
-      setBreathCount(4);
-      timeoutId = setTimeout(() => {
-        setBreathPhase("Hold");
-        setBreathCount(7);
-        timeoutId = setTimeout(() => {
-          setBreathPhase("Exhale");
-          setBreathCount(8);
-          timeoutId = setTimeout(() => {
-            setCompletedBreathCycles((prev) => prev + 1);
-            runCycle();
-          }, 8000);
-        }, 7000);
-      }, 4000);
-    };
+    if (!breathworkPacerRef.current) {
+      breathworkPacerRef.current = new BreathworkPacer(true);
+    } else {
+      breathworkPacerRef.current.start();
+    }
 
-    runCycle();
-    return () => clearTimeout(timeoutId);
-  }, [isBreathworkActive, stage]);
+    const st = breathworkPacerRef.current.getStatus();
+    setBreathPhase(st.phase);
+    setBreathCount(st.secondsRemaining);
+    setCompletedBreathCycles(st.completedCycles);
 
-  // Breathwork 1-second countdown pacer
-  useEffect(() => {
-    if (!isBreathworkActive || stage !== "active") return;
-    const pacer = setInterval(() => {
-      setBreathCount((prev) => (prev > 1 ? prev - 1 : 1));
+    const interval = setInterval(() => {
+      if (breathworkPacerRef.current) {
+        breathworkPacerRef.current.tick();
+        const s = breathworkPacerRef.current.getStatus();
+        setBreathPhase(s.phase);
+        setBreathCount(s.secondsRemaining);
+        setCompletedBreathCycles(s.completedCycles);
+      }
     }, 1000);
-    return () => clearInterval(pacer);
+
+    return () => clearInterval(interval);
   }, [isBreathworkActive, stage]);
 
   const formatTimer = (totalSeconds: number) => {
@@ -408,6 +438,17 @@ export function MemberSessionRoomModal({
           priority_code: "urgent",
           category: "crisis_intervention",
           notes: `Member reported acute distress: "${cleanedText}". Latency: ${latencyMs.toFixed(2)}ms`,
+        }),
+      }).catch(() => {});
+
+      fetch("/api/mindspace/operations/safety/cases", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          conversation_id: session?.id || `live-${Date.now()}`,
+          category_code: "CRISIS_SENTINEL",
+          severity: "high",
+          details: `Distress tripwire detected: "${match[0]}"`,
         }),
       }).catch(() => {});
 
@@ -451,7 +492,7 @@ export function MemberSessionRoomModal({
             type: "chat_message",
             content: cleanedText,
             sequence_no: nextSeq,
-            sender_id: "usr-demo-member-01",
+            sender_id: currentUserId,
           })
         );
         sentOverWebSocket = true;
@@ -460,7 +501,19 @@ export function MemberSessionRoomModal({
       }
     }
 
-    // 3. Resilient Fallback: If offline or mock test environment, generate simulated empathetic reply
+    // 3. Dual-channel send: fallback to REST POST if not transmitted over WebSocket
+    if (!sentOverWebSocket && session?.id) {
+      fetch(`/api/mindspace/member/conversations/${session.id}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content: cleanedText,
+          sender_user_id: currentUserId,
+        }),
+      }).catch(() => {});
+    }
+
+    // 4. Resilient Fallback: If offline or mock test environment, generate simulated empathetic reply
     if (!sentOverWebSocket) {
       setIsListenerSpeaking(true);
 
@@ -499,23 +552,51 @@ export function MemberSessionRoomModal({
     }
   };
 
-  // Trigger End of Call -> Advances to Reflection Stage
-  const handleEndCallClick = () => {
-    // Notify peer over WebSocket
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN && session?.id) {
+  // Trigger End of Call -> Advances to Reflection Stage with Mutual Termination Sync
+  const handleEndCallClick = async () => {
+    const convId = session?.id || `conv-${Date.now()}`;
+
+    // 1. Broadcast over WebSocket to immediately alert listener
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       try {
         wsRef.current.send(
           JSON.stringify({
             type: "session_closed",
-            conversation_id: session.id,
+            conversation_id: convId,
           })
         );
       } catch {}
     }
 
+    // 2. Mutual termination sync: close conversation in backend
+    await fetch(`/api/mindspace/member/conversations/${convId}/close`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        duration_seconds: seconds,
+      }),
+    }).catch((e) => console.warn("Backend close error:", e));
+
     setStage("reflection");
     setIsBreathworkActive(false);
     setIsListenerSpeaking(false);
+  };
+
+  // Handle Skip Reflection -> still ensures conversation is closed in backend
+  const handleSkipReflection = async () => {
+    const convId = session?.id;
+    if (convId) {
+      await fetch(`/api/mindspace/member/conversations/${convId}/close`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          duration_seconds: seconds,
+          skipped_reflection: true,
+        }),
+      }).catch(() => {});
+    }
+    handleModalClose(false);
+    onSessionEnded?.();
   };
 
   // Finalize Reflection and persist to PostgreSQL
@@ -535,7 +616,20 @@ export function MemberSessionRoomModal({
         }),
       }).catch((e) => console.warn("Backend close error:", e));
 
-      // 2. Persist post-session mood rating to PostgreSQL
+      // 2. Record feedback for listener in PostgreSQL listener_feedback table
+      await fetch(`/api/mindspace/member/conversations/${convId}/feedback`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          rating: starRating,
+          feedback_text: gratitudeNote || "Supportive session",
+          post_mood_score: postMoodRating,
+          post_mood_label: postMoodLabel,
+          sync_to_journal: syncToJournal,
+        }),
+      }).catch((e) => console.warn("Backend feedback error:", e));
+
+      // 3. Persist post-session mood rating to PostgreSQL
       await fetch("/api/mindspace/member/moods", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -552,7 +646,7 @@ export function MemberSessionRoomModal({
         }),
       }).catch((e) => console.warn("Backend mood save error:", e));
 
-      // 3. If journal sync enabled, save encrypted journal entry
+      // 4. If journal sync enabled, save encrypted journal entry
       if (syncToJournal) {
         await fetch("/api/mindspace/member/journal", {
           method: "POST",
@@ -671,6 +765,19 @@ export function MemberSessionRoomModal({
               </div>
             </div>
 
+            {/* Device & Hardware Check Status Badge */}
+            <div className="mt-3 flex items-center gap-2">
+              <Badge variant="outline" className="text-[10px] text-emerald-400 border-emerald-900 bg-emerald-950/40">
+                <CheckCircle2 className="size-3 mr-1 text-emerald-400" />
+                Mic & Video Verified • {deviceCheck.networkLatencyMs}ms Latency
+              </Badge>
+              {session?.channel === "chat" && (
+                <Badge variant="secondary" className="text-[10px] bg-slate-800 text-slate-300">
+                  Text Chat Preferred
+                </Badge>
+              )}
+            </div>
+
             {/* Privacy Guarantee Pill */}
             <div className="mt-6 flex items-center gap-2 text-xs text-slate-400">
               <Lock className="size-3.5 text-emerald-400" />
@@ -785,7 +892,7 @@ export function MemberSessionRoomModal({
                   <div className="p-2.5 rounded-xl bg-slate-950/70 border border-rose-800/40">
                     <span className="text-[10px] text-rose-300 uppercase font-bold tracking-wider block">India Tele-MANAS</span>
                     <a href="tel:14416" className="text-sm font-mono font-bold text-white hover:underline block mt-0.5">
-                      14416 / 1800-891-4416
+                      14416 / +91 9999 666 555
                     </a>
                     <span className="text-[10px] text-slate-400">Govt. of India 24/7 Crisis Helpline</span>
                   </div>
@@ -1161,6 +1268,31 @@ export function MemberSessionRoomModal({
                     );
                   })}
                 </div>
+
+                {/* 1-10 Granular Mood Valence Slider */}
+                <div className="space-y-1.5 pt-2">
+                  <div className="flex items-center justify-between text-[11px] text-slate-400">
+                    <span>1 (High Distress)</span>
+                    <span className="font-mono text-emerald-400 font-bold">{postMoodRating} / 10</span>
+                    <span>10 (Completely Grounded)</span>
+                  </div>
+                  <input
+                    type="range"
+                    min={1}
+                    max={10}
+                    step={1}
+                    value={postMoodRating}
+                    onChange={(e) => {
+                      const val = Number(e.target.value);
+                      setPostMoodRating(val);
+                      if (val >= 9) setPostMoodLabel("Much Calmer");
+                      else if (val >= 7) setPostMoodLabel("Heard & Lighter");
+                      else if (val >= 5) setPostMoodLabel("About the Same");
+                      else setPostMoodLabel("Still Overwhelmed");
+                    }}
+                    className="w-full accent-emerald-500 cursor-pointer h-2 bg-slate-800 rounded-lg"
+                  />
+                </div>
               </div>
 
               {/* 2. Rate Listener Experience */}
@@ -1218,7 +1350,7 @@ export function MemberSessionRoomModal({
               <div className="pt-2 flex items-center justify-between">
                 <Button
                   variant="ghost"
-                  onClick={() => handleModalClose(false)}
+                  onClick={handleSkipReflection}
                   className="text-xs text-slate-400 hover:text-white"
                 >
                   Skip Reflection

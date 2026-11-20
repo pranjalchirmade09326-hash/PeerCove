@@ -22,6 +22,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
+from sqlalchemy.types import TypeDecorator, Text
 
 # SQLite adapter for Python list and dict to prevent SQLite binding error
 sqlite3.register_adapter(list, json.dumps)
@@ -35,6 +36,70 @@ def compile_array_sqlite(type_, compiler, **kw):
 @compiles(JSONB, "sqlite")
 def compile_jsonb_sqlite(type_, compiler, **kw):
     return "TEXT"
+
+
+class SQLiteArray(TypeDecorator):
+    """TypeDecorator converting Python lists to/from JSON strings for SQLite tests."""
+    impl = Text
+    cache_ok = True
+
+    def process_result_value(self, value, dialect):
+        if value is None:
+            return []
+        if isinstance(value, str):
+            try:
+                parsed = json.loads(value)
+                return parsed if isinstance(parsed, list) else [parsed]
+            except Exception:
+                return [value]
+        return value
+
+    def process_bind_param(self, value, dialect):
+        if value is None:
+            return None
+        if isinstance(value, list):
+            return json.dumps(value)
+        return value
+
+
+# Override result_processor for ARRAY on sqlite dialect so queries return deserialized lists
+_orig_array_result_processor = ARRAY.result_processor
+
+def _sqlite_array_result_processor(self, dialect, coltype):
+    if dialect.name == "sqlite":
+        def process(value):
+            if value is None:
+                return []
+            if isinstance(value, str):
+                try:
+                    parsed = json.loads(value)
+                    return parsed if isinstance(parsed, list) else [parsed]
+                except Exception:
+                    return [value]
+            return value
+        return process
+    return _orig_array_result_processor(self, dialect, coltype)
+
+ARRAY.result_processor = _sqlite_array_result_processor
+
+# Trampoline adapter for asyncio.gather to avoid Windows Python 3.14 event loop deadlocks
+import asyncio
+_orig_gather = asyncio.gather
+
+async def _trampoline_gather(*coros, return_exceptions=False):
+    results = []
+    for c in coros:
+        try:
+            r = await c
+            results.append(r)
+        except Exception as e:
+            if return_exceptions:
+                results.append(e)
+            else:
+                raise
+    return results
+
+asyncio.gather = _trampoline_gather
 
 from app.main import app
 from app.core.database import Base, get_db
@@ -64,6 +129,7 @@ from app.models.operations import (
 async def noop_lifespan(app_instance):
     yield
 
+app.lifespan_context = noop_lifespan
 app.router.lifespan_context = noop_lifespan
 
 # 2. In-memory SQLite Database Setup
@@ -273,3 +339,34 @@ def db_session():
         yield session
     finally:
         session.close()
+
+
+def run_async(coro):
+    """Synchronous trampoline runner for coroutines avoiding AnyIO/TestClient portal deadlocks."""
+    import inspect
+    stack = [coro]
+    val = None
+    while stack:
+        curr = stack[-1]
+        try:
+            res = curr.send(val)
+            val = None
+            if inspect.isawaitable(res):
+                if hasattr(res, "__await__"):
+                    stack.append(res.__await__())
+                else:
+                    stack.append(res)
+        except StopIteration as e:
+            stack.pop()
+            val = e.value
+    return val
+
+
+@pytest.fixture(autouse=True)
+def reset_kms_key_version():
+    """Ensure KMS key version is isolated across tests."""
+    from app.core import security
+    security.CURRENT_KEY_VERSION = "v1"
+    yield
+    security.CURRENT_KEY_VERSION = "v1"
+

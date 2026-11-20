@@ -23,6 +23,7 @@ interface ApiErrorResponse {
     code?: string;
     message?: string;
   };
+  detail?: string | Array<{ msg?: string; loc?: string[]; type?: string }> | Record<string, unknown>;
 }
 
 async function requestBetterAuth(path: string): Promise<Response> {
@@ -136,11 +137,32 @@ async function getMindspaceBearerToken(expectedUserId: string): Promise<string> 
 
 async function readApiResponse<T>(response: Response): Promise<T> {
   const responseText = await response.text();
-  const result = responseText ? (JSON.parse(responseText) as T & ApiErrorResponse) : undefined;
+  let result: (T & ApiErrorResponse) | undefined = undefined;
+  try {
+    result = responseText ? (JSON.parse(responseText) as T & ApiErrorResponse) : undefined;
+  } catch {
+    result = undefined;
+  }
+
   if (!response.ok) {
-    const message = result?.error?.message ?? `MindSpace API request failed (${response.status}).`;
+    const detailMsg =
+      typeof result?.detail === "string"
+        ? result.detail
+        : Array.isArray(result?.detail)
+          ? result.detail.map((d: any) => d.msg || JSON.stringify(d)).join("; ")
+          : result?.detail
+            ? JSON.stringify(result.detail)
+            : undefined;
+
+    const message =
+      result?.error?.message ??
+      detailMsg ??
+      `MindSpace API request failed (${response.status}).`;
     const code = result?.error?.code;
-    throw new Error(code ? `${code}: ${message}` : message);
+    const err: any = new Error(code ? `${code}: ${message}` : message);
+    err.status = response.status;
+    err.detail = detailMsg;
+    throw err;
   }
   return result as T;
 }
@@ -170,6 +192,7 @@ export async function createMindspaceApiClient() {
         headers: {
           ...init?.headers,
           Authorization: `Bearer ${token}`,
+          "X-User-Id": identity.id,
           ...(init?.body ? { "Content-Type": "application/json" } : {}),
         },
         cache: "no-store",

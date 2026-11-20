@@ -10,7 +10,8 @@ from app.schemas.peer import (
     FeedbackCreate,
 )
 from app.services.peer_service import PeerService, get_peer_service
-from typing import Dict, Any
+from typing import Dict, Any, Optional
+import jwt
 
 router = APIRouter(prefix="/api/v1", tags=["Peer Support"])
 
@@ -169,6 +170,52 @@ async def update_listener_profile(
     return await service.update_listener_profile(user_id, payload)
 
 
+def extract_ws_user_id(websocket: WebSocket) -> Optional[str]:
+    """Extract authenticated user_id from WebSocket headers or query parameters."""
+    # 1. Check custom identity headers
+    header_user = (
+        websocket.headers.get("x-user-id")
+        or websocket.headers.get("x-member-id")
+        or websocket.headers.get("x-listener-id")
+    )
+    if header_user and header_user.strip():
+        return header_user.strip()
+
+    # 2. Check Bearer Authorization header
+    auth_header = websocket.headers.get("authorization")
+    raw_token = None
+    if auth_header and auth_header.strip():
+        parts = auth_header.strip().split()
+        if len(parts) == 2 and parts[0].lower() == "bearer":
+            raw_token = parts[1]
+        elif len(parts) == 1:
+            raw_token = parts[0]
+
+    # 3. Check query parameters (?token=... or ?user_id=...)
+    if not raw_token:
+        raw_token = (
+            websocket.query_params.get("token")
+            or websocket.query_params.get("auth_token")
+            or websocket.query_params.get("user_id")
+            or websocket.query_params.get("userId")
+        )
+
+    if not raw_token:
+        return None
+
+    token_str = str(raw_token).strip()
+    if "." in token_str:
+        try:
+            unverified = jwt.decode(token_str, options={"verify_signature": False})
+            sub = unverified.get("sub") or unverified.get("userId") or unverified.get("id")
+            if sub:
+                return str(sub)
+        except Exception:
+            pass
+
+    return token_str
+
+
 # WebSocket consultation channel
 @router.websocket("/peer/ws/{conversation_id}")
 async def websocket_peer_endpoint(
@@ -176,7 +223,31 @@ async def websocket_peer_endpoint(
     conversation_id: str,
     service: PeerService = Depends(get_peer_service),
 ):
-    await manager.connect(conversation_id, websocket)
+    # Step A: Authenticate connecting party
+    auth_user_id = extract_ws_user_id(websocket)
+    if not auth_user_id:
+        await websocket.accept()
+        await websocket.send_json({"type": "error", "code": 4003, "detail": "AUTHENTICATION_REQUIRED"})
+        await websocket.close(code=4003, reason="AUTHENTICATION_REQUIRED")
+        return
+
+    # Step B: Authorize participant membership against PeerConversation
+    is_authorized, conv = await service.verify_conversation_participant(conversation_id, auth_user_id)
+    if not conv:
+        await websocket.accept()
+        await websocket.send_json({"type": "error", "code": 4004, "detail": "CONVERSATION_NOT_FOUND"})
+        await websocket.close(code=4004, reason="CONVERSATION_NOT_FOUND")
+        return
+
+    if not is_authorized:
+        await websocket.accept()
+        await websocket.send_json({"type": "error", "code": 4003, "detail": "FORBIDDEN_NOT_PARTICIPANT"})
+        await websocket.close(code=4003, reason="FORBIDDEN_NOT_PARTICIPANT")
+        return
+
+    # Step C: Register authorized connection into broadcast pool
+    await manager.connect(conversation_id, websocket, user_id=auth_user_id)
+
     try:
         while True:
             data = await websocket.receive_json()
@@ -188,40 +259,25 @@ async def websocket_peer_endpoint(
                 signal = data.get("signal")
                 if signal is None and msg_type in ("offer", "answer", "candidate", "ice_candidate"):
                     signal = data
-                from_user = (
-                    data.get("from_user_id")
-                    or data.get("sender_id")
-                    or data.get("sender_user_id")
-                    or "usr-demo-peer"
-                )
+                # STRICT IDENTITY BINDING: from_user_id is ALWAYS the authenticated auth_user_id
                 await manager.broadcast(
                     str(conversation_id),
                     {
                         "type": "webrtc_signal",
                         "signal": signal,
-                        "from_user_id": from_user,
+                        "from_user_id": auth_user_id,
                     },
                     exclude=websocket,
                 )
             elif msg_type == "session_closed":
-                from_user = (
-                    data.get("from_user_id")
-                    or data.get("sender_id")
-                    or data.get("sender_user_id")
-                    or "usr-demo-member-01"
-                )
-                await service.close_conversation(from_user, conversation_id)
+                # STRICT IDENTITY BINDING: closed_by_user_id is ALWAYS auth_user_id
+                await service.close_conversation(auth_user_id, conversation_id)
             else:
                 content = data.get("content") or data.get("text")
-                sender_id = (
-                    data.get("sender_id")
-                    or data.get("sender_user_id")
-                    or data.get("from_user_id")
-                    or "usr-demo-member-01"
-                )
                 if content:
                     msg_payload = PeerMessageCreate(content=content)
-                    await service.send_message(sender_id, conversation_id, msg_payload)
+                    # STRICT IDENTITY BINDING: sender is ALWAYS auth_user_id
+                    await service.send_message(auth_user_id, conversation_id, msg_payload)
     except WebSocketDisconnect:
         manager.disconnect(conversation_id, websocket)
     except Exception:

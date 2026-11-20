@@ -17,7 +17,7 @@
  * Environment: Node (Vitest)
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { POST as peerSessionPOST } from "@/app/api/mindspace/member/peer-session/route";
 import * as apiClientModule from "@/modules/server/mindspace/api-client";
 
@@ -25,159 +25,58 @@ vi.mock("@/modules/server/mindspace/api-client", () => ({
   createMindspaceApiClient: vi.fn(),
 }));
 
+vi.mock("@/i18n/navigation", () => ({
+  Link: ({ children }: any) => children,
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+  usePathname: () => "/mindspace",
+  redirect: vi.fn(),
+  permanentRedirect: vi.fn(),
+  getPathname: vi.fn(),
+}));
+
 // ============================================================================
-// DOMAIN LOGIC & CONTRACT HANDLERS (According to PROJECT.md & TEST_INFRA.md)
+// DOMAIN LOGIC & CONTRACT HANDLERS (Imported from Production MemberQueue Entity)
 // ============================================================================
 
-export const VALID_TOPICS = [
-  "anxiety",
-  "stress",
-  "sleep",
-  "relationships",
-  "grief",
-  "general",
-] as const;
+import {
+  VALID_TOPICS,
+  SupportTopic,
+  SupportChannel,
+  MemberMatchRequestPayload,
+  validateTopic,
+  validateChannel,
+  validateLanguages,
+  sanitizeNotes,
+  QueueState,
+  MemberQueueStateMachine,
+  BreathworkPacer,
+} from "@/modules/client/mindspace/member/domain/entities/MemberQueue";
+import { MemberMatchRequestApi } from "@/modules/client/mindspace/member/infrastructure/services/MemberMatchRequestApi";
+import { MemberMatchingQueueModal } from "@/modules/client/mindspace/member/components/MemberMatchingQueueModal";
+import { BookSessionModal } from "@/modules/client/mindspace/member/components/BookSessionModal";
+import { MemberConsultationView } from "@/modules/client/mindspace/member/components/MemberConsultationView";
+import {
+  MemberMatchingQueueModal as BridgeQueueModal,
+  BookSessionModal as BridgeBookModal,
+  MemberConsultationView as BridgeConsultationView,
+} from "@/components/consultation";
+import { MemberMatchingQueueModal as ExportedQueueModal } from "@/modules/client/mindspace";
 
-export type SupportTopic = (typeof VALID_TOPICS)[number];
-export type SupportChannel = "chat" | "voice" | "video";
+export type {
+  SupportTopic,
+  SupportChannel,
+  MemberMatchRequestPayload,
+  QueueState,
+};
 
-export interface MemberMatchRequestPayload {
-  support_topic: string;
-  preferred_channel?: string;
-  preferred_languages?: string[];
-  consent_share_intake?: boolean;
-  intake_summary?: string;
-  notes?: string;
-}
-
-export function validateTopic(topic: unknown): { valid: boolean; normalized?: SupportTopic; error?: string } {
-  if (typeof topic !== "string") {
-    return { valid: false, error: "Topic must be a string" };
-  }
-  const normalized = topic.trim().toLowerCase();
-  if (!normalized) {
-    return { valid: false, error: "Topic cannot be empty" };
-  }
-  if (normalized.length > 50) {
-    return { valid: false, error: "Topic exceeds maximum length of 50 characters" };
-  }
-  if (!VALID_TOPICS.includes(normalized as SupportTopic)) {
-    return { valid: false, error: `Invalid topic '${topic}'. Allowed: ${VALID_TOPICS.join(", ")}` };
-  }
-  return { valid: true, normalized: normalized as SupportTopic };
-}
-
-export function validateChannel(channel: unknown): { valid: boolean; normalized: SupportChannel; error?: string } {
-  if (!channel || channel === "") {
-    return { valid: true, normalized: "chat" }; // Default fallback
-  }
-  if (typeof channel !== "string") {
-    return { valid: false, normalized: "chat", error: "Channel must be a string" };
-  }
-  const normalized = channel.trim().toLowerCase();
-  if (["chat", "voice", "video"].includes(normalized)) {
-    return { valid: true, normalized: normalized as SupportChannel };
-  }
-  return { valid: false, normalized: "chat", error: `Unsupported channel '${channel}'. Allowed: chat, voice, video` };
-}
-
-export function validateLanguages(languages: unknown): string[] {
-  if (!Array.isArray(languages) || languages.length === 0) {
-    return ["en"];
-  }
-  const cleaned = languages
-    .filter((l): l is string => typeof l === "string" && l.trim().length > 0)
-    .map((l) => l.trim().toLowerCase());
-  const unique = Array.from(new Set(cleaned));
-  return unique.length > 0 ? unique : ["en"];
-}
-
-export function sanitizeNotes(notes?: string, maxLength = 2000): string {
-  if (!notes) return "";
-  const sanitized = notes.replace(/<[^>]*>?/gm, "").trim();
-  return sanitized.slice(0, maxLength);
-}
-
-// Queue State Machine Implementation
-export type QueueState = "idle" | "queued" | "matching" | "matched" | "cancelled" | "timeout";
-
-export class MemberQueueStateMachine {
-  private state: QueueState = "idle";
-  private queuedAt: number = 0;
-  private matchedListener: { id: string; name: string; rating: number } | null = null;
-  private conversationId: string | null = null;
-
-  constructor(initialState: QueueState = "idle") {
-    this.state = initialState;
-    if (initialState === "queued") {
-      this.queuedAt = Date.now();
-    }
-  }
-
-  public getState(): QueueState {
-    return this.state;
-  }
-
-  public getElapsedMinutes(currentTime = Date.now()): number {
-    if (this.state === "idle" || this.queuedAt === 0) return 0;
-    const diffMs = Math.max(0, currentTime - this.queuedAt);
-    return Math.floor(diffMs / 60000);
-  }
-
-  public queue(now = Date.now()): void {
-    if (this.state !== "idle" && this.state !== "cancelled" && this.state !== "timeout") {
-      throw new Error(`Cannot queue from active state: ${this.state}`);
-    }
-    this.state = "queued";
-    this.queuedAt = now;
-    this.matchedListener = null;
-    this.conversationId = null;
-  }
-
-  public advanceToMatching(): void {
-    if (this.state !== "queued") {
-      throw new Error(`Cannot transition to matching from ${this.state}`);
-    }
-    this.state = "matching";
-  }
-
-  public match(listener: { id: string; name: string; rating: number }, convId: string): void {
-    if (this.state !== "queued" && this.state !== "matching") {
-      throw new Error(`Cannot match from state: ${this.state}`);
-    }
-    this.state = "matched";
-    this.matchedListener = listener;
-    this.conversationId = convId;
-  }
-
-  public cancel(reason = "member_withdrew"): { success: boolean; state: QueueState; reason: string } {
-    if (this.state === "matched") {
-      throw new Error("Cannot cancel an already matched request");
-    }
-    if (this.state === "cancelled") {
-      return { success: true, state: "cancelled", reason: "already_cancelled" };
-    }
-    this.state = "cancelled";
-    return { success: true, state: "cancelled", reason };
-  }
-
-  public checkTimeout(maxWaitMinutes = 15, currentTime = Date.now()): boolean {
-    if (this.state === "queued" || this.state === "matching") {
-      if (this.getElapsedMinutes(currentTime) >= maxWaitMinutes) {
-        this.state = "timeout";
-        return true;
-      }
-    }
-    return false;
-  }
-
-  public getMatchedInfo() {
-    return {
-      listener: this.matchedListener,
-      conversationId: this.conversationId,
-    };
-  }
-}
+export {
+  VALID_TOPICS,
+  validateTopic,
+  validateChannel,
+  validateLanguages,
+  sanitizeNotes,
+  MemberQueueStateMachine,
+};
 
 // Next.js Route Handler Contract Simulation for /api/mindspace/member/match-requests
 export async function matchRequestsPOST(req: Request) {
@@ -757,6 +656,15 @@ describe("Member Workflow Integration & E2E Tests (Tiers 1-3)", () => {
       sm.queue(5000000);
       expect(sm.getElapsedMinutes(4000000)).toBe(0); // Clamped to 0
     });
+
+    it("T2.6: derives monotonic wall-clock elapsed seconds correctly across time shifts", () => {
+      const startTime = 1000000;
+      const sm = new MemberQueueStateMachine();
+      sm.queue(startTime);
+      expect(sm.getElapsedSeconds(startTime + 45000)).toBe(45);
+      expect(sm.getElapsedSeconds(startTime + 900000)).toBe(900);
+      expect(sm.getElapsedSeconds(startTime - 5000)).toBe(0); // Clamped to 0
+    });
   });
 
   // --------------------------------------------------------------------------
@@ -1038,6 +946,252 @@ describe("Member Workflow Integration & E2E Tests (Tiers 1-3)", () => {
       expect(res.status).toBe(400);
       const json = await res.json();
       expect(json.error).toContain("Unsupported channel");
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // FEATURE: Somatic 4-7-8 Breathwork Pacer State Machine
+  // --------------------------------------------------------------------------
+  describe("Feature: Somatic 4-7-8 Breathwork Pacer", () => {
+    it("Pacer.1: initializes in inactive state or active upon start", () => {
+      const pacer = new BreathworkPacer();
+      expect(pacer.getStatus().isActive).toBe(false);
+      expect(pacer.getStatus().phase).toBe("Inhale");
+      expect(pacer.getStatus().secondsRemaining).toBe(4);
+      expect(pacer.getStatus().completedCycles).toBe(0);
+
+      pacer.start();
+      expect(pacer.getStatus().isActive).toBe(true);
+    });
+
+    it("Pacer.2: advances through 4s Inhale phase smoothly", () => {
+      const pacer = new BreathworkPacer(true);
+      expect(pacer.getStatus().phase).toBe("Inhale");
+      expect(pacer.getStatus().secondsRemaining).toBe(4);
+
+      pacer.tick();
+      expect(pacer.getStatus().secondsRemaining).toBe(3);
+      pacer.tick();
+      expect(pacer.getStatus().secondsRemaining).toBe(2);
+      pacer.tick();
+      expect(pacer.getStatus().secondsRemaining).toBe(1);
+    });
+
+    it("Pacer.3: transitions from Inhale (4s) to Hold (7s)", () => {
+      const pacer = new BreathworkPacer(true);
+      // 4 ticks total
+      for (let i = 0; i < 4; i++) pacer.tick();
+
+      const status = pacer.getStatus();
+      expect(status.phase).toBe("Hold");
+      expect(status.secondsRemaining).toBe(7);
+    });
+
+    it("Pacer.4: transitions from Hold (7s) to Exhale (8s)", () => {
+      const pacer = new BreathworkPacer(true);
+      // Inhale (4s) + Hold (7s) = 11 ticks
+      for (let i = 0; i < 11; i++) pacer.tick();
+
+      const status = pacer.getStatus();
+      expect(status.phase).toBe("Exhale");
+      expect(status.secondsRemaining).toBe(8);
+    });
+
+    it("Pacer.5: completes 1 full 19-second cycle and increments completedCycles", () => {
+      const pacer = new BreathworkPacer(true);
+      // Inhale (4s) + Hold (7s) + Exhale (8s) = 19 ticks
+      for (let i = 0; i < 19; i++) pacer.tick();
+
+      const status = pacer.getStatus();
+      expect(status.phase).toBe("Inhale");
+      expect(status.secondsRemaining).toBe(4);
+      expect(status.completedCycles).toBe(1);
+    });
+
+    it("Pacer.6: pause, resume, and toggle maintain state correctly", () => {
+      const pacer = new BreathworkPacer(true);
+      pacer.tick(); // secondsRemaining = 3
+      expect(pacer.getStatus().secondsRemaining).toBe(3);
+
+      pacer.pause();
+      expect(pacer.getStatus().isActive).toBe(false);
+      pacer.tick(); // should not advance while paused
+      expect(pacer.getStatus().secondsRemaining).toBe(3);
+
+      pacer.resume();
+      expect(pacer.getStatus().isActive).toBe(true);
+      pacer.tick();
+      expect(pacer.getStatus().secondsRemaining).toBe(2);
+
+      pacer.toggle(); // now false
+      expect(pacer.getStatus().isActive).toBe(false);
+      pacer.toggle(); // now true
+      expect(pacer.getStatus().isActive).toBe(true);
+    });
+
+    it("Pacer.7: reset returns pacer to initial pristine state", () => {
+      const pacer = new BreathworkPacer(true);
+      for (let i = 0; i < 25; i++) pacer.tick();
+      expect(pacer.getStatus().completedCycles).toBeGreaterThanOrEqual(1);
+
+      pacer.reset();
+      const status = pacer.getStatus();
+      expect(status.isActive).toBe(false);
+      expect(status.phase).toBe("Inhale");
+      expect(status.secondsRemaining).toBe(4);
+      expect(status.completedCycles).toBe(0);
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // FEATURE: MemberMatchRequestApi Client Service
+  // --------------------------------------------------------------------------
+  describe("Feature: MemberMatchRequestApi Client Service", () => {
+    const originalFetch = globalThis.fetch;
+
+    afterEach(() => {
+      globalThis.fetch = originalFetch;
+    });
+
+    it("Api.1: createRequest sends POST to /api/mindspace/member/match-requests", async () => {
+      const mockResponse = {
+        id: "mr-client-1",
+        request_state: "queued" as const,
+        support_topic: "anxiety",
+      };
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => mockResponse,
+      });
+
+      const res = await MemberMatchRequestApi.createRequest({
+        support_topic: "anxiety",
+        preferred_channel: "chat",
+      });
+
+      expect(res.id).toBe("mr-client-1");
+      expect(globalThis.fetch).toHaveBeenCalledWith(
+        "/api/mindspace/member/match-requests",
+        expect.objectContaining({
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        })
+      );
+    });
+
+    it("Api.2: createRequest throws structured error on HTTP error response", async () => {
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 400,
+        json: async () => ({ error: "Invalid topic" }),
+      });
+
+      await expect(
+        MemberMatchRequestApi.createRequest({ support_topic: "bad-topic" })
+      ).rejects.toThrow("Invalid topic");
+    });
+
+    it("Api.3: getStatus fetches status for given requestId", async () => {
+      const mockStatus = {
+        id: "mr-poll-1",
+        request_state: "matching" as const,
+        listener: null,
+      };
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => mockStatus,
+      });
+
+      const res = await MemberMatchRequestApi.getStatus("mr-poll-1");
+      expect(res.request_state).toBe("matching");
+      expect(globalThis.fetch).toHaveBeenCalledWith(
+        "/api/mindspace/member/match-requests/mr-poll-1"
+      );
+    });
+
+    it("Api.4: cancelRequest invokes sub-route and returns cancelled status", async () => {
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => ({ status: "cancelled", id: "mr-cancel-1" }),
+      });
+
+      const res = await MemberMatchRequestApi.cancelRequest("mr-cancel-1");
+      expect(res.status).toBe("cancelled");
+    });
+
+    it("Api.5: cancelRequest throws REQUEST_ALREADY_CLAIMED when receiving 409", async () => {
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 409,
+        json: async () => ({ error: "REQUEST_ALREADY_CLAIMED" }),
+      });
+
+      await expect(
+        MemberMatchRequestApi.cancelRequest("mr-claimed-req")
+      ).rejects.toThrow("REQUEST_ALREADY_CLAIMED");
+    });
+
+    it("Api.6: cancelRequest throws REQUEST_ALREADY_CLAIMED on primary 409 without calling fallback endpoint", async () => {
+      const mockFetch = vi.fn().mockImplementation(async (url: string) => {
+        if (url.includes("/cancel") && !url.includes("match-request/cancel")) {
+          return { ok: false, status: 409, json: async () => ({ error: "REQUEST_ALREADY_CLAIMED" }) };
+        }
+        return { ok: true, status: 200, json: async () => ({ status: "cancelled" }) };
+      });
+      globalThis.fetch = mockFetch;
+
+      await expect(
+        MemberMatchRequestApi.cancelRequest("mr-claimed-race")
+      ).rejects.toThrow("REQUEST_ALREADY_CLAIMED");
+
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+      expect(mockFetch).not.toHaveBeenCalledWith(
+        "/api/mindspace/member/match-request/cancel",
+        expect.anything()
+      );
+    });
+
+    it("Api.7: cancelRequest falls back to body-based cancel endpoint on network error and succeeds", async () => {
+      const mockFetch = vi.fn().mockImplementation(async (url: string) => {
+        if (url.includes("match-requests/") && url.includes("/cancel")) {
+          throw new Error("Network connection dropped");
+        }
+        return { ok: true, status: 200, json: async () => ({ status: "cancelled", id: "mr-fallback-1" }) };
+      });
+      globalThis.fetch = mockFetch;
+
+      const res = await MemberMatchRequestApi.cancelRequest("mr-fallback-1");
+      expect(res.status).toBe("cancelled");
+      expect(mockFetch).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // FEATURE: Dual-Path Compatibility Bridges & Component Exports
+  // --------------------------------------------------------------------------
+  describe("Feature: Dual-Path Compatibility Bridges", () => {
+    it("Bridge.1: canonical and bridge BookSessionModal are defined functions", () => {
+      expect(typeof BookSessionModal).toBe("function");
+      expect(typeof BridgeBookModal).toBe("function");
+      expect(BookSessionModal).toBe(BridgeBookModal);
+    });
+
+    it("Bridge.2: canonical and bridge MemberMatchingQueueModal are defined functions", () => {
+      expect(typeof MemberMatchingQueueModal).toBe("function");
+      expect(typeof BridgeQueueModal).toBe("function");
+      expect(MemberMatchingQueueModal).toBe(BridgeQueueModal);
+    });
+
+    it("Bridge.3: canonical and bridge MemberConsultationView are defined functions", () => {
+      expect(typeof MemberConsultationView).toBe("function");
+      expect(typeof BridgeConsultationView).toBe("function");
+      expect(MemberConsultationView).toBe(BridgeConsultationView);
+    });
+
+    it("Bridge.4: module index exports MemberMatchingQueueModal", () => {
+      expect(typeof ExportedQueueModal).toBe("function");
+      expect(ExportedQueueModal).toBe(MemberMatchingQueueModal);
     });
   });
 });

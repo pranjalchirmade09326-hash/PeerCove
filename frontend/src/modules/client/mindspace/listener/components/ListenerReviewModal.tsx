@@ -3,7 +3,7 @@
 /**
  * ListenerReviewModal — Doctor / Peer Listener SOAP Notes & FHIR Clinical Extraction Documentation.
  *
- * Implements the post-consultation workflow from the DrGodly video:
+ * Implements the post-consultation clinical workflow:
  *   - Tab 1: Comprehensive SOAP Note (Subjective, Objective, Assessment, Plan)
  *   - Tab 2: Clinical Extractions in FHIR Format (Conditions, Observations, Medications [Acetaminophen], Orders [CBC])
  *   - One-click "Push to Electronic Medical Record (EMR / FHIR)" button
@@ -163,7 +163,7 @@ export function ListenerReviewModal({
             </div>
 
             <Badge variant="outline" className="text-[10px] bg-muted/40 font-mono">
-              DrGodly / Mindspace Protocol
+              MindSpace Clinical Protocol
             </Badge>
           </div>
         </DialogHeader>

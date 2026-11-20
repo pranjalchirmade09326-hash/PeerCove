@@ -29,6 +29,17 @@ import { POST as journalPOST } from "@/app/api/mindspace/member/journal/route";
 import { POST as safetyCasesPOST } from "@/app/api/mindspace/safety/cases/route";
 import { POST as conductReportPOST } from "@/app/api/mindspace/member/conduct-report/route";
 import { POST as listenerSoapPOST } from "@/app/api/mindspace/listener/conversations/[id]/soap/route";
+import { GET as memberMessagesGET, POST as memberMessagesPOST } from "@/app/api/mindspace/member/conversations/[id]/messages/route";
+import { GET as listenerMessagesGET, POST as listenerMessagesPOST } from "@/app/api/mindspace/listener/conversations/[id]/messages/route";
+import { POST as memberFeedbackPOST } from "@/app/api/mindspace/member/conversations/[id]/feedback/route";
+import { POST as listenerNotesPOST } from "@/app/api/mindspace/listener/conversations/[id]/notes/route";
+import { GET as operationsSafetyCasesGET, POST as operationsSafetyCasesPOST } from "@/app/api/mindspace/operations/safety/cases/route";
+import {
+  BreathworkPacer as SharedBreathworkPacer,
+  checkMediaDevices as sharedCheckMediaDevices,
+  checkCrisisSentinel as sharedCheckCrisisSentinel,
+  TELE_MANAS_HELPLINE as SHARED_TELE_MANAS,
+} from "@/modules/client/mindspace/consultation";
 import * as apiClientModule from "@/modules/server/mindspace/api-client";
 
 vi.mock("@/modules/server/mindspace/api-client", () => ({
@@ -1574,6 +1585,389 @@ describe("Consultation Workflow Integration & E2E Tests (Tiers 1-3)", () => {
       for (let i = 0; i < 60; i++) cooldown.tick();
       expect(cooldown.isComplete()).toBe(true);
       expect(cooldown.canAcceptNewSessions()).toBe(true);
+    });
+  });
+
+  // --------------------------------------------------------------------------
+  // TIER 4: Next.js Consultation API Routes & Workflow Contracts
+  // --------------------------------------------------------------------------
+  describe("Tier 4: Next.js Consultation API Routes & Workflow Contracts", () => {
+    // Feature: Member Conversation Messages Route
+    describe("Member Messages Route: /api/mindspace/member/conversations/[id]/messages", () => {
+      it("T4.1: GET returns message history from backend when online", async () => {
+        const mockMessages = [
+          { id: "msg-1", conversation_id: "conv-101", sender_user_id: "usr-demo-listener-01", content: "Hello, I am here to listen.", sent_at: new Date().toISOString() },
+        ];
+        const mockRequest = vi.fn().mockResolvedValue(mockMessages);
+        vi.mocked(apiClientModule.createMindspaceApiClient).mockResolvedValue({ request: mockRequest } as any);
+
+        const req = new Request("http://localhost:4000/api/mindspace/member/conversations/conv-101/messages");
+        const res = await memberMessagesGET(req, { params: Promise.resolve({ id: "conv-101" }) });
+        expect(res.status).toBe(200);
+        const data = await res.json();
+        expect(data).toEqual(mockMessages);
+        expect(mockRequest).toHaveBeenCalledWith("/api/v1/peer/conversations/conv-101/messages");
+      });
+
+      it("T4.2: GET provides resilient fallback when backend is offline", async () => {
+        vi.mocked(apiClientModule.createMindspaceApiClient).mockRejectedValue(new Error("Connection refused"));
+
+        const req = new Request("http://localhost:4000/api/mindspace/member/conversations/conv-102/messages");
+        const res = await memberMessagesGET(req, { params: Promise.resolve({ id: "conv-102" }) });
+        expect(res.status).toBe(200);
+        const data = await res.json();
+        expect(Array.isArray(data)).toBe(true);
+        expect(data[0].conversation_id).toBe("conv-102");
+        expect(data[0].source).toBe("fallback");
+      });
+
+      it("T4.3: POST forwards new message to backend when online", async () => {
+        const mockReply = { id: "msg-103", conversation_id: "conv-103", sender_user_id: "usr-member-1", content: "Feeling better", sent_at: new Date().toISOString() };
+        const mockRequest = vi.fn().mockResolvedValue(mockReply);
+        vi.mocked(apiClientModule.createMindspaceApiClient).mockResolvedValue({ request: mockRequest } as any);
+
+        const req = new Request("http://localhost:4000/api/mindspace/member/conversations/conv-103/messages", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content: "Feeling better" }),
+        });
+        const res = await memberMessagesPOST(req, { params: Promise.resolve({ id: "conv-103" }) });
+        expect(res.status).toBe(200);
+        const data = await res.json();
+        expect(data.id).toBe("msg-103");
+      });
+
+      it("T4.4: POST provides resilient fallback response when offline", async () => {
+        vi.mocked(apiClientModule.createMindspaceApiClient).mockRejectedValue(new Error("Offline"));
+
+        const req = new Request("http://localhost:4000/api/mindspace/member/conversations/conv-104/messages", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content: "Offline message test" }),
+        });
+        const res = await memberMessagesPOST(req, { params: Promise.resolve({ id: "conv-104" }) });
+        expect(res.status).toBe(200);
+        const data = await res.json();
+        expect(data.content).toBe("Offline message test");
+        expect(data.source).toBe("fallback");
+      });
+
+      it("T4.5: POST gracefully handles empty or non-JSON body", async () => {
+        vi.mocked(apiClientModule.createMindspaceApiClient).mockRejectedValue(new Error("Offline"));
+
+        const req = new Request("http://localhost:4000/api/mindspace/member/conversations/conv-105/messages", {
+          method: "POST",
+          body: "",
+        });
+        const res = await memberMessagesPOST(req, { params: Promise.resolve({ id: "conv-105" }) });
+        expect(res.status).toBe(200);
+        const data = await res.json();
+        expect(data.source).toBe("fallback");
+      });
+    });
+
+    // Feature: Listener Conversation Messages Route
+    describe("Listener Messages Route: /api/mindspace/listener/conversations/[id]/messages", () => {
+      it("T4.6: GET returns message history from backend when online", async () => {
+        const mockMessages = [
+          { id: "msg-201", conversation_id: "conv-201", sender_user_id: "usr-demo-member-01", content: "Thank you for listening.", sent_at: new Date().toISOString() },
+        ];
+        const mockRequest = vi.fn().mockResolvedValue(mockMessages);
+        vi.mocked(apiClientModule.createMindspaceApiClient).mockResolvedValue({ request: mockRequest } as any);
+
+        const req = new Request("http://localhost:4000/api/mindspace/listener/conversations/conv-201/messages");
+        const res = await listenerMessagesGET(req, { params: Promise.resolve({ id: "conv-201" }) });
+        expect(res.status).toBe(200);
+        const data = await res.json();
+        expect(data).toEqual(mockMessages);
+      });
+
+      it("T4.7: GET provides resilient fallback when backend is offline", async () => {
+        vi.mocked(apiClientModule.createMindspaceApiClient).mockRejectedValue(new Error("Offline"));
+
+        const req = new Request("http://localhost:4000/api/mindspace/listener/conversations/conv-202/messages");
+        const res = await listenerMessagesGET(req, { params: Promise.resolve({ id: "conv-202" }) });
+        expect(res.status).toBe(200);
+        const data = await res.json();
+        expect(Array.isArray(data)).toBe(true);
+        expect(data[0].conversation_id).toBe("conv-202");
+        expect(data[0].source).toBe("fallback");
+      });
+
+      it("T4.8: POST forwards listener message to backend when online", async () => {
+        const mockReply = { id: "msg-203", conversation_id: "conv-203", sender_user_id: "usr-listener-1", content: "Take your time.", sent_at: new Date().toISOString() };
+        const mockRequest = vi.fn().mockResolvedValue(mockReply);
+        vi.mocked(apiClientModule.createMindspaceApiClient).mockResolvedValue({ request: mockRequest } as any);
+
+        const req = new Request("http://localhost:4000/api/mindspace/listener/conversations/conv-203/messages", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content: "Take your time." }),
+        });
+        const res = await listenerMessagesPOST(req, { params: Promise.resolve({ id: "conv-203" }) });
+        expect(res.status).toBe(200);
+        const data = await res.json();
+        expect(data.id).toBe("msg-203");
+      });
+
+      it("T4.9: POST provides resilient fallback response when offline", async () => {
+        vi.mocked(apiClientModule.createMindspaceApiClient).mockRejectedValue(new Error("Offline"));
+
+        const req = new Request("http://localhost:4000/api/mindspace/listener/conversations/conv-204/messages", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content: "Listener offline message" }),
+        });
+        const res = await listenerMessagesPOST(req, { params: Promise.resolve({ id: "conv-204" }) });
+        expect(res.status).toBe(200);
+        const data = await res.json();
+        expect(data.content).toBe("Listener offline message");
+        expect(data.source).toBe("fallback");
+      });
+    });
+
+    // Feature: Member Post-Session Feedback Route
+    describe("Member Feedback Route: /api/mindspace/member/conversations/[id]/feedback", () => {
+      it("T4.10: POST forwards feedback to backend when online", async () => {
+        const mockResponse = { status: "success", feedback_id: "fb-live-1" };
+        const mockRequest = vi.fn().mockResolvedValue(mockResponse);
+        vi.mocked(apiClientModule.createMindspaceApiClient).mockResolvedValue({ request: mockRequest } as any);
+
+        const feedbackPayload = {
+          rating: 5,
+          feedback_text: "Very calm and empathetic listener.",
+          post_mood_score: 9,
+          post_mood_label: "Much Calmer",
+          sync_to_journal: true,
+        };
+
+        const req = new Request("http://localhost:4000/api/mindspace/member/conversations/conv-fb-1/feedback", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(feedbackPayload),
+        });
+
+        const res = await memberFeedbackPOST(req, { params: Promise.resolve({ id: "conv-fb-1" }) });
+        expect(res.status).toBe(200);
+        const data = await res.json();
+        expect(data.status).toBe("success");
+        expect(mockRequest).toHaveBeenCalledWith(
+          "/api/v1/peer/conversations/conv-fb-1/feedback",
+          expect.objectContaining({ method: "POST" })
+        );
+      });
+
+      it("T4.11: POST records feedback in fallback mode when offline", async () => {
+        vi.mocked(apiClientModule.createMindspaceApiClient).mockRejectedValue(new Error("Offline"));
+
+        const req = new Request("http://localhost:4000/api/mindspace/member/conversations/conv-fb-2/feedback", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ rating: 4, feedback_text: "Helpful session" }),
+        });
+
+        const res = await memberFeedbackPOST(req, { params: Promise.resolve({ id: "conv-fb-2" }) });
+        expect(res.status).toBe(200);
+        const data = await res.json();
+        expect(data.status).toBe("success");
+        expect(data.source).toBe("fallback");
+        expect(data.conversation_id).toBe("conv-fb-2");
+        expect(data.rating).toBe(4);
+      });
+
+      it("T4.12: validates member rating bounds (1-5) and mood score (1-10) before submitting", () => {
+        expect(validateMemberRating(5).valid).toBe(true);
+        expect(validateMemberRating(1).valid).toBe(true);
+        expect(validateMemberRating(0).valid).toBe(false);
+        expect(validateMemberRating(6).valid).toBe(false);
+        expect(validateMemberRating("5" as any).valid).toBe(false);
+
+        expect(validateMoodScore(10).valid).toBe(true);
+        expect(validateMoodScore(1).valid).toBe(true);
+        expect(validateMoodScore(0).valid).toBe(false);
+        expect(validateMoodScore(11).valid).toBe(false);
+      });
+    });
+
+    // Feature: Listener SOAP Notes Route Alias
+    describe("Listener Notes Route: /api/mindspace/listener/conversations/[id]/notes", () => {
+      it("T4.13: POST proxies SOAP note to FastAPI backend endpoint when online", async () => {
+        const mockResponse = { status: "success", note_id: "soap-live-1" };
+        const mockRequest = vi.fn().mockResolvedValue(mockResponse);
+        vi.mocked(apiClientModule.createMindspaceApiClient).mockResolvedValue({ request: mockRequest } as any);
+
+        const soapBody = {
+          subjective: "S: Member feels relaxed after breathwork",
+          objective: "O: Speech rhythm steady, engagement active",
+          assessment: "A: Mild anxiety reduced",
+          plan: "P: Schedule follow-up check-in next week",
+        };
+
+        const req = new Request("http://localhost:4000/api/mindspace/listener/conversations/conv-notes-1/notes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(soapBody),
+        });
+
+        const res = await listenerNotesPOST(req, { params: Promise.resolve({ id: "conv-notes-1" }) });
+        expect(res.status).toBe(200);
+        const data = await res.json();
+        expect(data.status).toBe("success");
+        expect(mockRequest).toHaveBeenCalledWith(
+          "/api/v1/peer/conversations/conv-notes-1/soap",
+          expect.objectContaining({ method: "POST" })
+        );
+      });
+
+      it("T4.14: POST provides resilient fallback response when offline", async () => {
+        vi.mocked(apiClientModule.createMindspaceApiClient).mockRejectedValue(new Error("Offline"));
+
+        const req = new Request("http://localhost:4000/api/mindspace/listener/conversations/conv-notes-2/notes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ subjective: "S", objective: "O", assessment: "A", plan: "P" }),
+        });
+
+        const res = await listenerNotesPOST(req, { params: Promise.resolve({ id: "conv-notes-2" }) });
+        expect(res.status).toBe(200);
+        const data = await res.json();
+        expect(data.status).toBe("success");
+        expect(data.source).toBe("fallback");
+      });
+    });
+
+    // Feature: Operations Safety Cases Route
+    describe("Operations Safety Cases Route: /api/mindspace/operations/safety/cases", () => {
+      it("T4.15: GET returns safety cases from backend when online", async () => {
+        const mockCases = [{ id: "case-1", category_code: "CRISIS_SENTINEL", severity: "urgent" }];
+        const mockRequest = vi.fn().mockResolvedValue(mockCases);
+        vi.mocked(apiClientModule.createMindspaceApiClient).mockResolvedValue({ request: mockRequest } as any);
+
+        const res = await operationsSafetyCasesGET();
+        expect(res.status).toBe(200);
+        const data = await res.json();
+        expect(data).toEqual(mockCases);
+      });
+
+      it("T4.16: GET returns fallback cases when backend is offline", async () => {
+        vi.mocked(apiClientModule.createMindspaceApiClient).mockRejectedValue(new Error("Offline"));
+
+        const res = await operationsSafetyCasesGET();
+        expect(res.status).toBe(200);
+        const data = await res.json();
+        expect(Array.isArray(data)).toBe(true);
+        expect(data[0].category_code).toBe("CRISIS_SENTINEL");
+      });
+
+      it("T4.17: POST forwards safety escalation case to backend when online", async () => {
+        const mockCase = { status: "created", case_id: "case-ops-99" };
+        const mockRequest = vi.fn().mockResolvedValue(mockCase);
+        vi.mocked(apiClientModule.createMindspaceApiClient).mockResolvedValue({ request: mockRequest } as any);
+
+        const req = new Request("http://localhost:4000/api/mindspace/operations/safety/cases", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            conversation_id: "conv-esc-1",
+            category_code: "CRISIS_SENTINEL",
+            severity: "high",
+            details: "Urgent crisis escalation",
+          }),
+        });
+
+        const res = await operationsSafetyCasesPOST(req);
+        expect(res.status).toBe(200);
+        const data = await res.json();
+        expect(data.case_id).toBe("case-ops-99");
+      });
+
+      it("T4.18: POST provides fallback creation when offline", async () => {
+        vi.mocked(apiClientModule.createMindspaceApiClient).mockRejectedValue(new Error("Offline"));
+
+        const req = new Request("http://localhost:4000/api/mindspace/operations/safety/cases", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ details: "Fallback crisis report" }),
+        });
+
+        const res = await operationsSafetyCasesPOST(req);
+        expect(res.status).toBe(200);
+        const data = await res.json();
+        expect(data.status).toBe("created");
+        expect(data.source).toBe("fallback");
+      });
+    });
+
+    // Feature: Shared Consultation Domain Entities & Utilities
+    describe("Shared Consultation Domain Entities: @/modules/client/mindspace/consultation", () => {
+      it("T4.19: SharedBreathworkPacer executes deterministic 4-7-8 rhythm (4s Inhale, 7s Hold, 8s Exhale)", () => {
+        const pacer = new SharedBreathworkPacer(true);
+        expect(pacer.getStatus().phase).toBe("Inhale");
+        expect(pacer.getStatus().secondsRemaining).toBe(4);
+
+        // 4 ticks: advances to Hold (7s)
+        for (let i = 0; i < 4; i++) pacer.tick();
+        expect(pacer.getStatus().phase).toBe("Hold");
+        expect(pacer.getStatus().secondsRemaining).toBe(7);
+
+        // 7 ticks: advances to Exhale (8s)
+        for (let i = 0; i < 7; i++) pacer.tick();
+        expect(pacer.getStatus().phase).toBe("Exhale");
+        expect(pacer.getStatus().secondsRemaining).toBe(8);
+
+        // 8 ticks: advances to Inhale (4s) and increments completedCycles to 1
+        for (let i = 0; i < 8; i++) pacer.tick();
+        expect(pacer.getStatus().phase).toBe("Inhale");
+        expect(pacer.getStatus().secondsRemaining).toBe(4);
+        expect(pacer.getStatus().completedCycles).toBe(1);
+      });
+
+      it("T4.20: SharedBreathworkPacer correctly handles pause, resume, toggle, and reset", () => {
+        const pacer = new SharedBreathworkPacer(true);
+        pacer.pause();
+        expect(pacer.getStatus().isActive).toBe(false);
+        pacer.tick();
+        expect(pacer.getStatus().secondsRemaining).toBe(4);
+
+        pacer.resume();
+        expect(pacer.getStatus().isActive).toBe(true);
+        pacer.tick();
+        expect(pacer.getStatus().secondsRemaining).toBe(3);
+
+        pacer.toggle();
+        expect(pacer.getStatus().isActive).toBe(false);
+
+        pacer.reset();
+        expect(pacer.getStatus().secondsRemaining).toBe(4);
+        expect(pacer.getStatus().completedCycles).toBe(0);
+      });
+
+      it("T4.21: sharedCheckMediaDevices safely returns DeviceCheckResult in Node environment", async () => {
+        const result = await sharedCheckMediaDevices();
+        expect(result.microphoneReady).toBe(true);
+        expect(result.cameraReady).toBe(true);
+        expect(result.audioOutputReady).toBe(true);
+        expect(result.networkLatencyMs).toBeGreaterThan(0);
+      });
+
+      it("T4.22: sharedCheckCrisisSentinel detects distress keywords in <2ms with Tele-MANAS hotline", () => {
+        const res = sharedCheckCrisisSentinel("I am having thoughts to end my life");
+        expect(res.isCrisis).toBe(true);
+        expect(res.detectionLatencyMs).toBeLessThan(2);
+        expect(res.helplines?.teleManas).toBe(SHARED_TELE_MANAS);
+        expect(res.matchedPhrase).toBe("end my life");
+      });
+
+      it("T4.23: sharedCheckCrisisSentinel returns false for non-distress input in <2ms", () => {
+        const res = sharedCheckCrisisSentinel("I am feeling productive today and drinking tea.");
+        expect(res.isCrisis).toBe(false);
+        expect(res.detectionLatencyMs).toBeLessThan(2);
+        expect(res.helplines).toBeUndefined();
+      });
+
+      it("T4.24: verifies Tele-MANAS hotline string format in shared constants", () => {
+        expect(SHARED_TELE_MANAS).toBe("14416 / +91 9999 666 555");
+      });
     });
   });
 });

@@ -3,7 +3,7 @@
 /**
  * InPersonConsultationModal — In-Person Consultation with Ambient Voice Capture & Auto-SOAP/FHIR Generation.
  *
- * Implements the exact workflow from DrGodly / Mindspace Product Demo (https://www.youtube.com/watch?v=yf93thQmNsw):
+ * Implements the exact workflow from MindSpace Clinical Product Demo:
  *   1. "In-Person Consultation" entry point.
  *   2. "Start Recording" button before seeing the patient — captures ambient audio in background.
  *   3. Real-time soundwave visualization and live consultation transcript streaming.
@@ -214,7 +214,7 @@ export function InPersonConsultationModal({
               <span>In-Person Consultation • Ambient AI Capture</span>
             </div>
             <Badge variant="outline" className="text-[10px] border-emerald-600 text-emerald-700 dark:text-emerald-300">
-              DrGodly / Mindspace Workflow
+              MindSpace Clinical Workflow
             </Badge>
           </div>
           <DialogTitle className="text-xl font-bold font-serif">

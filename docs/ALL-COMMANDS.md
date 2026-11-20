@@ -1,12 +1,12 @@
-# 🛠️ MindSpace — Complete Commands Quick Reference Guide
+# 🛠️ SevaHealth AI / MindSpace — Complete Commands Quick Reference Guide
 
-A comprehensive, categorized reference for all operational, development, deployment, and testing commands across the entire MindSpace platform.
+A comprehensive, categorized reference for all operational, development, deployment, database, and testing commands across the entire platform.
 
 ---
 
 ## ⚡ 1. One-Click Platform Launch (Windows)
 
-Start or stop the entire MindSpace ecosystem (PostgreSQL databases, IAM service, FastAPI Core, Multi-Agent Engine, and Next.js Frontend) with a single command:
+Start or stop the entire ecosystem (PostgreSQL databases, IAM service, FastAPI Core, Multi-Agent Engine, and Next.js Frontend) with a single command from the project root:
 
 ```powershell
 # Start everything in parallel
@@ -23,28 +23,38 @@ Start or stop the entire MindSpace ecosystem (PostgreSQL databases, IAM service,
 ### Start Services via Docker Compose
 
 ```powershell
-# Core Health API (Port 8080) & PostgreSQL (Port 5433)
+# 1. Core Health API (Port 8080) & PostgreSQL Core DB (Port 5433)
 docker compose -f backend\mindspace-fastapi\docker-compose.yml up -d --build
 
-# IAM Identity Provider & JWKS (Port 5001)
+# 2. Frontend PostgreSQL Application Database (Port 5435)
+docker compose -f frontend\docker-compose.yml up -d --build
+
+# 3. IAM Identity Provider & JWKS (Port 5001)
 docker compose -f backend\mindspace-iam-py\docker-compose.yml up -d --build
 
-# Multi-Agent Intelligence & Voice Companion (Port 8018)
+# 4. Multi-Agent Intelligence & Voice Engine (Port 8018)
 docker compose -f agents\docker-compose.yml up -d --build
+```
 
-# Frontend PostgreSQL Database (Port 5435)
-docker compose -f frontend\docker-compose.yml up -d --build
+### Quick Database-Only Start (Minimal Setup)
+
+If running the Python and Node.js servers locally outside Docker:
+
+```powershell
+# Start only the two PostgreSQL databases
+docker compose -f backend\mindspace-fastapi\docker-compose.yml up -d mindspace-postgres
+docker compose -f frontend\docker-compose.yml up -d
 ```
 
 ### Inspect Container Status & Logs
 
 ```powershell
-# View all running MindSpace containers
+# View all running containers and port mappings
 docker ps
 
 # Stream logs from specific services
+docker logs -f mindspace-fastapi        # Core FastAPI backend & Peer router
 docker logs -f mindspace-agents         # Multi-Agent voice engine
-docker logs -f mindspace-fastapi        # Core FastAPI backend
 docker logs -f mindspace-iam            # IAM identity provider
 
 # Stop containers while safely preserving database volumes
@@ -66,18 +76,21 @@ cd frontend
 # Install package dependencies
 pnpm install
 
-# Database & Prisma ORM
+# Database & Prisma ORM (Port 5435)
 pnpm db:generate             # Generate Prisma client types
-pnpm db:push                 # Sync schema to PostgreSQL (Port 5435)
+pnpm db:push                 # Push schema to PostgreSQL (Port 5435)
 pnpm seed:test-data          # Seed test users and initial state
 
 # Local Development Server (Port 4000)
 pnpm dev                     # Starts Next.js Turbopack development server
 
+# Run Automated Test Suite (Vitest)
+pnpm test --run              # Runs 405 unit & integration tests
+
 # Code Quality & Linting
 pnpm lint                    # Run ESLint (0 errors certified)
 
-# Production Build
+# Production Build & Run
 pnpm build                   # Compile production Next.js build
 pnpm start                   # Start production server
 ```
@@ -93,77 +106,84 @@ cd backend\mindspace-fastapi
 
 # Run locally using uv (Python 3.12+)
 uv run uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
+
+# Run Automated Test Suite (Pytest)
+uv run pytest tests/ -v       # Runs all 37 backend tests
+
+# Run specific test file
+uv run pytest tests/test_peer_workflow.py -v
 ```
 
 - **Swagger API Docs:** `http://localhost:8080/docs`
 - **ReDoc API Docs:** `http://localhost:8080/redoc`
 - **Health Probe:** `http://localhost:8080/health/ready`
 
-### Engine 2: Multi-Agent Intelligence Service (`agents/`)
+### Engine 1: IAM Identity Provider (`backend/mindspace-iam-py/`)
+
+```powershell
+cd backend\mindspace-iam-py
+
+# Run IAM server locally (Port 5001)
+uv run uvicorn app.main:app --host 0.0.0.0 --port 5001 --reload
+```
+
+- **JWKS Endpoint:** `http://localhost:5001/.well-known/jwks.json`
+
+### Engine 2: Multi-Agent Intelligence (`agents/`)
 
 ```powershell
 cd agents
 
-# Run locally using uvicorn
-uv run uvicorn src.main:app --host 0.0.0.0 --port 8018 --reload
+# Run multi-agent orchestrator locally (Port 8018)
+uv run python -m src.server
 ```
 
-- **Swagger API Docs:** `http://localhost:8018/docs`
-- **Voice WebSocket Endpoint:** `ws://localhost:8018/ws/audio`
-
-### IAM Service (`backend/mindspace-iam-py/`)
-
-```powershell
-cd backend\mindspace-iam-py
-docker compose up -d
-```
-
-- **JWKS Key Endpoint:** `http://localhost:5001/.well-known/jwks.json`
+- **Audio WebSocket Endpoint:** `ws://localhost:8018/ws/audio`
 
 ---
 
-## 🧪 5. Automated Test Suites (100% Passing)
+## 🧪 5. Testing & Quality Assurance Verification
 
-Run all tests from the repository root (`D:\Mindspace`):
+Run the full platform test suite with two commands:
 
 ```powershell
-# 1. Frontend Unit & Workflow Tests (392/392 tests across all 5 roles)
-pnpm --dir frontend test
+# Frontend Suite (405 tests)
+cd frontend
+pnpm test --run
 
-# 2. Backend Milestone 4 Persistence & Security Tests (19/19 tests)
-cd backend\mindspace-fastapi
-uv run pytest tests/test_milestone4_persistence.py tests/test_api_and_security.py tests/test_mcp.py tests/test_safety.py -v
-cd ..\..
-
-# 3. Master E2E Acceptance Test Suite (Tiers 1-4: 52/52 tests)
-python tests/e2e/run_all_e2e.py
-
-# 4. Tier 5 Adversarial Agents Security Suite (21/21 tests)
-python tests/e2e/test_tier5_adversarial_agents.py
-
-# 5. Tier 5 Adversarial Core Security Suite (17/17 tests)
-python tests/e2e/test_tier5_adversarial_core.py
-
-# 6. Production Rebranding Invariant Suite (20/20 tests)
-python tests/e2e_rebranding_verification.py
+# Backend Suite (37 tests)
+cd ..\backend\mindspace-fastapi
+uv run pytest tests/ -v
 ```
 
 ---
 
-## 👥 6. Service URLs & 1-Click Demo Login
+## 🔍 6. Port Check & Troubleshooting Commands
 
-Navigate to **`http://localhost:4000/en/login`** or **`http://localhost:4000/en/demo-login`** to authenticate directly into any role workspace:
+If a port is already in use on Windows, inspect and free it:
 
-| Role | Demo Card / User | Primary Workspace URL | Dedicated Client Demo URL |
-|---|---|---|---|
-| **Member** | Sarah Chen | `http://localhost:4000/en/mindspace/member` | `http://localhost:4000/en/mindspace/member` |
-| **Peer Listener** | Marcus Johnson | `http://localhost:4000/en/mindspace/listener` | `http://localhost:4000/en/mindspace/listener` |
-| **Listener Supervisor** | Rae Kim | `http://localhost:4000/en/mindspace/listener-supervisor` | `http://localhost:4000/en/mindspace/supervisor` |
-| **Safety Operations** | Noor Haddad | `http://localhost:4000/en/mindspace/safety-operations` | `http://localhost:4000/en/mindspace/safety` |
-| **Platform Administrator** | Admin User | `http://localhost:4000/en/mindspace/platform-administrator` | `http://localhost:4000/en/mindspace/admin` |
+```powershell
+# Check which process is using a port (e.g. 4000, 8080, 5433, 5435)
+Get-NetTCPConnection -LocalPort 4000 -ErrorAction SilentlyContinue | Select-Object OwningProcess
 
-### Key Feature URLs:
-- **Voice Companion:** `http://localhost:4000/en/mindspace/member/voice`
-- **Wellbeing Journal:** `http://localhost:4000/en/mindspace/member/journal`
-- **Mood Tracking:** `http://localhost:4000/en/mindspace/member/reflections`
-- **Peer Sessions:** `http://localhost:4000/en/mindspace/member/peer-sessions`
+# Kill a specific process by PID
+Stop-Process -Id <PID> -Force
+
+# Verify PostgreSQL connection
+Test-NetConnection -ComputerName localhost -Port 5433
+Test-NetConnection -ComputerName localhost -Port 5435
+```
+
+---
+
+## 🌐 7. Application URLs & Endpoints
+
+| Service / Interface | Local URL | Description |
+|---|---|---|
+| **Web Portal** | `http://localhost:4000/` | Main portal landing & role selection |
+| **Member Dashboard** | `http://localhost:4000/mindspace/member` | Patient intake, doctor recommendation, booking |
+| **Listener Dashboard** | `http://localhost:4000/mindspace/listener` | Doctor hub, in-person ambient audio capture, SOAP review |
+| **Supervisor Workspace** | `http://localhost:4000/mindspace/supervisor` | Safety monitoring, risk escalation review |
+| **FastAPI Swagger Docs**| `http://localhost:8080/docs` | Interactive OpenAPI REST endpoints |
+| **FastAPI Health Check**| `http://localhost:8080/health/ready` | Readiness and database probe |
+| **IAM JWKS Keys** | `http://localhost:5001/.well-known/jwks.json`| RFC 7517 public keys for JWT verification |

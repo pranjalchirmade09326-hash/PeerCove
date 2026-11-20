@@ -1,9 +1,12 @@
 from sqlalchemy import Column, String, Text, DateTime, ForeignKey, Integer, Float, Boolean, JSON, LargeBinary
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
 from app.core.database import Base
+
+def utcnow():
+    return datetime.now(timezone.utc)
 
 class PrivacyRequest(Base):
     __tablename__ = "privacy_requests"
@@ -12,7 +15,7 @@ class PrivacyRequest(Base):
     member_id = Column(Text, ForeignKey("app_principals.user_id"), nullable=False)
     request_type = Column(Text, nullable=False)
     request_state = Column(Text, default="submitted", nullable=False)
-    requested_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
+    requested_at = Column(DateTime(timezone=True), default=utcnow, nullable=False)
     fulfilled_at = Column(DateTime(timezone=True), nullable=True)
     decision_reason = Column(Text, nullable=True)
 
@@ -20,7 +23,7 @@ class AuditEvent(Base):
     __tablename__ = "audit_events"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    occurred_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
+    occurred_at = Column(DateTime(timezone=True), default=utcnow, nullable=False)
     actor_user_id = Column(Text, nullable=True)
     actor_type = Column(Text, default="user", nullable=True)
     action_code = Column(Text, nullable=False)
@@ -51,7 +54,7 @@ class ListenerSupervisorAssignment(Base):
     supervisor_user_id = Column(Text, nullable=False)
     assignment_state = Column(Text, default="active", nullable=False)
     assigned_by_user_id = Column(Text, nullable=False)
-    assigned_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
+    assigned_at = Column(DateTime(timezone=True), default=utcnow, nullable=False)
     ended_at = Column(DateTime(timezone=True), nullable=True)
     reason_code = Column(Text, nullable=False)
 
@@ -68,7 +71,7 @@ class ConductReport(Base):
     severity = Column(Text, default="routine", nullable=True)
     report_state = Column(Text, default="open", nullable=False)
     assigned_to_user_id = Column(Text, nullable=True)
-    createdAt = Column("created_at", DateTime(timezone=True), default=datetime.utcnow, nullable=False)
+    createdAt = Column("created_at", DateTime(timezone=True), default=utcnow, nullable=False)
     resolvedAt = Column("resolved_at", DateTime(timezone=True), nullable=True)
 
     @property
@@ -99,7 +102,7 @@ class ListenerFeedback(Base):
     post_mood_score = Column(Float, nullable=True)
     sync_to_journal = Column(Boolean, default=False, nullable=True)
     review_state = Column(Text, default="received", nullable=False)
-    submitted_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
+    submitted_at = Column(DateTime(timezone=True), default=utcnow, nullable=False)
     reviewed_by_user_id = Column(Text, nullable=True)
 
 class SafetyCase(Base):
@@ -115,7 +118,7 @@ class SafetyCase(Base):
     priority_code = Column(Text, nullable=False)
     jurisdiction = Column(Text, nullable=True)
     assigned_responder_user_id = Column(Text, nullable=True)
-    created_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utcnow, nullable=False)
     acknowledged_at = Column(DateTime(timezone=True), nullable=True)
     closed_at = Column(DateTime(timezone=True), nullable=True)
     resolution_code = Column(Text, nullable=True)
@@ -131,7 +134,7 @@ class SafetyCaseAction(Base):
     resource_id = Column(UUID(as_uuid=True), nullable=True)
     details_ciphertext = Column(LargeBinary, nullable=True)
     key_version = Column(Text, nullable=True)
-    occurred_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
+    occurred_at = Column(DateTime(timezone=True), default=utcnow, nullable=False)
 
 class CrisisResource(Base):
     __tablename__ = "crisis_resources"
@@ -160,7 +163,7 @@ class Followup(Base):
     followup_state = Column(Text, default="scheduled", nullable=False)
     response_ciphertext = Column(LargeBinary, nullable=True)
     key_version = Column(Text, nullable=True)
-    created_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utcnow, nullable=False)
     completed_at = Column(DateTime(timezone=True), nullable=True)
 
 class Notification(Base):
@@ -176,7 +179,7 @@ class Notification(Base):
     delivery_state = Column(Text, default="queued", nullable=False)
     attempt_count = Column(Integer, default=0, nullable=False)
     deduplication_key = Column(Text, unique=True, nullable=True)
-    created_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utcnow, nullable=False)
 
 class SelfHelpContent(Base):
     __tablename__ = "self_help_content"
@@ -193,7 +196,7 @@ class SelfHelpContent(Base):
     reviewer_user_id = Column(Text, nullable=True)
     effective_from = Column(DateTime(timezone=True), nullable=True)
     effective_to = Column(DateTime(timezone=True), nullable=True)
-    created_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utcnow, nullable=False)
 
 class WorkflowDefinition(Base):
     __tablename__ = "workflow_definitions"
@@ -203,7 +206,7 @@ class WorkflowDefinition(Base):
     version = Column(Text, nullable=False)
     status = Column(Text, default="draft", nullable=False)
     policy_version = Column(Text, nullable=False)
-    created_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utcnow, nullable=False)
 
 class WorkflowExecution(Base):
     __tablename__ = "workflow_executions"
@@ -214,7 +217,7 @@ class WorkflowExecution(Base):
     subject_type = Column(Text, nullable=False)
     subject_id = Column(Text, nullable=False)
     status = Column(Text, default="running", nullable=False)
-    started_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
+    started_at = Column(DateTime(timezone=True), default=utcnow, nullable=False)
     closed_at = Column(DateTime(timezone=True), nullable=True)
     correlation_id = Column(UUID(as_uuid=True), nullable=True)
 
@@ -240,4 +243,4 @@ class OutboxEvent(Base):
     event_type = Column(Text, nullable=False)
     payload = Column(JSONB, nullable=False)
     published_at = Column(DateTime(timezone=True), nullable=True)
-    created_at = Column(DateTime(timezone=True), default=datetime.utcnow, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=utcnow, nullable=False)

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createMindspaceApiClient } from "@/modules/server/mindspace/api-client";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -16,7 +18,13 @@ export async function POST(
       method: "POST",
     });
     return NextResponse.json(data);
-  } catch (_error: any) {
+  } catch (error: any) {
+    if (error?.status === 409 || error?.detail === "REQUEST_ALREADY_CLAIMED") {
+      return NextResponse.json(
+        { error: "REQUEST_ALREADY_CLAIMED", detail: "Request has already been claimed by a listener" },
+        { status: 409 }
+      );
+    }
     return NextResponse.json({
       id,
       status: "cancelled",

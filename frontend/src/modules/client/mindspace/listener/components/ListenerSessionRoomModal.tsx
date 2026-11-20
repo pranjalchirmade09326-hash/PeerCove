@@ -51,6 +51,7 @@ import {
   Heart,
 } from "lucide-react";
 import { toast } from "sonner";
+import { BreathworkPacer, useDeviceCheck } from "@/modules/client/mindspace/consultation";
 
 // Deterministic Crisis Sentinel Regex (<2ms pre-inference tripwire) matching MemberSessionRoomModal & backend
 export const CRISIS_REGEX =
@@ -69,6 +70,7 @@ export interface ListenerSessionRoomModalProps {
     memberName: string;
     topic: string;
     channel?: string;
+    listenerId?: string;
   } | null;
   onSessionEnded?: () => void;
 }
@@ -117,10 +119,17 @@ export function ListenerSessionRoomModal({
   // Mandatory Caregiver Cooldown timer (60 seconds decompression)
   const [cooldownRemaining, setCooldownRemaining] = useState(60);
 
+  // In-call Grounding Breathwork Pacer state (4-7-8 rhythm)
+  const [isBreathworkActive, setIsBreathworkActive] = useState(false);
+  const [breathPhase, setBreathPhase] = useState<"Inhale" | "Hold" | "Exhale">("Inhale");
+  const [breathCount, setBreathCount] = useState(4);
+  const breathworkPacerRef = useRef<BreathworkPacer | null>(null);
+
   // Somatic Breathing 4-7-8 loop during cooldown
   const [breathingPhase, setBreathingPhase] = useState<"idle" | "Inhale" | "Hold" | "Exhale">("idle");
   const [breathingCount, setBreathingCount] = useState(4);
   const [completedBreathCycles, setCompletedBreathCycles] = useState(0);
+  const cooldownBreathRef = useRef<BreathworkPacer | null>(null);
 
   // In-Call Live Chat
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -154,6 +163,69 @@ export function ListenerSessionRoomModal({
 
   const memberName = memberSession?.memberName || "Ananya Sharma (Member)";
   const memberTopic = memberSession?.topic || "Workplace Stress & Exhaustion";
+  const currentUserId = memberSession?.listenerId || "usr-demo-listener-01";
+
+  // Pre-call hardware device and latency check
+  const { deviceCheck } = useDeviceCheck(open && stage === "incoming");
+
+  // In-call Somatic 4-7-8 breathwork runner during active call
+  useEffect(() => {
+    if (!isBreathworkActive || stage !== "active") {
+      if (breathworkPacerRef.current) {
+        breathworkPacerRef.current.reset();
+      }
+      return;
+    }
+
+    if (!breathworkPacerRef.current) {
+      breathworkPacerRef.current = new BreathworkPacer(true);
+    } else {
+      breathworkPacerRef.current.start();
+    }
+
+    const st = breathworkPacerRef.current.getStatus();
+    setBreathPhase(st.phase);
+    setBreathCount(st.secondsRemaining);
+    setCompletedBreathCycles(st.completedCycles);
+
+    const interval = setInterval(() => {
+      if (breathworkPacerRef.current) {
+        breathworkPacerRef.current.tick();
+        const s = breathworkPacerRef.current.getStatus();
+        setBreathPhase(s.phase);
+        setBreathCount(s.secondsRemaining);
+        setCompletedBreathCycles(s.completedCycles);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isBreathworkActive, stage]);
+
+  // Cooldown Somatic Breathing 4-7-8 loop
+  useEffect(() => {
+    if (!open || stage !== "cooldown" || breathingPhase === "idle") {
+      if (cooldownBreathRef.current) cooldownBreathRef.current.reset();
+      return;
+    }
+
+    if (!cooldownBreathRef.current) {
+      cooldownBreathRef.current = new BreathworkPacer(true);
+    } else {
+      cooldownBreathRef.current.start();
+    }
+
+    const interval = setInterval(() => {
+      if (cooldownBreathRef.current) {
+        cooldownBreathRef.current.tick();
+        const s = cooldownBreathRef.current.getStatus();
+        setBreathingPhase(s.phase);
+        setBreathingCount(s.secondsRemaining);
+        setCompletedBreathCycles(s.completedCycles);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [open, stage, breathingPhase]);
 
   // Deterministic Crisis Sentinel Check (<2ms regex tripwire)
   const checkCrisisTripwire = (text: string): boolean => {
@@ -166,7 +238,7 @@ export function ListenerSessionRoomModal({
       setCrisisMatchedKeyword(match[0]);
       setCrisisLatencyMs(latencyMs);
 
-      // Non-blocking escalation dispatch to safety cases & conduct reports
+      // Non-blocking escalation dispatch to safety cases & operations
       fetch("/api/mindspace/safety/cases", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -175,6 +247,17 @@ export function ListenerSessionRoomModal({
           priority_code: "urgent",
           category: "crisis_intervention",
           notes: `Listener Room Crisis Sentinel Intercept: "${text}". Keyword: "${match[0]}". Latency: ${latencyMs.toFixed(2)}ms`,
+        }),
+      }).catch(() => {});
+
+      fetch("/api/mindspace/operations/safety/cases", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          conversation_id: memberSession?.id || "emergency-session",
+          category_code: "CRISIS_SENTINEL",
+          severity: "high",
+          details: `Tripwire triggered by text: "${match[0]}"`,
         }),
       }).catch(() => {});
 
@@ -205,11 +288,37 @@ export function ListenerSessionRoomModal({
       setIsCrisisTriggered(false);
       setCrisisMatchedKeyword(null);
       setCrisisLatencyMs(0);
+      setIsBreathworkActive(false);
       setBreathingPhase("idle");
       setBreathingCount(4);
       setCompletedBreathCycles(0);
     }
   }, [open, memberSession?.id, memberSession?.channel]);
+
+  // Load conversation message history from backend on mount
+  useEffect(() => {
+    if (!open || !memberSession?.id) return;
+    const convId = memberSession.id;
+
+    fetch(`/api/mindspace/listener/conversations/${convId}/messages`)
+      .then((res) => (res.ok ? res.json() : []))
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          const loaded: ChatMessage[] = data.map((m: any, idx: number) => ({
+            id: m.id || `l-hist-${idx}`,
+            sender: m.sender_user_id === currentUserId ? "listener" : "member",
+            senderName: m.sender_user_id === currentUserId ? "You (Listener)" : memberName,
+            text: m.content,
+            time: m.sent_at
+              ? new Date(m.sent_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+              : "Just now",
+          }));
+          setMessages(loaded);
+          setSequenceNumber(loaded.length);
+        }
+      })
+      .catch(() => {});
+  }, [open, memberSession?.id, currentUserId, memberName]);
 
   // Active call duration counter
   useEffect(() => {
@@ -238,7 +347,7 @@ export function ListenerSessionRoomModal({
       const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
       const hostname = window.location.hostname || "localhost";
       const port = process.env.NEXT_PUBLIC_FASTAPI_PORT || "8080";
-      wsUrl = `${protocol}//${hostname}:${port}/api/v1/peer/ws/${convId}`;
+      wsUrl = `${protocol}//${hostname}:${port}/api/v1/peer/ws/${convId}?user_id=${currentUserId}`;
     }
 
     let ws: WebSocket | null = null;
@@ -266,7 +375,7 @@ export function ListenerSessionRoomModal({
             const data = JSON.parse(event.data);
             if (data.type === "new_message" && data.message) {
               const msg = data.message;
-              if (msg.sender_role !== "listener") {
+              if (msg.sender_user_id !== currentUserId) {
                 checkCrisisTripwire(msg.content);
                 setMessages((prev) => [
                   ...prev,
@@ -314,7 +423,7 @@ export function ListenerSessionRoomModal({
       }
       setWsConnected(false);
     };
-  }, [open, stage, memberSession?.id, memberName]);
+  }, [open, stage, memberSession?.id, currentUserId, memberName]);
 
   // Volunteer Cooldown countdown (60s decompression)
   useEffect(() => {
@@ -324,28 +433,6 @@ export function ListenerSessionRoomModal({
     }, 1000);
     return () => clearInterval(interval);
   }, [open, stage]);
-
-  // Somatic Breathing 4-7-8 during Cooldown
-  useEffect(() => {
-    if (!open || stage !== "cooldown" || breathingPhase === "idle") return;
-    const interval = setInterval(() => {
-      setBreathingCount((prev) => {
-        if (prev > 1) return prev - 1;
-        if (breathingPhase === "Inhale") {
-          setBreathingPhase("Hold");
-          return 7;
-        } else if (breathingPhase === "Hold") {
-          setBreathingPhase("Exhale");
-          return 8;
-        } else {
-          setCompletedBreathCycles((c) => c + 1);
-          setBreathingPhase("Inhale");
-          return 4;
-        }
-      });
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [open, stage, breathingPhase]);
 
   const formatTimer = (totalSeconds: number) => {
     const mins = Math.floor(totalSeconds / 60);
@@ -378,7 +465,7 @@ export function ListenerSessionRoomModal({
     onOpenChange(false);
   };
 
-  // In-call text message send
+  // In-call text message send with dual-channel relay
   const handleSendMessage = () => {
     const text = chatInput.trim();
     if (!text) return;
@@ -397,7 +484,8 @@ export function ListenerSessionRoomModal({
     setMessages((prev) => [...prev, newMsg]);
     setChatInput("");
 
-    // Transmit over WebSocket if connected
+    // 1. Transmit over WebSocket if connected
+    let sentOverWs = false;
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       try {
         wsRef.current.send(
@@ -405,11 +493,26 @@ export function ListenerSessionRoomModal({
             type: "chat_message",
             content: text,
             sequence_no: nextSeq,
-            sender_id: "usr-demo-listener-01",
+            sender_id: currentUserId,
             sender_role: "listener",
           })
         );
-      } catch {}
+        sentOverWs = true;
+      } catch {
+        sentOverWs = false;
+      }
+    }
+
+    // 2. Dual-channel fallback to REST POST if not transmitted over WebSocket
+    if (!sentOverWs && memberSession?.id) {
+      fetch(`/api/mindspace/listener/conversations/${memberSession.id}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          content: text,
+          sender_user_id: currentUserId,
+        }),
+      }).catch(() => {});
     }
   };
 
@@ -444,6 +547,16 @@ export function ListenerSessionRoomModal({
           notes: `Listener triggered safety escalation during live call with ${memberName}.`,
         }),
       });
+      await fetch("/api/mindspace/operations/safety/cases", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          conversation_id: memberSession?.id || "emergency-session",
+          category_code: "CRISIS_SENTINEL",
+          severity: "high",
+          details: `Listener manual safety escalation during live call with ${memberName}.`,
+        }),
+      });
     } catch {}
 
     toast.error("Crisis Sentinel Triggered", {
@@ -459,8 +572,29 @@ export function ListenerSessionRoomModal({
     });
   };
 
-  // Transition from active call to debrief
-  const handleEndCall = () => {
+  // Transition from active call to debrief with mutual termination sync
+  const handleEndCall = async () => {
+    const convId = memberSession?.id || `conv-${Date.now()}`;
+
+    // 1. Broadcast session_closed to member so member transitions immediately to reflection
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      try {
+        wsRef.current.send(
+          JSON.stringify({
+            type: "session_closed",
+            conversation_id: convId,
+          })
+        );
+      } catch {}
+    }
+
+    // 2. Mutual termination sync: call close endpoint on backend
+    await fetch(`/api/mindspace/listener/conversations/${convId}/close`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ duration_seconds: seconds }),
+    }).catch((e) => console.warn("Backend close error:", e));
+
     setStage("debrief");
   };
 
@@ -490,6 +624,19 @@ export function ListenerSessionRoomModal({
           duration_seconds: seconds,
         }),
       });
+
+      // Also persist to /notes route alias for contract conformance
+      await fetch(`/api/mindspace/listener/conversations/${convId}/notes`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subjective: soapSubjective.trim(),
+          objective: soapObjective.trim(),
+          assessment: soapAssessment.trim(),
+          plan: soapPlan.trim(),
+          duration_seconds: seconds,
+        }),
+      }).catch(() => {});
 
       // 2. Close conversation in backend database
       await fetch(`/api/mindspace/listener/conversations/${convId}/close`, {
@@ -574,6 +721,14 @@ export function ListenerSessionRoomModal({
               <span className="text-emerald-400">Waiting in queue</span>
             </div>
 
+            {/* Device & Latency Readiness Check Badge */}
+            <div className="mt-4 flex items-center gap-2">
+              <Badge variant="outline" className="text-[10px] text-teal-400 border-teal-800 bg-teal-950/40">
+                <CheckCircle2 className="size-3 mr-1 text-teal-400" />
+                Audio & Video Ready • {deviceCheck.networkLatencyMs}ms Latency
+              </Badge>
+            </div>
+
             {/* Accept / Decline Action Buttons */}
             <div className="mt-8 flex items-center gap-4">
               <Button
@@ -622,6 +777,21 @@ export function ListenerSessionRoomModal({
               </div>
 
               <div className="flex items-center gap-3">
+                {/* Somatic 4-7-8 Breathwork Pacer Toggle */}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setIsBreathworkActive((v) => !v)}
+                  className={`h-8 text-xs rounded-xl gap-1.5 border transition-all ${
+                    isBreathworkActive
+                      ? "bg-teal-600/20 text-teal-300 border-teal-500"
+                      : "bg-slate-800/70 border-slate-700 text-slate-300 hover:bg-slate-700"
+                  }`}
+                >
+                  <Wind className="size-3.5 text-teal-400" />
+                  <span>4-7-8 Breathwork</span>
+                </Button>
+
                 {/* Live Timer */}
                 <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800/80 border border-slate-700/60 text-xs font-mono font-medium text-emerald-400 shadow-inner">
                   <Clock className="size-3.5" />
@@ -701,6 +871,44 @@ export function ListenerSessionRoomModal({
               {/* Member Video / Audio Stage (7 Cols) */}
               <div className="lg:col-span-7 p-6 flex flex-col justify-between relative bg-gradient-to-b from-slate-900/40 via-slate-950 to-slate-950">
                 <div className="flex-1 rounded-2xl border border-slate-800/80 bg-slate-900/80 flex flex-col items-center justify-center p-8 relative overflow-hidden shadow-inner">
+                  {/* In-Call Somatic Breathwork Pacer Overlay */}
+                  {isBreathworkActive && (
+                    <div className="absolute inset-0 bg-slate-950/90 backdrop-blur-md z-20 flex flex-col items-center justify-center p-6 text-center animate-in fade-in zoom-in-95 duration-200">
+                      <div className="relative flex items-center justify-center mb-4">
+                        <div
+                          className={`rounded-full border-4 border-teal-400 bg-teal-500/10 flex items-center justify-center transition-all duration-1000 ${
+                            breathPhase === "Inhale"
+                              ? "size-36 scale-110 shadow-lg shadow-teal-500/30"
+                              : breathPhase === "Hold"
+                              ? "size-36 scale-105 border-amber-400 bg-amber-500/10"
+                              : "size-28 scale-90 border-emerald-400 bg-emerald-500/10"
+                          }`}
+                        >
+                          <div className="text-center">
+                            <p className="text-xl font-bold font-serif text-white">{breathPhase}</p>
+                            <p className="text-xs font-mono text-teal-300">{breathCount}s</p>
+                          </div>
+                        </div>
+                      </div>
+                      <p className="text-xs text-slate-300 max-w-xs">
+                        Grounding breath pacer for member guidance. Inhale (4s) • Hold (7s) • Exhale (8s).
+                      </p>
+                      <div className="flex items-center gap-3 mt-3">
+                        <Badge variant="outline" className="text-[10px] text-teal-400 border-teal-800">
+                          Cycles Completed: {completedBreathCycles}
+                        </Badge>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setIsBreathworkActive(false)}
+                          className="text-xs text-slate-400 hover:text-white h-7 px-2"
+                        >
+                          Hide Pacer
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="size-24 rounded-full bg-teal-900/40 border-2 border-teal-500/60 flex items-center justify-center mb-3 text-teal-300 font-bold text-2xl shadow-lg shadow-teal-950/50">
                     {memberName[0]}
                   </div>

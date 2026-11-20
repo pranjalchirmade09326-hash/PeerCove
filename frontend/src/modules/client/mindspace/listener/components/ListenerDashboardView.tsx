@@ -46,6 +46,7 @@ import {
   Video,
   Wind,
   Stethoscope,
+  X,
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -166,6 +167,9 @@ export function ListenerDashboardView({
   const [queue, setQueue] = useState<TQueueMember[]>(INITIAL_QUEUE_MEMBERS);
   const [filterTab, setFilterTab] = useState<"all" | "waiting" | "completed">("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [capacityLimit, setCapacityLimit] = useState(3);
+  const [openConversations, setOpenConversations] = useState(1);
+  const [isDecliningId, setIsDecliningId] = useState<string | null>(null);
 
   // Fetch live queue & peer conversations on mount
   useEffect(() => {
@@ -174,6 +178,12 @@ export function ListenerDashboardView({
         const profileRes = await fetch("/api/mindspace/listener/summary");
         if (profileRes.ok) {
           const pData = await profileRes.json();
+          if (pData.capacityLimit !== undefined) {
+            setCapacityLimit(Number(pData.capacityLimit));
+          }
+          if (pData.openConversations !== undefined) {
+            setOpenConversations(Number(pData.openConversations));
+          }
           if (pData.active_now !== undefined) {
             setIsAvailable(Boolean(pData.active_now));
           } else if (pData.isOnline !== undefined) {
@@ -186,25 +196,75 @@ export function ListenerDashboardView({
         // Fallback to initialAvailable prop
       }
 
+      let activeWaiting: TQueueMember[] = [];
+      try {
+        const activeRes = await fetch("/api/mindspace/listener/match-requests/active");
+        if (activeRes.ok) {
+          const activeData = await activeRes.json();
+          if (Array.isArray(activeData) && activeData.length > 0) {
+            activeWaiting = activeData.map((item: any, idx: number) => ({
+              id: item.id || `req-${idx}`,
+              displayName: item.member_name || item.memberName || "Member",
+              topic: item.support_topic || item.topic || "Work stress & active listening support",
+              waitingMinutes:
+                typeof item.waiting_minutes === "number"
+                  ? item.waiting_minutes
+                  : typeof item.waitingMinutes === "number"
+                  ? item.waitingMinutes
+                  : Math.max(0, Math.floor((Date.now() - new Date(item.created_at || Date.now()).getTime()) / 60000)),
+              channel: (item.preferred_channel === "voice" || item.preferred_channel === "video" || item.channel === "voice" || item.channel === "video")
+                ? (item.preferred_channel || item.channel)
+                : "chat",
+              urgency: item.urgency === "support" || item.urgency === "elevated" ? item.urgency : "routine",
+              status: "waiting",
+            }));
+          }
+        }
+      } catch {
+        // Fallback to conversations or initial queue
+      }
+
+      let completedHistory: TQueueMember[] = [];
       try {
         const res = await fetch("/api/mindspace/listener/conversations");
         if (res.ok) {
           const data = await res.json();
           if (Array.isArray(data) && data.length > 0) {
-            const mapped: TQueueMember[] = data.map((item: any, idx: number) => ({
-              id: item.id || `req-${idx}`,
-              displayName: item.member_name || item.memberName || "Member",
-              topic: item.note || item.topic || "Work stress & active listening support",
-              waitingMinutes: item.waitingMinutes || (idx + 1) * 3,
-              channel: (item.channel === "voice" || item.channel === "video") ? item.channel : "chat",
-              urgency: "routine",
-              status: item.status === "completed" ? "completed" : "waiting",
-            }));
-            setQueue(mapped);
+            completedHistory = data
+              .filter((item: any) => item.status === "completed")
+              .map((item: any, idx: number) => ({
+                id: item.id || `comp-${idx}`,
+                displayName: item.member_name || item.memberName || "Member",
+                topic: item.note || item.topic || "Completed peer consultation",
+                waitingMinutes: item.waitingMinutes || (idx + 1) * 3,
+                channel: (item.channel === "voice" || item.channel === "video") ? item.channel : "chat",
+                urgency: "routine",
+                status: "completed",
+              }));
+
+            // If activeRes was empty or failed, also check conversations for waiting items
+            if (activeWaiting.length === 0) {
+              const waitingFromConvs = data
+                .filter((item: any) => item.status !== "completed")
+                .map((item: any, idx: number) => ({
+                  id: item.id || `req-${idx}`,
+                  displayName: item.member_name || item.memberName || "Member",
+                  topic: item.note || item.topic || "Work stress & active listening support",
+                  waitingMinutes: item.waitingMinutes || (idx + 1) * 3,
+                  channel: (item.channel === "voice" || item.channel === "video") ? item.channel : "chat",
+                  urgency: "routine",
+                  status: "waiting",
+                }));
+              activeWaiting = waitingFromConvs;
+            }
           }
         }
       } catch {
         // Resilient fallback to initial queue
+      }
+
+      if (activeWaiting.length > 0 || completedHistory.length > 0) {
+        setQueue([...activeWaiting, ...completedHistory]);
       }
     }
     loadInitialData();
@@ -303,22 +363,97 @@ export function ListenerDashboardView({
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      const res = await fetch("/api/mindspace/listener/conversations");
-      if (res.ok) {
-        const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
-          const mapped: TQueueMember[] = data.map((item: any, idx: number) => ({
-            id: item.id || `req-${idx}`,
-            displayName: item.member_name || item.memberName || "Member",
-            topic: item.note || item.topic || "Work stress & active listening support",
-            waitingMinutes: item.waitingMinutes || (idx + 1) * 3,
-            channel: (item.channel === "voice" || item.channel === "video") ? item.channel : "chat",
-            urgency: "routine",
-            status: item.status === "completed" ? "completed" : "waiting",
-          }));
-          setQueue(mapped);
-          toast.success("Roster & Queue Refreshed from Database");
+      try {
+        const summaryRes = await fetch("/api/mindspace/listener/summary");
+        if (summaryRes.ok) {
+          const pData = await summaryRes.json();
+          if (pData.capacityLimit !== undefined) {
+            setCapacityLimit(Number(pData.capacityLimit));
+          }
+          if (pData.openConversations !== undefined) {
+            setOpenConversations(Number(pData.openConversations));
+          }
+          if (pData.active_now !== undefined) {
+            setIsAvailable(Boolean(pData.active_now));
+          } else if (pData.isOnline !== undefined) {
+            setIsAvailable(Boolean(pData.isOnline));
+          }
         }
+      } catch {
+        // Continue
+      }
+
+      let activeWaiting: TQueueMember[] = [];
+      try {
+        const activeRes = await fetch("/api/mindspace/listener/match-requests/active");
+        if (activeRes.ok) {
+          const activeData = await activeRes.json();
+          if (Array.isArray(activeData) && activeData.length > 0) {
+            activeWaiting = activeData.map((item: any, idx: number) => ({
+              id: item.id || `req-${idx}`,
+              displayName: item.member_name || item.memberName || "Member",
+              topic: item.support_topic || item.topic || "Work stress & active listening support",
+              waitingMinutes:
+                typeof item.waiting_minutes === "number"
+                  ? item.waiting_minutes
+                  : typeof item.waitingMinutes === "number"
+                  ? item.waitingMinutes
+                  : Math.max(0, Math.floor((Date.now() - new Date(item.created_at || Date.now()).getTime()) / 60000)),
+              channel: (item.preferred_channel === "voice" || item.preferred_channel === "video" || item.channel === "voice" || item.channel === "video")
+                ? (item.preferred_channel || item.channel)
+                : "chat",
+              urgency: item.urgency === "support" || item.urgency === "elevated" ? item.urgency : "routine",
+              status: "waiting",
+            }));
+          }
+        }
+      } catch {
+        // Continue
+      }
+
+      let completedHistory: TQueueMember[] = [];
+      try {
+        const res = await fetch("/api/mindspace/listener/conversations");
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            completedHistory = data
+              .filter((item: any) => item.status === "completed")
+              .map((item: any, idx: number) => ({
+                id: item.id || `comp-${idx}`,
+                displayName: item.member_name || item.memberName || "Member",
+                topic: item.note || item.topic || "Completed peer consultation",
+                waitingMinutes: item.waitingMinutes || (idx + 1) * 3,
+                channel: (item.channel === "voice" || item.channel === "video") ? item.channel : "chat",
+                urgency: "routine",
+                status: "completed",
+              }));
+
+            if (activeWaiting.length === 0) {
+              const waitingFromConvs = data
+                .filter((item: any) => item.status !== "completed")
+                .map((item: any, idx: number) => ({
+                  id: item.id || `req-${idx}`,
+                  displayName: item.member_name || item.memberName || "Member",
+                  topic: item.note || item.topic || "Work stress & active listening support",
+                  waitingMinutes: item.waitingMinutes || (idx + 1) * 3,
+                  channel: (item.channel === "voice" || item.channel === "video") ? item.channel : "chat",
+                  urgency: "routine",
+                  status: "waiting",
+                }));
+              activeWaiting = waitingFromConvs;
+            }
+          }
+        }
+      } catch {
+        // Continue
+      }
+
+      if (activeWaiting.length > 0 || completedHistory.length > 0) {
+        setQueue([...activeWaiting, ...completedHistory]);
+        toast.success("Roster & Queue Refreshed from Database");
+      } else {
+        toast.info("Roster refreshed");
       }
     } catch {
       toast.info("Roster refreshed");
@@ -338,23 +473,41 @@ export function ListenerDashboardView({
     const next = !isAvailable;
     setIsAvailable(next);
     try {
-      const res = await fetch("/api/mindspace/listener/profile", {
-        method: "PUT",
+      const res = await fetch("/api/mindspace/listener/availability", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isOnline: next, active_now: next }),
+        body: JSON.stringify({ active: next, active_now: next, isOnline: next }),
       });
       if (res.ok) {
         const data = await res.json();
         const serverOnline =
-          data.isOnline !== undefined
-            ? Boolean(data.isOnline)
+          data.is_available !== undefined
+            ? Boolean(data.is_available)
             : data.active_now !== undefined
             ? Boolean(data.active_now)
             : next;
         setIsAvailable(serverOnline);
       }
     } catch {
-      // Continue with optimistic state
+      try {
+        const res = await fetch("/api/mindspace/listener/profile", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ isOnline: next, active_now: next }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const serverOnline =
+            data.isOnline !== undefined
+              ? Boolean(data.isOnline)
+              : data.active_now !== undefined
+              ? Boolean(data.active_now)
+              : next;
+          setIsAvailable(serverOnline);
+        }
+      } catch {
+        // Continue with optimistic state
+      }
     }
 
     if (next) {
@@ -365,6 +518,27 @@ export function ListenerDashboardView({
       toast.info("Availability paused", {
         description: "You will not receive new incoming queue requests.",
       });
+    }
+  };
+
+  const handleDeclineOffer = async (member: TQueueMember, reason: string = "listener_passed") => {
+    setIsDecliningId(member.id);
+    // Optimistically remove from local queue state
+    setQueue((prev) => prev.filter((m) => m.id !== member.id));
+
+    try {
+      await fetch(`/api/mindspace/listener/offers/${member.id}/decline`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason }),
+      });
+      toast.info("Offer declined. Request reassigned to peer queue.", {
+        description: `Request for ${member.displayName} returned to active pool.`,
+      });
+    } catch {
+      toast.info("Offer declined. Request reassigned to peer queue.");
+    } finally {
+      setIsDecliningId(null);
     }
   };
 
@@ -388,6 +562,13 @@ export function ListenerDashboardView({
       return;
     }
 
+    if (openConversations >= capacityLimit) {
+      toast.warning("Workload Capacity Exceeded", {
+        description: `You have reached your maximum active capacity (${openConversations}/${capacityLimit}). Complete ongoing sessions first.`,
+      });
+      return;
+    }
+
     let conversationId = member.id;
 
     if (member.status === "waiting") {
@@ -403,7 +584,10 @@ export function ListenerDashboardView({
           if (data.conversation_id) {
             conversationId = data.conversation_id;
           }
+          setOpenConversations((prev) => prev + 1);
         } else if (res.status === 409) {
+          // Immediately filter out contested item from queue in local state before triggering handleRefresh()
+          setQueue((prev) => prev.filter((m) => m.id !== member.id));
           const errData = await res.json().catch(() => ({}));
           const detail = errData.detail || "";
           if (detail.includes("CLAIMED")) {
@@ -426,6 +610,7 @@ export function ListenerDashboardView({
           toast.warning("Cannot Accept Request", {
             description: errData.detail || "Workload limit reached or offline.",
           });
+          handleRefresh();
           return;
         }
       } catch {
@@ -455,6 +640,7 @@ export function ListenerDashboardView({
       } catch {
         // Continue
       }
+      setOpenConversations((prev) => Math.max(0, prev - 1));
       setQueue((prev) =>
         prev.map((m) => (m.id === activeCallSession.id ? { ...m, status: "completed" } : m))
       );
@@ -484,6 +670,10 @@ export function ListenerDashboardView({
     setIsReviewModalOpen(true);
   };
 
+  const isAtCapacity = openConversations >= capacityLimit;
+  const capacityPercentage = Math.min(100, Math.round((openConversations / Math.max(1, capacityLimit)) * 100));
+  const availableSlots = Math.max(0, capacityLimit - openConversations);
+
   const activeWaiting = queue.filter((m) => m.status === "waiting");
   const completedList = queue.filter((m) => m.status === "completed");
   const firstWaiting = activeWaiting[0];
@@ -503,65 +693,6 @@ export function ListenerDashboardView({
 
   return (
     <div className="space-y-6">
-      {/* ── YOUTUBE VIDEO PARITY DEMO FLOW BAR ── */}
-      <div className="p-3.5 rounded-2xl border border-emerald-500/40 bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-transparent dark:from-emerald-950/40 dark:via-teal-950/20 dark:to-transparent flex flex-wrap items-center justify-between gap-3 shadow-xs">
-        <div className="flex items-center gap-2.5">
-          <div className="size-8 rounded-xl bg-emerald-700 text-white flex items-center justify-center font-bold text-xs shadow-xs">
-            DEMO
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-foreground">
-                DrGodly Product Demo Workflow (Doctor / Listener Mode)
-              </span>
-              <Badge className="bg-emerald-700 text-white text-[10px] px-2 py-0.5 rounded-full">
-                Video Parity
-              </Badge>
-            </div>
-            <p className="text-[11px] text-muted-foreground">
-              Live CDS Copilot (Suggested Questions) • In-Person Ambient Recording (Waveform) • SOAP & FHIR Extractions
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 flex-wrap">
-          <Button
-            size="sm"
-            onClick={() => setIsInPersonModalOpen(true)}
-            className="text-xs h-8 rounded-xl bg-[#236B54] hover:bg-[#1a5240] text-white font-semibold gap-1.5 shadow-sm"
-          >
-            <Stethoscope className="size-3.5" />
-            <span>4. In-Person Consultation (Ambient Capture)</span>
-          </Button>
-
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              const waiting = queue[0] || INITIAL_QUEUE_MEMBERS[0];
-              handleStartCall(waiting);
-            }}
-            className="text-xs h-8 rounded-xl border-emerald-400/60 bg-background/80 hover:bg-emerald-50 dark:hover:bg-emerald-950 text-emerald-900 dark:text-emerald-300 font-medium gap-1.5"
-          >
-            <Headphones className="size-3.5 text-emerald-600" />
-            <span>3. Telehealth + CDS Copilot</span>
-          </Button>
-
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              const comp = queue.find(q => q.status === "completed") || queue[0];
-              handleOpenReview(comp);
-            }}
-            className="text-xs h-8 rounded-xl border-blue-400/60 bg-background/80 hover:bg-blue-50 dark:hover:bg-blue-950 text-blue-900 dark:text-blue-300 font-medium gap-1.5"
-          >
-            <FileText className="size-3.5 text-blue-600" />
-            <span>5. Review SOAP & FHIR</span>
-          </Button>
-        </div>
-      </div>
-
       {/* ── 1. Header & Status Toggle ── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -674,9 +805,31 @@ export function ListenerDashboardView({
             </Button>
             <Button
               size="sm"
-              disabled={!isAvailable}
+              variant="outline"
+              disabled={isDecliningId === firstWaiting.id}
+              onClick={() => handleDeclineOffer(firstWaiting)}
+              className="rounded-xl text-xs h-9 px-3 gap-1.5 border-rose-300 dark:border-rose-900/60 text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/40"
+              title="Decline offer and return request to active pool"
+            >
+              <X className="size-3.5" />
+              <span>Decline</span>
+            </Button>
+            <Button
+              size="sm"
+              disabled={!isAvailable || isAtCapacity}
               onClick={() => handleStartCall(firstWaiting)}
-              className="rounded-xl text-xs h-9 px-4 font-semibold bg-[#236B54] hover:bg-[#1a5240] text-white gap-1.5 shadow-sm"
+              title={
+                !isAvailable
+                  ? "Listener is offline. Go online to accept."
+                  : isAtCapacity
+                  ? `Workload limit reached (${openConversations}/${capacityLimit}). Complete ongoing sessions first.`
+                  : "Accept & start consultation"
+              }
+              className={`rounded-xl text-xs h-9 px-4 font-semibold text-white gap-1.5 shadow-sm ${
+                !isAvailable || isAtCapacity
+                  ? "bg-muted text-muted-foreground opacity-60 cursor-not-allowed"
+                  : "bg-[#236B54] hover:bg-[#1a5240]"
+              }`}
             >
               <Headphones className="size-3.5" />
               <span>Accept & Start Call</span>
@@ -743,9 +896,15 @@ export function ListenerDashboardView({
           </div>
           <Badge
             variant="outline"
-            className="w-fit border-emerald-500/40 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 text-xs font-semibold"
+            className={`w-fit text-xs font-semibold ${
+              isAtCapacity
+                ? "border-amber-500/50 bg-amber-50 text-amber-900 dark:bg-amber-950/40 dark:text-amber-200"
+                : "border-emerald-500/40 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
+            }`}
           >
-            Healthy Workload • 1 of 3 Capacity
+            {isAtCapacity
+              ? `At Capacity Limit • ${openConversations} of ${capacityLimit} Active`
+              : `Healthy Workload • ${openConversations} of ${capacityLimit} Capacity`}
           </Badge>
         </div>
 
@@ -753,10 +912,14 @@ export function ListenerDashboardView({
           <div className="space-y-2">
             <div className="flex items-center justify-between text-muted-foreground">
               <span className="font-semibold text-foreground">Concurrent Member Limit</span>
-              <span>1 / 3 Members (33%)</span>
+              <span>{openConversations} / {capacityLimit} Members ({capacityPercentage}%)</span>
             </div>
-            <Progress value={33} className="h-2 bg-emerald-100 dark:bg-emerald-950" />
-            <p className="text-[11px] text-muted-foreground">2 slots available for incoming queue matches</p>
+            <Progress value={capacityPercentage} className="h-2 bg-emerald-100 dark:bg-emerald-950" />
+            <p className="text-[11px] text-muted-foreground">
+              {availableSlots === 0
+                ? "No slots available. Complete active sessions to receive incoming matches."
+                : `${availableSlots} slot${availableSlots > 1 ? "s" : ""} available for incoming queue matches`}
+            </p>
           </div>
 
           <div className="space-y-2">
@@ -978,15 +1141,39 @@ export function ListenerDashboardView({
                         <span>SOAP Record</span>
                       </Button>
                     ) : (
-                      <Button
-                        size="sm"
-                        disabled={!isAvailable}
-                        className="h-8 text-xs rounded-xl bg-[#236B54] hover:bg-[#1a5240] text-white gap-1.5 px-3"
-                        onClick={() => handleStartCall(req)}
-                      >
-                        <Headphones className="size-3.5" />
-                        <span>Start Call</span>
-                      </Button>
+                      <>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={isDecliningId === req.id}
+                          onClick={() => handleDeclineOffer(req)}
+                          className="h-8 text-xs rounded-xl border-rose-200 text-rose-700 hover:bg-rose-50 dark:border-rose-900/60 dark:text-rose-300 dark:hover:bg-rose-950/40 gap-1 px-2.5 font-medium"
+                          title="Decline offer and return to queue"
+                        >
+                          <X className="size-3.5" />
+                          <span>Decline</span>
+                        </Button>
+                        <Button
+                          size="sm"
+                          disabled={!isAvailable || isAtCapacity}
+                          className={`h-8 text-xs rounded-xl text-white gap-1.5 px-3 ${
+                            !isAvailable || isAtCapacity
+                              ? "bg-muted text-muted-foreground opacity-60 cursor-not-allowed"
+                              : "bg-[#236B54] hover:bg-[#1a5240]"
+                          }`}
+                          title={
+                            !isAvailable
+                              ? "Listener is offline"
+                              : isAtCapacity
+                              ? `Workload limit reached (${openConversations}/${capacityLimit})`
+                              : "Start Call"
+                          }
+                          onClick={() => handleStartCall(req)}
+                        >
+                          <Headphones className="size-3.5" />
+                          <span>Start Call</span>
+                        </Button>
+                      </>
                     )}
                   </div>
                 </TableCell>

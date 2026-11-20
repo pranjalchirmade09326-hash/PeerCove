@@ -1,0 +1,171 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 950" width="100%" height="100%" style="background:#0f172a; font-family:system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <defs>
+    <!-- Gradients -->
+    <linearGradient id="headerGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#10b981"/>
+      <stop offset="50%" stop-color="#06b6d4"/>
+      <stop offset="100%" stop-color="#3b82f6"/>
+    </linearGradient>
+    
+    <linearGradient id="memberCardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#064e3b" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#022c22" stop-opacity="0.9"/>
+    </linearGradient>
+
+    <linearGradient id="doctorCardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e3a8a" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#0f172a" stop-opacity="0.9"/>
+    </linearGradient>
+
+    <linearGradient id="aiCardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4c1d95" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#2e1065" stop-opacity="0.9"/>
+    </linearGradient>
+
+    <linearGradient id="goldCardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#78350f" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#451a03" stop-opacity="0.9"/>
+    </linearGradient>
+
+    <!-- Filters -->
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="110%">
+      <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#000000" flood-opacity="0.5"/>
+    </filter>
+
+    <!-- Arrow Marker -->
+    <marker id="arrowGreen" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#10b981"/>
+    </marker>
+    <marker id="arrowBlue" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#38bdf8"/>
+    </marker>
+    <marker id="arrowPurple" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#a855f7"/>
+    </marker>
+  </defs>
+
+  <!-- Title Banner -->
+  <rect x="40" y="25" width="1320" height="75" rx="16" fill="#1e293b" stroke="#334155" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="70" y="65" fill="#f8fafc" font-size="24" font-weight="800" letter-spacing="0.5">MindSpace / SevaHealth AI — Member &amp; Listener Workflow Architecture</text>
+  <text x="70" y="85" fill="#94a3b8" font-size="13" font-weight="500">End-to-End Clinical Flow: AI Intake → Booking (May 11th) → Telehealth / Ambient AI Voice Capture → SOAP &amp; FHIR R4 Records</text>
+  
+  <rect x="1170" y="45" width="160" height="35" rx="8" fill="#10b981" fill-opacity="0.2" stroke="#10b981" stroke-width="1.5"/>
+  <text x="1250" y="67" fill="#34d399" font-size="12" font-weight="700" text-anchor="middle">Clean Architecture</text>
+
+  <!-- ========================================== -->
+  <!-- LEFT PANEL: MEMBER (PATIENT) WORKFLOW -->
+  <!-- ========================================== -->
+  <rect x="40" y="125" width="640" height="790" rx="20" fill="#0f172a" stroke="#059669" stroke-width="2" filter="url(#shadow)"/>
+  
+  <!-- Member Header -->
+  <rect x="55" y="140" width="610" height="48" rx="12" fill="#064e3b" stroke="#10b981" stroke-width="1"/>
+  <circle cx="85" cy="164" r="12" fill="#10b981"/>
+  <text x="85" y="169" fill="#ffffff" font-size="14" font-weight="bold" text-anchor="middle">1</text>
+  <text x="110" y="170" fill="#ecfdf5" font-size="16" font-weight="700">MEMBER WORKFLOW (Patient / Citizen)</text>
+  <text x="560" y="170" fill="#a7f3d0" font-size="11" font-weight="600">Pure ChatGPT Sanctuary</text>
+
+  <!-- Step 1: Patient Landing & Symptom Input -->
+  <rect x="65" y="210" width="590" height="110" rx="14" fill="url(#memberCardGrad)" stroke="#10b981" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="90" y="240" fill="#34d399" font-size="14" font-weight="700">STEP 1: Symptom Intake Chatbot</text>
+  <text x="90" y="265" fill="#e2e8f0" font-size="12">• Patient enters symptoms: &quot;Persistent tension headache, neck stiffness, anxiety&quot;</text>
+  <text x="90" y="285" fill="#94a3b8" font-size="12">• Deterministic Crisis Sentinel runs immediately (Detects self-harm/crisis risks)</text>
+  <text x="90" y="305" fill="#94a3b8" font-size="12">• If safe: LangGraph AI processes clinical severity and triage indicators</text>
+
+  <!-- Arrow down -->
+  <line x1="360" y1="320" x2="360" y2="350" stroke="#10b981" stroke-width="2.5" marker-end="url(#arrowGreen)"/>
+
+  <!-- Step 2: Doctor Recommendation Card -->
+  <rect x="65" y="355" width="590" height="120" rx="14" fill="url(#aiCardGrad)" stroke="#8b5cf6" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="90" y="385" fill="#c084fc" font-size="14" font-weight="700">STEP 2: Automated Doctor Recommendation</text>
+  <text x="90" y="410" fill="#f1f5f9" font-size="12">• AI suggests matching specialist: Dr. Vikram Sen (Neurology / Headache Care)</text>
+  <text x="90" y="430" fill="#e2e8f0" font-size="12">• Recommends Earliest Slot: May 11th, 2026 at 10:00 AM</text>
+  <text x="90" y="450" fill="#94a3b8" font-size="12">• Displays interactive &quot;Book Consultation&quot; CTA directly inside conversation</text>
+
+  <!-- Arrow down -->
+  <line x1="360" y1="475" x2="360" y2="505" stroke="#10b981" stroke-width="2.5" marker-end="url(#arrowGreen)"/>
+
+  <!-- Step 3: Appointment Booking Modal -->
+  <rect x="65" y="510" width="590" height="125" rx="14" fill="url(#memberCardGrad)" stroke="#10b981" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="90" y="540" fill="#34d399" font-size="14" font-weight="700">STEP 3: Schedule Session Modal</text>
+  <text x="90" y="565" fill="#e2e8f0" font-size="12">• Doctor pre-selected: Dr. Vikram Sen (MBBS, MD - Neurology)</text>
+  <text x="90" y="585" fill="#e2e8f0" font-size="12">• Date &amp; Time confirmed: May 11th, 2026 at 10:00 AM</text>
+  <text x="90" y="605" fill="#94a3b8" font-size="12">• Select Modality: Virtual Telehealth vs. In-Person Consultation</text>
+  <text x="90" y="625" fill="#94a3b8" font-size="12">• Auto-persists to PostgreSQL Database &amp; syncs to doctor queue</text>
+
+  <!-- Arrow down -->
+  <line x1="360" y1="635" x2="360" y2="665" stroke="#10b981" stroke-width="2.5" marker-end="url(#arrowGreen)"/>
+
+  <!-- Step 4: Telehealth Room -->
+  <rect x="65" y="670" width="590" height="115" rx="14" fill="#1e293b" stroke="#38bdf8" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="90" y="700" fill="#38bdf8" font-size="14" font-weight="700">STEP 4: Live Telehealth Room</text>
+  <text x="90" y="725" fill="#f1f5f9" font-size="12">• High-definition WebRTC video / audio consultation</text>
+  <text x="90" y="745" fill="#94a3b8" font-size="12">• Secure end-to-end encrypted peer connection</text>
+  <text x="90" y="765" fill="#94a3b8" font-size="12">• Integrated chat, somatic breathing exercises, and crisis reassurance</text>
+
+  <!-- Member Status Badge -->
+  <rect x="65" y="810" width="590" height="80" rx="12" fill="#022c22" stroke="#059669" stroke-width="1"/>
+  <text x="90" y="840" fill="#34d399" font-size="13" font-weight="700">Output: Confirmed Appointment &amp; Clinical Encounter Created</text>
+  <text x="90" y="865" fill="#a7f3d0" font-size="11">Data securely saved in PostgreSQL table `clinical_encounters` with AES-256-GCM envelope encryption.</text>
+
+
+  <!-- ========================================== -->
+  <!-- RIGHT PANEL: LISTENER (DOCTOR) WORKFLOW -->
+  <!-- ========================================== -->
+  <rect x="720" y="125" width="640" height="790" rx="20" fill="#0f172a" stroke="#2563eb" stroke-width="2" filter="url(#shadow)"/>
+
+  <!-- Doctor Header -->
+  <rect x="735" y="140" width="610" height="48" rx="12" fill="#1e3a8a" stroke="#3b82f6" stroke-width="1"/>
+  <circle cx="765" cy="164" r="12" fill="#3b82f6"/>
+  <text x="765" y="169" fill="#ffffff" font-size="14" font-weight="bold" text-anchor="middle">2</text>
+  <text x="790" y="170" fill="#eff6ff" font-size="16" font-weight="700">LISTENER WORKFLOW (Doctor / Clinician)</text>
+  <text x="1225" y="170" fill="#bfdbfe" font-size="11" font-weight="600">Dual Consultation Modes</text>
+
+  <!-- Step 1: Doctor Hub Modality Choice -->
+  <rect x="745" y="210" width="590" height="110" rx="14" fill="url(#doctorCardGrad)" stroke="#3b82f6" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="770" y="240" fill="#60a5fa" font-size="14" font-weight="700">STEP 1: Doctor &amp; Listener Clinical Hub</text>
+  <text x="770" y="265" fill="#e2e8f0" font-size="12">• Active Doctor: Dr. Vikram Sen • Status: Online &amp; Ready for Queue</text>
+  <text x="770" y="285" fill="#94a3b8" font-size="12">• View Incoming Appointments (May 11th Scheduled Session listed)</text>
+  <text x="770" y="305" fill="#94a3b8" font-size="12">• Modality Choice: 1) Virtual Telehealth OR 2) In-Person Consultation</text>
+
+  <!-- Arrow down -->
+  <line x1="1040" y1="320" x2="1040" y2="350" stroke="#38bdf8" stroke-width="2.5" marker-end="url(#arrowBlue)"/>
+
+  <!-- Step 2: In-Person Ambient Recording vs CDS Copilot -->
+  <rect x="745" y="355" width="590" height="150" rx="14" fill="url(#goldCardGrad)" stroke="#f59e0b" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="770" y="385" fill="#fbbf24" font-size="14" font-weight="700">STEP 2: Ambient Voice Capture &amp; CDS Copilot</text>
+  <text x="770" y="410" fill="#fef3c7" font-size="12">MODE A (In-Person): Click &quot;Start Recording&quot; before seeing patient</text>
+  <text x="770" y="430" fill="#e2e8f0" font-size="11">• Real-time animated audio soundwave visualizer (Web Audio API)</text>
+  <text x="770" y="450" fill="#e2e8f0" font-size="11">• Continuous ambient speech-to-text transcript streaming</text>
+  <text x="770" y="470" fill="#fef3c7" font-size="12">MODE B (Telehealth): Real-time Clinical Decision Support (CDS Copilot)</text>
+  <text x="770" y="490" fill="#e2e8f0" font-size="11">• AI dynamically suggests probing clinical questions during the live call</text>
+
+  <!-- Arrow down -->
+  <line x1="1040" y1="505" x2="1040" y2="535" stroke="#38bdf8" stroke-width="2.5" marker-end="url(#arrowBlue)"/>
+
+  <!-- Step 3: AI Synthesis (SOAP Note & FHIR) -->
+  <rect x="745" y="540" width="590" height="120" rx="14" fill="url(#aiCardGrad)" stroke="#8b5cf6" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="770" y="570" fill="#c084fc" font-size="14" font-weight="700">STEP 3: Automatic SOAP &amp; FHIR Synthesis</text>
+  <text x="770" y="595" fill="#f1f5f9" font-size="12">• Doctor clicks &quot;Stop Recording&quot; to synthesize clinical dialogue</text>
+  <text x="770" y="615" fill="#e2e8f0" font-size="12">• SOAP Note: Subjective, Objective, Assessment, Plan generated automatically</text>
+  <text x="770" y="635" fill="#94a3b8" font-size="12">• FHIR Extractions: Conditions, Observations (120/80 mmHg), Medications, Labs</text>
+
+  <!-- Arrow down -->
+  <line x1="1040" y1="660" x2="1040" y2="690" stroke="#38bdf8" stroke-width="2.5" marker-end="url(#arrowBlue)"/>
+
+  <!-- Step 4: Review & Push to EMR (FHIR) -->
+  <rect x="745" y="695" width="590" height="100" rx="14" fill="#1e293b" stroke="#10b981" stroke-width="1.5" filter="url(#shadow)"/>
+  <text x="770" y="725" fill="#34d399" font-size="14" font-weight="700">STEP 4: Review Modal &amp; Push to EMR</text>
+  <text x="770" y="750" fill="#f1f5f9" font-size="12">• Doctor reviews synthesized note, edits recommendations, checks dosage</text>
+  <text x="770" y="770" fill="#94a3b8" font-size="12">• One-Click &quot;Push to Electronic Medical Record (EMR / FHIR)&quot;</text>
+
+  <!-- Doctor Status Badge -->
+  <rect x="745" y="810" width="590" height="80" rx="12" fill="#0f2942" stroke="#0284c7" stroke-width="1"/>
+  <text x="770" y="840" fill="#38bdf8" font-size="13" font-weight="700">Output: Finalized EHR Record with RxNorm &amp; LOINC Codes</text>
+  <text x="770" y="865" fill="#bae6fd" font-size="11">• Medication: Acetaminophen 500mg (RxNorm 198440) • Lab: CBC with Diff (LOINC 58410-2)</text>
+
+  <!-- Horizontal Connection Arrow between Step 3 Member Booking & Step 1 Doctor Queue -->
+  <path d="M 655 570 C 690 570, 690 280, 745 280" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="6,4" marker-end="url(#arrowGreen)"/>
+  <rect x="665" y="410" width="90" height="26" rx="6" fill="#1e293b" stroke="#f59e0b" stroke-width="1"/>
+  <text x="710" y="427" fill="#fbbf24" font-size="10" font-weight="700" text-anchor="middle">Queue Sync</text>
+
+</svg>

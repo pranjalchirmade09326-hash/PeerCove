@@ -4,7 +4,7 @@ import { POST as moodsPOST, GET as moodsGET } from "@/app/api/mindspace/member/m
 import { POST as goalsPOST, GET as goalsGET } from "@/app/api/mindspace/member/goals/route";
 import { POST as peerSessionPOST } from "@/app/api/mindspace/member/peer-session/route";
 import { POST as matchRequestsPOST, GET as matchRequestsGET } from "@/app/api/mindspace/member/match-requests/route";
-import { GET as matchRequestGetById } from "@/app/api/mindspace/member/match-requests/[id]/route";
+import { GET as matchRequestGetById, POST as matchRequestDirectCancelPOST } from "@/app/api/mindspace/member/match-requests/[id]/route";
 import { POST as matchRequestCancelByIdPOST } from "@/app/api/mindspace/member/match-requests/[id]/cancel/route";
 import { POST as matchRequestCancelPOST } from "@/app/api/mindspace/member/match-request/cancel/route";
 import * as apiClientModule from "@/modules/server/mindspace/api-client";
@@ -339,6 +339,21 @@ describe("Member Next.js Route Handlers - Resiliency & Stream Consumption Fixes"
       expect(json.error).toBeDefined();
     });
 
+    it("POST /api/mindspace/member/match-requests rejects empty string support topic with 400 Bad Request", async () => {
+      const req = new Request("http://localhost:4000/api/mindspace/member/match-requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          support_topic: "",
+        }),
+      });
+
+      const res = await matchRequestsPOST(req);
+      expect(res.status).toBe(400);
+      const json = await res.json();
+      expect(json.error).toBe("Topic cannot be empty");
+    });
+
     it("POST /api/mindspace/member/match-requests falls back gracefully when backend is offline", async () => {
       vi.mocked(apiClientModule.createMindspaceApiClient).mockRejectedValue(
         new Error("Backend unreachable")
@@ -425,6 +440,85 @@ describe("Member Next.js Route Handlers - Resiliency & Stream Consumption Fixes"
       const json = await res.json();
       expect(json.id).toBe("mr-888");
       expect(json.status).toBe("cancelled");
+    });
+
+    it("POST /api/mindspace/member/match-request/cancel returns 409 Conflict when already claimed by listener", async () => {
+      const error: any = new Error("REQUEST_ALREADY_CLAIMED");
+      error.status = 409;
+      error.detail = "REQUEST_ALREADY_CLAIMED";
+      const mockRequest = vi.fn().mockRejectedValue(error);
+      vi.mocked(apiClientModule.createMindspaceApiClient).mockResolvedValue({
+        identity: { id: "u-1", name: "User", email: "u@m.com" },
+        request: mockRequest,
+      } as any);
+
+      const req = new Request("http://localhost:4000/api/mindspace/member/match-request/cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: "mr-claimed-fallback" }),
+      });
+      const res = await matchRequestCancelPOST(req);
+      expect(res.status).toBe(409);
+      const json = await res.json();
+      expect(json.detail).toBe("REQUEST_ALREADY_CLAIMED");
+      expect(json.error).toBe("Request already claimed by listener");
+    });
+
+    it("POST /api/mindspace/member/match-requests/[id] directly cancels match request", async () => {
+      const mockRequest = vi.fn().mockResolvedValue({
+        id: "mr-direct-1",
+        status: "cancelled",
+      });
+      vi.mocked(apiClientModule.createMindspaceApiClient).mockResolvedValue({
+        identity: { id: "u-1", name: "User", email: "u@m.com" },
+        request: mockRequest,
+      } as any);
+
+      const req = new Request("http://localhost:4000/api/mindspace/member/match-requests/mr-direct-1", {
+        method: "POST",
+      });
+      const res = await matchRequestDirectCancelPOST(req, {
+        params: Promise.resolve({ id: "mr-direct-1" }),
+      });
+      expect(res.status).toBe(200);
+      const json = await res.json();
+      expect(json.status).toBe("cancelled");
+      expect(mockRequest).toHaveBeenCalledWith(
+        "/api/v1/peer/match-requests/mr-direct-1/cancel",
+        expect.objectContaining({ method: "POST" })
+      );
+    });
+
+    it("POST /api/mindspace/member/match-requests/[id]/cancel returns 409 when already claimed", async () => {
+      const error: any = new Error("REQUEST_ALREADY_CLAIMED");
+      error.status = 409;
+      error.detail = "REQUEST_ALREADY_CLAIMED";
+      const mockRequest = vi.fn().mockRejectedValue(error);
+
+      vi.mocked(apiClientModule.createMindspaceApiClient).mockResolvedValue({
+        identity: { id: "u-1", name: "User", email: "u@m.com" },
+        request: mockRequest,
+      } as any);
+
+      const req = new Request("http://localhost:4000/api/mindspace/member/match-requests/mr-claimed-1/cancel", {
+        method: "POST",
+      });
+      const res = await matchRequestCancelByIdPOST(req, {
+        params: Promise.resolve({ id: "mr-claimed-1" }),
+      });
+      expect(res.status).toBe(409);
+      const json = await res.json();
+      expect(json.error).toBe("REQUEST_ALREADY_CLAIMED");
+    });
+
+    it("GET /api/mindspace/member/match-requests/[id] returns 404 for invalid-id", async () => {
+      const req = new Request("http://localhost:4000/api/mindspace/member/match-requests/invalid-id");
+      const res = await matchRequestGetById(req, {
+        params: Promise.resolve({ id: "invalid-id" }),
+      });
+      expect(res.status).toBe(404);
+      const json = await res.json();
+      expect(json.error).toBe("Invalid match request ID");
     });
   });
 });
