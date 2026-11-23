@@ -27,19 +27,23 @@ import {
   ShieldAlert,
   Sparkles,
   UsersRound,
+  X,
 } from "lucide-react";
+import { Markdown } from "@/modules/client/shared/components/Markdown";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "@/i18n/navigation";
 
-export interface CompanionChatMessage {
+export interface WellbeingCompanionChatMessage {
   id: string;
   sender: "user" | "agent";
   text: string;
   timestamp: string;
 }
+
+type CompanionChatMessage = WellbeingCompanionChatMessage;
 
 const CRISIS_TRIGGER_KEYWORDS = [
   "suicide",
@@ -72,6 +76,7 @@ export function WellbeingCompanionChat({
   const [inputText, setInputText] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [crisisDetected, setCrisisDetected] = useState(false);
+  const [isCrisisBannerDismissed, setIsCrisisBannerDismissed] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
 
   const threadEndRef = useRef<HTMLDivElement>(null);
@@ -90,6 +95,7 @@ export function WellbeingCompanionChat({
     const hasCrisis = CRISIS_TRIGGER_KEYWORDS.some((kw) => lower.includes(kw));
     if (hasCrisis) {
       setCrisisDetected(true);
+      setIsCrisisBannerDismissed(false);
       return true;
     }
     return false;
@@ -163,13 +169,43 @@ export function WellbeingCompanionChat({
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let accumulatedText = "";
+      let leftover = "";
 
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
         const chunk = decoder.decode(value, { stream: true });
-        accumulatedText += chunk;
+        const lines = (leftover + chunk).split("\n");
+        leftover = lines.pop() ?? "";
+
+        for (const rawLine of lines) {
+          const trimmed = rawLine.trim();
+          if (!trimmed || trimmed.startsWith(":") || trimmed === "data: [DONE]") continue;
+
+          let line = trimmed;
+          if (/^data:\s*/i.test(line)) {
+            line = line.replace(/^data:\s*/i, "").trim();
+          }
+          if (!line || line === "[DONE]") continue;
+
+          try {
+            const parsed = JSON.parse(line);
+            if (parsed.type === "text_delta" && parsed.data?.content) {
+              accumulatedText += parsed.data.content;
+            } else if (parsed.type === "agent_end") {
+              if (parsed.session_id && !sessionId) {
+                setSessionId(parsed.session_id);
+              }
+            } else if (typeof parsed.content === "string") {
+              accumulatedText += parsed.content;
+            }
+          } catch {
+            if (!line.startsWith("{") && !line.startsWith("data:") && !line.includes('"type"')) {
+              accumulatedText += line;
+            }
+          }
+        }
 
         // Check if stream output tripped safety
         if (checkSafetyCircuitBreaker(accumulatedText)) {
@@ -187,6 +223,30 @@ export function WellbeingCompanionChat({
             msg.id === agentMsgId ? { ...msg, text: cleanText } : msg,
           ),
         );
+      }
+
+      if (leftover.trim()) {
+        let line = leftover.trim();
+        if (/^data:\s*/i.test(line)) {
+          line = line.replace(/^data:\s*/i, "").trim();
+        }
+        if (line && line !== "[DONE]") {
+          try {
+            const parsed = JSON.parse(line);
+            if (parsed.type === "text_delta" && parsed.data?.content) {
+              accumulatedText += parsed.data.content;
+            }
+          } catch {
+            if (!line.startsWith("{") && !line.startsWith("data:") && !line.includes('"type"')) {
+              accumulatedText += line;
+            }
+          }
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === agentMsgId ? { ...msg, text: accumulatedText } : msg,
+            ),
+          );
+        }
       }
     } catch (error) {
       toast.error("AI service is currently operating in offline mode.");
@@ -215,32 +275,42 @@ export function WellbeingCompanionChat({
   return (
     <div className="space-y-4 max-w-4xl mx-auto">
       {/* ── 1. Safety Alert Banner (if circuit breaker tripped) ── */}
-      {crisisDetected && (
+      {crisisDetected && !isCrisisBannerDismissed && (
         <div className="rounded-2xl border-2 border-rose-500 bg-rose-50 p-5 text-rose-950 dark:bg-rose-950/40 dark:text-rose-100 animate-in fade-in slide-in-from-top-2 duration-300">
-          <div className="flex items-start gap-3">
-            <ShieldAlert className="size-6 text-rose-600 shrink-0 mt-0.5" />
-            <div className="space-y-2 flex-1">
-              <h2 className="font-bold text-base text-rose-900 dark:text-rose-200">
-                Immediate Crisis Support is Available 24/7
-              </h2>
-              <p className="text-sm leading-relaxed text-rose-800 dark:text-rose-300">
-                You do not have to carry this alone. Please reach out to compassionate professionals right now:
-              </p>
-              <div className="flex flex-wrap gap-2 pt-1">
-                <Button asChild size="sm" className="bg-rose-600 hover:bg-rose-700 text-white gap-2">
-                  <a href="tel:988">
-                    <PhoneCall className="size-3.5" />
-                    Call or Text 988 (USA Suicide & Crisis Lifeline)
-                  </a>
-                </Button>
-                <Button asChild size="sm" variant="outline" className="border-rose-400 text-rose-900 dark:text-rose-100 gap-2">
-                  <a href="tel:14416">
-                    <PhoneCall className="size-3.5" />
-                    Tele-MANAS (14416 - India)
-                  </a>
-                </Button>
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-3 flex-1">
+              <ShieldAlert className="size-6 text-rose-600 shrink-0 mt-0.5" />
+              <div className="space-y-2 flex-1">
+                <h2 className="font-bold text-base text-rose-900 dark:text-rose-200">
+                  Immediate Crisis Support is Available 24/7
+                </h2>
+                <p className="text-sm leading-relaxed text-rose-800 dark:text-rose-300">
+                  You do not have to carry this alone. Please reach out to compassionate professionals right now:
+                </p>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <Button asChild size="sm" className="bg-rose-600 hover:bg-rose-700 text-white gap-2">
+                    <a href="tel:988">
+                      <PhoneCall className="size-3.5" />
+                      Call or Text 988 (USA Suicide & Crisis Lifeline)
+                    </a>
+                  </Button>
+                  <Button asChild size="sm" variant="outline" className="border-rose-400 text-rose-900 dark:text-rose-100 gap-2">
+                    <a href="tel:14416">
+                      <PhoneCall className="size-3.5" />
+                      Tele-MANAS (14416 - India)
+                    </a>
+                  </Button>
+                </div>
               </div>
             </div>
+            <button
+              type="button"
+              onClick={() => setIsCrisisBannerDismissed(true)}
+              title="Hide crisis banner"
+              className="text-rose-600 hover:text-rose-900 dark:text-rose-400 dark:hover:text-rose-200 p-1 rounded-lg hover:bg-rose-200/50 transition-colors shrink-0"
+            >
+              <X className="size-4" />
+            </button>
           </div>
         </div>
       )}
@@ -293,7 +363,15 @@ export function WellbeingCompanionChat({
                     : "bg-muted/70 text-foreground rounded-tl-xs border"
                 }`}
               >
-                <p className="whitespace-pre-wrap">{msg.text || (isStreaming && <Loader2 className="size-4 animate-spin opacity-50" />)}</p>
+                {msg.sender === "agent" ? (
+                  msg.text ? (
+                    <Markdown content={msg.text} className="space-y-1.5 [&_p]:my-1 [&_ul]:my-1 [&_ul]:pl-5 [&_ol]:my-1 [&_ol]:pl-5 [&_li]:my-0.5" />
+                  ) : (
+                    isStreaming && <Loader2 className="size-4 animate-spin opacity-50" />
+                  )
+                ) : (
+                  <p className="whitespace-pre-wrap">{msg.text}</p>
+                )}
                 <span className="block mt-1 text-[10px] opacity-60 text-right">
                   {msg.timestamp}
                 </span>

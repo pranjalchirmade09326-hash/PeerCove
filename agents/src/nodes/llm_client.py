@@ -33,7 +33,7 @@ def invoke_gemini_chat(system_prompt: str, messages: List[Dict[str, Any]], tempe
 
     # 1. Direct Google Gemini REST API (Supports AQ. and AIza keys via header & query param)
     if api_key:
-        for model in ["gemini-flash-lite-latest", "gemini-3.5-flash-lite"]:
+        for model in ["gemini-flash-lite-latest", "gemini-2.5-flash-lite", "gemini-flash-latest"]:
             try:
                 url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
                 headers = {

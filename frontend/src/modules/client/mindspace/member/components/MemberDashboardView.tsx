@@ -31,6 +31,7 @@ import {
   Heart,
   Headphones,
   Lock,
+  Loader2,
   MessageSquare,
   Mic,
   PhoneCall,
@@ -49,7 +50,9 @@ import {
   Video,
   Volume2,
   VolumeX,
+  X,
 } from "lucide-react";
+import { Markdown } from "@/modules/client/shared/components/Markdown";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -281,80 +284,227 @@ export function MemberDashboardView({
     {
       id: "initial-welcome",
       sender: "companion",
-      text: `Hello ${firstName}! I am your Patient Intake Assistant. Please describe what symptoms or health concerns you are experiencing today (such as headaches, neck stiffness, fatigue, anxiety, or sleep disturbances), and I will collect your details to set up an appointment with the appropriate doctor.`,
+      text: `Hello ${firstName}! I am your MindSpace Wellbeing & Intake Companion. Whether you'd like to reflect on your thoughts, talk through symptoms or stress, or schedule a consultation with our doctors (like Dr. Vikram Sen) or peer listeners, I am here to support you. How are you feeling today?`,
       timestamp: "Just now",
     },
   ]);
   const [chatInput, setChatInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [crisisDetected, setCrisisDetected] = useState(false);
+  const [isCrisisBannerDismissed, setIsCrisisBannerDismissed] = useState(false);
   const [chatSessionId, setChatSessionId] = useState<string | null>(null);
 
   const threadEndRef = useRef<HTMLDivElement>(null);
 
   // ── Voice Input (Speech-to-Text) & Output (Text-to-Speech) ──
   const [isRecordingVoice, setIsRecordingVoice] = useState(false);
+  const [isTranscribingVoice, setIsTranscribingVoice] = useState(false);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
   const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
   const [autoVoiceReply, setAutoVoiceReply] = useState(false);
+
   const isVoiceInputRef = useRef(false);
   const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
-  const recognitionRef = useRef<any>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const toggleVoiceRecording = () => {
+  // Clean up all audio capture hardware tracks and timers
+  const cleanupAudioRecording = useCallback(() => {
+    if (recordingTimerRef.current) {
+      clearInterval(recordingTimerRef.current);
+      recordingTimerRef.current = null;
+    }
+    if (mediaStreamRef.current) {
+      try {
+        mediaStreamRef.current.getTracks().forEach((track) => {
+          track.stop();
+        });
+      } catch (err) {
+        console.warn("Error stopping audio tracks:", err);
+      }
+      mediaStreamRef.current = null;
+    }
+    mediaRecorderRef.current = null;
+    audioChunksRef.current = [];
+    setRecordingSeconds(0);
+  }, []);
+
+  // Teardown audio on component unmount
+  useEffect(() => {
+    return () => {
+      cleanupAudioRecording();
+      if (audioPlayerRef.current) {
+        audioPlayerRef.current.pause();
+        audioPlayerRef.current = null;
+      }
+      if (typeof window !== "undefined" && window.speechSynthesis) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, [cleanupAudioRecording]);
+
+  const toggleVoiceRecording = async () => {
     if (typeof window === "undefined") return;
-    const SpeechRecognition =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
 
-    if (!SpeechRecognition) {
-      toast.error("Voice input is not supported in this browser. Please use Chrome or Edge.");
+    if (isTranscribingVoice) {
+      toast.info("Transcribing audio, please wait a moment...");
       return;
     }
 
+    // 1. If currently recording, STOP recording and trigger transcription
     if (isRecordingVoice) {
-      try {
-        recognitionRef.current?.stop();
-      } catch {}
       setIsRecordingVoice(false);
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current);
+        recordingTimerRef.current = null;
+      }
+
+      const recorder = mediaRecorderRef.current;
+      if (recorder && recorder.state !== "inactive") {
+        try {
+          recorder.stop();
+        } catch (err) {
+          console.warn("Error stopping MediaRecorder:", err);
+          cleanupAudioRecording();
+        }
+      } else {
+        cleanupAudioRecording();
+      }
+      return;
+    }
+
+    // 2. START recording using standard getUserMedia + MediaRecorder
+    if (!navigator.mediaDevices?.getUserMedia) {
+      toast.error("Audio recording is not supported in this browser.");
       return;
     }
 
     try {
-      const recognition = new SpeechRecognition();
-      recognition.continuous = false;
-      recognition.interimResults = true;
-      recognition.lang = "hi-IN";
+      cleanupAudioRecording();
 
-      recognition.onstart = () => {
-        setIsRecordingVoice(true);
-        isVoiceInputRef.current = true;
-        toast.info("Listening... speak your mind!");
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
+
+      mediaStreamRef.current = stream;
+      audioChunksRef.current = [];
+
+      // Determine best supported browser audio container
+      let mimeType = "";
+      if (typeof MediaRecorder !== "undefined" && typeof MediaRecorder.isTypeSupported === "function") {
+        if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
+          mimeType = "audio/webm;codecs=opus";
+        } else if (MediaRecorder.isTypeSupported("audio/webm")) {
+          mimeType = "audio/webm";
+        } else if (MediaRecorder.isTypeSupported("audio/ogg;codecs=opus")) {
+          mimeType = "audio/ogg;codecs=opus";
+        } else if (MediaRecorder.isTypeSupported("audio/mp4")) {
+          mimeType = "audio/mp4";
+        }
+      }
+
+      const options: MediaRecorderOptions = mimeType ? { mimeType } : {};
+      const recorder = new MediaRecorder(stream, options);
+      mediaRecorderRef.current = recorder;
+
+      recorder.ondataavailable = (event: BlobEvent) => {
+        if (event.data && event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
       };
 
-      recognition.onresult = (event: any) => {
-        let transcript = "";
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          transcript += event.results[i][0].transcript;
+      recorder.onerror = (event: any) => {
+        console.error("MediaRecorder error:", event);
+        toast.error("Audio recording encountered an error.");
+        cleanupAudioRecording();
+        setIsRecordingVoice(false);
+      };
+
+      recorder.onstop = async () => {
+        // Collect recorded chunks and release microphone hardware immediately
+        const chunks = [...audioChunksRef.current];
+        const recordedMime = recorder.mimeType || mimeType || "audio/webm";
+        cleanupAudioRecording();
+
+        if (!chunks.length) {
+          toast.error("No audio was recorded.");
+          return;
         }
-        if (transcript) {
+
+        const audioBlob = new Blob(chunks, { type: recordedMime });
+        if (audioBlob.size < 200) {
+          toast.info("Audio was too short. Please speak your reflection clearly.");
+          return;
+        }
+
+        setIsTranscribingVoice(true);
+        try {
+          const formData = new FormData();
+          formData.append("file", audioBlob, "speech.webm");
+
+          const res = await fetch("/api/voice-transcribe", {
+            method: "POST",
+            body: formData,
+          });
+
+          if (!res.ok) {
+            throw new Error(`Transcription failed with status ${res.status}`);
+          }
+
+          const data = await res.json();
+          const transcript = (data.transcript || "").trim();
+
+          if (!transcript) {
+            toast.info("No speech detected. Please try speaking again.");
+            return;
+          }
+
+          // Auto-submit into LangGraph & Safety Sentinel pipeline and auto-play TTS response
           isVoiceInputRef.current = true;
-          setChatInput((prev) => (prev ? `${prev} ${transcript}` : transcript));
+          handleSendChatMessage(transcript);
+        } catch (err: any) {
+          console.error("Transcription error:", err);
+          toast.error("Could not transcribe speech. Please try typing your message.");
+        } finally {
+          setIsTranscribingVoice(false);
         }
       };
 
-      recognition.onerror = (event: any) => {
-        console.warn("Speech recognition error:", event.error);
-        setIsRecordingVoice(false);
-      };
+      // Start recording with 250ms chunk slicing
+      recorder.start(250);
+      setIsRecordingVoice(true);
+      setRecordingSeconds(0);
 
-      recognition.onend = () => {
-        setIsRecordingVoice(false);
-      };
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingSeconds((prev) => {
+          if (prev >= 60) {
+            if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+              mediaRecorderRef.current.stop();
+            }
+            return 60;
+          }
+          return prev + 1;
+        });
+      }, 1000);
 
-      recognitionRef.current = recognition;
-      recognition.start();
-    } catch (err) {
-      console.error("SpeechRecognition start error:", err);
+      toast.info("Listening... Speak your mind and click the mic again when finished.");
+    } catch (err: any) {
+      cleanupAudioRecording();
       setIsRecordingVoice(false);
+      if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
+        toast.error("Microphone access was denied. Please allow microphone permissions in your browser.");
+      } else if (err.name === "NotFoundError" || err.name === "DevicesNotFoundError") {
+        toast.error("No microphone device was detected.");
+      } else {
+        console.error("Microphone access error:", err);
+        toast.error("Could not access microphone: " + (err.message || "Unknown error"));
+      }
     }
   };
 
@@ -475,6 +625,7 @@ export function MemberDashboardView({
     const hasCrisis = CRISIS_TRIGGER_KEYWORDS.some((kw) => lower.includes(kw));
     if (hasCrisis) {
       setCrisisDetected(true);
+      setIsCrisisBannerDismissed(false);
       return true;
     }
     return false;
@@ -551,12 +702,43 @@ export function MemberDashboardView({
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
         let accumulated = "";
+        let leftover = "";
 
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
           const chunk = decoder.decode(value, { stream: true });
-          accumulated += chunk;
+          const lines = (leftover + chunk).split("\n");
+          leftover = lines.pop() ?? "";
+
+          for (const rawLine of lines) {
+            const trimmed = rawLine.trim();
+            if (!trimmed || trimmed.startsWith(":") || trimmed === "data: [DONE]") continue;
+
+            let line = trimmed;
+            if (/^data:\s*/i.test(line)) {
+              line = line.replace(/^data:\s*/i, "").trim();
+            }
+            if (!line || line === "[DONE]") continue;
+
+            try {
+              const parsed = JSON.parse(line);
+              if (parsed.type === "text_delta" && parsed.data?.content) {
+                accumulated += parsed.data.content;
+              } else if (parsed.type === "agent_end") {
+                if (parsed.session_id && !chatSessionId) {
+                  setChatSessionId(parsed.session_id);
+                }
+              } else if (typeof parsed.content === "string") {
+                accumulated += parsed.content;
+              }
+            } catch {
+              // If not JSON and not SSE meta, append as plain text
+              if (!line.startsWith("{") && !line.startsWith("data:") && !line.includes('"type"')) {
+                accumulated += line;
+              }
+            }
+          }
 
           if (checkSafetyCircuitBreaker(accumulated)) {
             reader.cancel();
@@ -566,6 +748,29 @@ export function MemberDashboardView({
           setChatMessages((prev) =>
             prev.map((m) => (m.id === agentMsgId ? { ...m, text: accumulated } : m))
           );
+        }
+
+        // Process leftover buffer if present
+        if (leftover.trim()) {
+          let line = leftover.trim();
+          if (/^data:\s*/i.test(line)) {
+            line = line.replace(/^data:\s*/i, "").trim();
+          }
+          if (line && line !== "[DONE]") {
+            try {
+              const parsed = JSON.parse(line);
+              if (parsed.type === "text_delta" && parsed.data?.content) {
+                accumulated += parsed.data.content;
+              }
+            } catch {
+              if (!line.startsWith("{") && !line.startsWith("data:") && !line.includes('"type"')) {
+                accumulated += line;
+              }
+            }
+            setChatMessages((prev) =>
+              prev.map((m) => (m.id === agentMsgId ? { ...m, text: accumulated } : m))
+            );
+          }
         }
 
         if ((triggeredByVoice || autoVoiceReply) && accumulated.trim()) {
@@ -623,6 +828,7 @@ export function MemberDashboardView({
 
   const handleStartNewChat = () => {
     setCrisisDetected(false);
+    setIsCrisisBannerDismissed(false);
     setChatSessionId(`session-${Date.now()}`);
     setChatMessages([
       {
@@ -874,14 +1080,14 @@ export function MemberDashboardView({
                 <div>
                   <div className="flex items-center gap-2">
                     <h2 className="text-sm font-bold text-foreground">
-                      Patient Intake Chatbot
+                      Member Sanctuary AI
                     </h2>
                     <Badge variant="outline" className="text-[10px] py-0 px-2 rounded-full border-emerald-400 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
-                      Clinical Intake AI
+                      Member Companion AI
                     </Badge>
                   </div>
                   <p className="text-[10px] sm:text-[11px] text-muted-foreground">
-                    Symptom Triage & Doctor Match • Online & Ready to Listen
+                    Wellbeing Support & Care Scheduling • Online & Ready to Listen
                   </p>
                 </div>
               </div>
@@ -928,36 +1134,46 @@ export function MemberDashboardView({
           {activeCenterView === "chat" && (
             <div className="flex-1 flex flex-col justify-between p-4 sm:p-5 overflow-hidden min-h-0">
               {/* Emergency Banner if Safety Circuit Breaker Tripped */}
-              {crisisDetected && (
+              {crisisDetected && !isCrisisBannerDismissed && (
                 <div className="mb-3 rounded-2xl border-2 border-rose-500 bg-rose-50 p-3.5 text-rose-950 dark:bg-rose-950/40 dark:text-rose-100 animate-in fade-in duration-300 shrink-0">
-                  <div className="flex items-start gap-3">
-                    <ShieldAlert className="size-5 text-rose-600 shrink-0 mt-0.5" />
-                    <div className="space-y-1.5 flex-1">
-                      <h3 className="font-bold text-sm text-rose-900 dark:text-rose-200">
-                        Immediate Human Crisis Support is Standing By (24/7)
-                      </h3>
-                      <p className="text-xs text-rose-800 dark:text-rose-300">
-                        Your life matters deeply. Please connect with our trained emergency responders right away:
-                      </p>
-                      <div className="flex flex-wrap gap-2 pt-1">
-                        <Button
-                          size="sm"
-                          onClick={() => setIsCrisisModalOpen(true)}
-                          className="rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs h-8"
-                        >
-                          <PhoneCall className="size-3 mr-1" />
-                          Tele-MANAS: 14416 / +91 9999 666 555
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setIsBookModalOpen(true)}
-                          className="rounded-xl border-rose-300 text-rose-900 dark:text-rose-200 text-xs h-8"
-                        >
-                          Connect with Volunteer Listener
-                        </Button>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3">
+                      <ShieldAlert className="size-5 text-rose-600 shrink-0 mt-0.5" />
+                      <div className="space-y-1.5 flex-1">
+                        <h3 className="font-bold text-sm text-rose-900 dark:text-rose-200">
+                          Immediate Human Crisis Support is Standing By (24/7)
+                        </h3>
+                        <p className="text-xs text-rose-800 dark:text-rose-300">
+                          Your life matters deeply. Please connect with our trained emergency responders right away:
+                        </p>
+                        <div className="flex flex-wrap gap-2 pt-1">
+                          <Button
+                            size="sm"
+                            onClick={() => setIsCrisisModalOpen(true)}
+                            className="rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs h-8"
+                          >
+                            <PhoneCall className="size-3 mr-1" />
+                            Tele-MANAS: 14416 / +91 9999 666 555
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setIsBookModalOpen(true)}
+                            className="rounded-xl border-rose-300 text-rose-900 dark:text-rose-200 text-xs h-8"
+                          >
+                            Connect with Volunteer Listener
+                          </Button>
+                        </div>
                       </div>
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsCrisisBannerDismissed(true)}
+                      title="Hide crisis banner"
+                      className="text-rose-600 hover:text-rose-900 dark:text-rose-400 dark:hover:text-rose-200 p-1 rounded-lg hover:bg-rose-200/50 transition-colors shrink-0"
+                    >
+                      <X className="size-4" />
+                    </button>
                   </div>
                 </div>
               )}
@@ -971,33 +1187,33 @@ export function MemberDashboardView({
                       <Sparkles className="size-7" />
                     </div>
                     <h2 className="text-xl sm:text-2xl font-bold font-serif text-foreground">
-                      Patient Intake Chatbot
+                      Member Sanctuary Companion
                     </h2>
                     <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-md mx-auto">
-                      Please enter your symptoms below. The chatbot collects all your health details and sets up an appointment with the appropriate doctor based on your symptoms.
+                      Welcome to your safe sanctuary. Share how you are feeling, talk through physical or emotional symptoms, and connect directly with verified peer listeners or doctors.
                     </p>
 
                     {/* 4 Clinical Starter Prompt Cards matching video */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-3 text-left">
                       {[
                         {
-                          title: "🤕 Persistent headache & neck tension",
-                          desc: "3-day headache, stiffness & fatigue",
+                          title: "🤕 Persistent headache & tension",
+                          desc: "3-day headache, neck stiffness & fatigue",
                           prompt: "I've had a persistent tension headache for the past 3 days with neck stiffness, fatigue, and feeling anxious.",
                         },
                         {
-                          title: "⚡ Severe anxiety & exhaustion",
+                          title: "⚡ Severe anxiety & burnout",
                           desc: "Chronic stress, palpitations & overwhelm",
                           prompt: "I am experiencing severe situational anxiety, heart palpitations, and trouble concentrating at work.",
                         },
                         {
-                          title: "😴 Insomnia & sleep disruption",
+                          title: "😴 Sleep issues & restlessness",
                           desc: "Disrupted sleep cycle & morning fatigue",
                           prompt: "I've been waking up multiple times every night with racing thoughts and feeling exhausted during the day.",
                         },
                         {
-                          title: "📅 Book Doctor Appointment",
-                          desc: "May 11th • In-Person or Virtual Meet",
+                          title: "📅 Schedule Doctor / Peer Session",
+                          desc: "May 11th with Dr. Vikram Sen or Peer Match",
                           prompt: "I'd like to book an appointment with Dr. Vikram Sen for May 11th.",
                         },
                       ].map((card, i) => (
@@ -1026,65 +1242,75 @@ export function MemberDashboardView({
                 )}
 
                 {/* Message Stream */}
-                {chatMessages.map((msg) => (
-                  <div
-                    key={msg.id}
-                    className={`flex gap-3 ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
-                  >
-                    {msg.sender === "companion" && (
-                      <div className="size-8 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-600 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
-                        <Sparkles className="size-4" />
-                      </div>
-                    )}
+                {chatMessages.map((msg) => {
+                  if (msg.sender === "companion" && !msg.text && isStreaming) {
+                    return null;
+                  }
+                  return (
                     <div
-                      className={`max-w-[82%] sm:max-w-[75%] rounded-3xl p-4 text-xs sm:text-sm leading-relaxed ${
-                        msg.sender === "user"
-                          ? "bg-[#236B54] text-white rounded-br-sm shadow-xs"
-                          : "bg-muted/70 text-foreground border border-border/50 rounded-bl-sm"
-                      }`}
+                      key={msg.id}
+                      className={`flex gap-3 ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
                     >
-                      <div className="whitespace-pre-wrap">{msg.text}</div>
-
-                      {/* Direct In-Chat Action to Book Appointment matching video */}
-                      {msg.sender === "companion" && (msg.text.includes("Book") || msg.text.includes("appointment") || msg.text.includes("Appointment") || msg.text.includes("Vikram Sen")) && (
-                        <div className="pt-3">
-                          <Button
-                            size="sm"
-                            onClick={() => setIsBookModalOpen(true)}
-                            className="rounded-xl bg-[#236B54] hover:bg-[#1a5240] text-white font-semibold text-xs h-9 px-4 gap-2 shadow-md w-full sm:w-auto"
-                          >
-                            <Calendar className="size-4" />
-                            <span>Book Appointment with Doctor (May 11th)</span>
-                            <ArrowRight className="size-3.5" />
-                          </Button>
+                      {msg.sender === "companion" && (
+                        <div className="size-8 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-600 text-white flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
+                          <Sparkles className="size-4" />
                         </div>
                       )}
-                      <div className={`flex items-center justify-between text-[10px] mt-1.5 ${msg.sender === "user" ? "text-emerald-200" : "text-muted-foreground"}`}>
-                        <span>{msg.timestamp}</span>
-                        {msg.sender === "companion" && msg.text && (
-                          <button
-                            type="button"
-                            onClick={() => playSpeechAudio(msg.text, msg.id)}
-                            title={speakingMessageId === msg.id ? "Stop voice audio" : "Listen to audio response"}
-                            className="p-1 rounded-md hover:bg-muted/80 transition-colors opacity-70 hover:opacity-100 flex items-center gap-1 ml-2"
-                          >
-                            {speakingMessageId === msg.id ? (
-                              <>
-                                <VolumeX className="size-3 text-red-500 animate-pulse" />
-                                <span className="text-[9px] text-red-500 font-medium">Stop</span>
-                              </>
-                            ) : (
-                              <>
-                                <Volume2 className="size-3 text-emerald-600 dark:text-emerald-400" />
-                                <span className="text-[9px]">Listen</span>
-                              </>
-                            )}
-                          </button>
+                      <div
+                        className={`max-w-[82%] sm:max-w-[75%] rounded-3xl p-4 text-xs sm:text-sm leading-relaxed ${
+                          msg.sender === "user"
+                            ? "bg-[#236B54] text-white rounded-br-sm shadow-xs"
+                            : "bg-muted/70 text-foreground border border-border/50 rounded-bl-sm"
+                        }`}
+                      >
+                        {msg.sender === "companion" ? (
+                          <Markdown content={msg.text} className="text-xs sm:text-sm leading-relaxed space-y-2 [&_p]:my-1.5 [&_ul]:my-1.5 [&_ul]:pl-5 [&_ol]:my-1.5 [&_ol]:pl-5 [&_li]:my-0.5" />
+                        ) : (
+                          <div className="whitespace-pre-wrap">{msg.text}</div>
                         )}
+
+                        {/* Direct In-Chat Action to Book Appointment matching video */}
+                        {msg.sender === "companion" && (msg.text.includes("Book") || msg.text.includes("appointment") || msg.text.includes("Appointment") || msg.text.includes("Vikram Sen")) && (
+                          <div className="pt-3">
+                            <Button
+                              size="sm"
+                              onClick={() => setIsBookModalOpen(true)}
+                              className="rounded-xl bg-[#236B54] hover:bg-[#1a5240] text-white font-semibold text-xs h-9 px-4 gap-2 shadow-md w-full sm:w-auto"
+                            >
+                              <Calendar className="size-4" />
+                              <span>Book Appointment with Doctor (May 11th)</span>
+                              <ArrowRight className="size-3.5" />
+                            </Button>
+                          </div>
+                        )}
+                        )}
+                        <div className={`flex items-center justify-between text-[10px] mt-1.5 ${msg.sender === "user" ? "text-emerald-200" : "text-muted-foreground"}`}>
+                          <span>{msg.timestamp}</span>
+                          {msg.sender === "companion" && msg.text && (
+                            <button
+                              type="button"
+                              onClick={() => playSpeechAudio(msg.text, msg.id)}
+                              title={speakingMessageId === msg.id ? "Stop voice audio" : "Listen to audio response"}
+                              className="p-1 rounded-md hover:bg-muted/80 transition-colors opacity-70 hover:opacity-100 flex items-center gap-1 ml-2"
+                            >
+                              {speakingMessageId === msg.id ? (
+                                <>
+                                  <VolumeX className="size-3 text-red-500 animate-pulse" />
+                                  <span className="text-[9px] text-red-500 font-medium">Stop</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Volume2 className="size-3 text-emerald-600 dark:text-emerald-400" />
+                                  <span className="text-[9px]">Listen</span>
+                                </>
+                              )}
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
 
                 {isStreaming && (
                   <div className="flex gap-3 items-center text-xs text-muted-foreground">
@@ -1104,14 +1330,27 @@ export function MemberDashboardView({
                   <button
                     type="button"
                     onClick={toggleVoiceRecording}
-                    title={isRecordingVoice ? "Stop voice listening" : "Click to speak (Voice-to-Text)"}
+                    disabled={isTranscribingVoice}
+                    title={
+                      isTranscribingVoice
+                        ? "Transcribing your speech into text..."
+                        : isRecordingVoice
+                        ? `Listening (${recordingSeconds}s)... Click to finish and send`
+                        : "Click to speak (Voice-to-Text)"
+                    }
                     className={`size-9 rounded-2xl flex items-center justify-center shrink-0 transition-all ${
                       isRecordingVoice
-                        ? "bg-red-500 text-white animate-pulse shadow-md"
+                        ? "bg-red-500 text-white animate-pulse shadow-md ring-2 ring-red-400"
+                        : isTranscribingVoice
+                        ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 cursor-wait"
                         : "bg-muted text-muted-foreground hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
                     }`}
                   >
-                    <Mic className={`size-4 ${isRecordingVoice ? "animate-bounce" : ""}`} />
+                    {isTranscribingVoice ? (
+                      <Loader2 className="size-4 animate-spin text-emerald-600" />
+                    ) : (
+                      <Mic className={`size-4 ${isRecordingVoice ? "animate-bounce" : ""}`} />
+                    )}
                   </button>
 
                   <Link
@@ -1150,8 +1389,14 @@ export function MemberDashboardView({
                         handleSendChatMessage();
                       }
                     }}
-                    placeholder="Message your Sanctuary Companion... (Press Enter to send)"
-                    disabled={isStreaming}
+                    placeholder={
+                      isRecordingVoice
+                        ? `Listening to your voice (${recordingSeconds}s)... Click mic to send`
+                        : isTranscribingVoice
+                        ? "Transcribing your reflection..."
+                        : "Message your Sanctuary Companion... (Press Enter to send)"
+                    }
+                    disabled={isStreaming || isRecordingVoice || isTranscribingVoice}
                     className="border-0 focus-visible:ring-0 shadow-none text-xs sm:text-sm h-10 px-2 bg-transparent"
                   />
 

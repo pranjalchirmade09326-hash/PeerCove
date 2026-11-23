@@ -673,6 +673,7 @@ export function VoiceIntakeTest({
             text?: string;
             audio?: string;
             message?: string;
+            is_crisis?: boolean;
             /** "status" — agent-reported phase: "greeting" | "ready" | "thinking". */
             status?: string;
           };
@@ -761,6 +762,9 @@ export function VoiceIntakeTest({
 
           if (data.type === "text" && data.text) {
             console.log("[VoiceIntakeTest] text (agent):", data.text.slice(0, 100));
+            if (data.is_crisis) {
+              console.warn("[VoiceIntakeTest] Crisis assistance active for voice turn");
+            }
             flushPendingUserTranscript();
             pendingAssistantTextRef.current = "";
             addMessage({

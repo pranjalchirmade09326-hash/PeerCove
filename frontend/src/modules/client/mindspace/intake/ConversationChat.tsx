@@ -14,6 +14,7 @@
 
 import { useEffect, useRef } from "react";
 import { Bot, MessageSquareIcon } from "lucide-react";
+import { Markdown } from "@/modules/client/shared/components/Markdown";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -66,8 +67,10 @@ function Bubble({
         </div>
       )}
       <div
-        className={`max-w-[80%] whitespace-pre-wrap rounded-2xl px-4 py-2 text-sm ${
-          isUser ? "bg-primary text-primary-foreground" : "bg-secondary"
+        className={`max-w-[80%] rounded-2xl px-4 py-2 text-sm ${
+          isUser
+            ? "bg-primary text-primary-foreground whitespace-pre-wrap"
+            : "bg-secondary [&_p]:my-1.5 [&_ul]:my-1.5 [&_ul]:pl-5 [&_ol]:my-1.5 [&_ol]:pl-5 [&_li]:my-0.5"
         }`}
       >
         {children}
@@ -130,7 +133,11 @@ export function ConversationChat({
           <>
             {messages.map((message) => (
               <Bubble key={message.key} from={message.from} userName={userName}>
-                {message.content}
+                {message.from === "assistant" ? (
+                  <Markdown content={message.content} />
+                ) : (
+                  message.content
+                )}
               </Bubble>
             ))}
 
@@ -145,7 +152,11 @@ export function ConversationChat({
 
             {liveTranscript && liveRole && (
               <Bubble from={liveRole} userName={userName}>
-                {liveTranscript}
+                {liveRole === "assistant" ? (
+                  <Markdown content={liveTranscript} />
+                ) : (
+                  liveTranscript
+                )}
               </Bubble>
             )}
           </>

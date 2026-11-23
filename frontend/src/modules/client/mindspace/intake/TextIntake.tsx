@@ -1,4 +1,4 @@
-﻿/**
+/**
  * TextIntake — patient-facing text chat intake component.
  *
  * Layer: client / telemedicine / patient / intake
@@ -87,15 +87,26 @@ export function TextIntake({
       token: string | null;
       done: boolean;
       sessionId?: string;
+      isCrisis?: boolean;
+      activeTier?: number;
+      errorMessage?: string;
       conversationEnded?: boolean;
     } => {
-      const line = raw.startsWith("data:") ? raw.slice(5).trim() : raw.trim();
+      const trimmed = raw.trim();
+      if (!trimmed || trimmed.startsWith(":")) return { token: null, done: false };
+
+      // Strip SSE "data:" prefix safely
+      let line = trimmed;
+      if (/^data:\s*/i.test(line)) {
+        line = line.replace(/^data:\s*/i, "").trim();
+      }
+
       if (!line || line === "[DONE]")
         return { token: null, done: line === "[DONE]" };
       if (
-        raw.startsWith("event:") ||
-        raw.startsWith("id:") ||
-        raw.startsWith("retry:")
+        trimmed.startsWith("event:") ||
+        trimmed.startsWith("id:") ||
+        trimmed.startsWith("retry:")
       )
         return { token: null, done: false };
 
@@ -105,7 +116,19 @@ export function TextIntake({
         if (type === "text_delta")
           return { token: data?.content ?? "", done: false };
         if (type === "agent_end")
-          return { token: null, done: true, sessionId: parsed.session_id };
+          return {
+            token: null,
+            done: true,
+            sessionId: parsed.session_id,
+            isCrisis: Boolean(parsed.is_crisis),
+            activeTier: typeof parsed.active_tier === "number" ? parsed.active_tier : undefined,
+          };
+        if (type === "error")
+          return {
+            token: null,
+            done: true,
+            errorMessage: parsed.error || parsed.message || "An unexpected error occurred.",
+          };
         if (type === "text_complete") return { token: null, done: false };
         /*
          * status_end — the agent itself has decided the intake is over
@@ -140,6 +163,16 @@ export function TextIntake({
         if (typeof parsed === "string") return { token: parsed, done: false };
         return { token: null, done: false };
       } catch {
+        // If line looks like JSON or SSE protocol metadata, never leak it into the chat bubble
+        if (
+          line.startsWith("{") ||
+          line.startsWith("[") ||
+          line.startsWith("data:") ||
+          line.includes('"type"') ||
+          line.includes('"text_delta"')
+        ) {
+          return { token: null, done: false };
+        }
         return { token: line, done: false };
       }
     },
@@ -224,7 +257,7 @@ export function TextIntake({
         for (const line of lines) {
           if (!line.trim()) continue;
           const result = parseChunkLine(line);
-          // Also capture session id from the agent_end chunk
+          // Also capture session id and metadata from the agent_end chunk
           if (result.sessionId) {
             console.log(
               "[TextIntake] session_id from agent (agent_end chunk):",
@@ -233,6 +266,12 @@ export function TextIntake({
               sessionId,
             );
             setSessionId(result.sessionId);
+          }
+          if (result.isCrisis) {
+            console.warn("[TextIntake] Crisis response received from agent.");
+          }
+          if (result.errorMessage) {
+            toast.error(result.errorMessage);
           }
           if (result.token !== null) appendToken(result.token);
           if (result.conversationEnded) conversationEndedThisTurn = true;
@@ -249,6 +288,12 @@ export function TextIntake({
             sessionId,
           );
           setSessionId(result.sessionId);
+        }
+        if (result.isCrisis) {
+          console.warn("[TextIntake] Crisis response received from agent.");
+        }
+        if (result.errorMessage) {
+          toast.error(result.errorMessage);
         }
         if (result.token !== null) appendToken(result.token);
         if (result.conversationEnded) conversationEndedThisTurn = true;

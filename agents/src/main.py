@@ -5,6 +5,7 @@ Exposes HTTP, streaming, and voice endpoints for Next.js frontend consumption.
 import os
 import sys
 import asyncio
+import logging
 from pathlib import Path
 
 # Add project root to sys.path
@@ -14,6 +15,8 @@ sys.path.insert(0, str(agents_root))
 
 import json
 import io
+import time
+import base64
 import wave
 import struct
 from collections import deque
@@ -21,7 +24,7 @@ from fastapi import FastAPI, HTTPException, Header, Request, Response, WebSocket
 from fastapi.responses import StreamingResponse, PlainTextResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Tuple
 from dotenv import load_dotenv
 
 # Load environment variables from agents/.env
@@ -30,6 +33,7 @@ load_dotenv(agents_root / ".env")
 from src.orchestrator import orchestrator_app
 from src.nodes.voice_service import synthesize_speech, transcribe_audio
 from src.nodes.llm_client import invoke_gemini_chat
+from src.auth import validate_token, validate_token_async, verify_token, AuthenticationError
 
 app = FastAPI(
     title="MindSpace Multi-Agent Service",
@@ -115,6 +119,8 @@ async def chat_endpoint(req: ChatRequest, authorization: Optional[str] = Header(
         "matched_listener": final_state.get("matched_listener_name")
     }
 
+logger = logging.getLogger("mindspace.agents")
+
 # Global in-memory multi-turn session cache
 SESSION_MEMORIES: Dict[str, List[Dict[str, str]]] = {}
 
@@ -122,7 +128,8 @@ SESSION_MEMORIES: Dict[str, List[Dict[str, str]]] = {}
 async def intake_stream_endpoint(req: IntakeRequest, authorization: Optional[str] = Header(None)):
     """
     Direct endpoint for Next.js frontend proxy (INTAKE_AGENT_URL).
-    Supports token streaming back to MemberDashboardView with full multi-turn conversational memory.
+    Supports token streaming back to MemberDashboardView with full multi-turn conversational memory,
+    emitting standards-compliant SSE (text_delta, agent_end, error) chunks matching parseChunkLine().
     """
     token = authorization.replace("Bearer ", "") if authorization else None
     sess_id = req.session_id or f"sess-{int(asyncio.get_event_loop().time() * 1000)}"
@@ -144,27 +151,56 @@ async def intake_stream_endpoint(req: IntakeRequest, authorization: Optional[str
     }
 
     try:
-        final_state = orchestrator_app.invoke(initial_state)
+        # Offload synchronous LangGraph execution to worker thread to avoid blocking the event loop
+        final_state = await asyncio.to_thread(orchestrator_app.invoke, initial_state)
         latest_reply = final_state["messages"][-1]
         reply_content = latest_reply.get("content", "I am holding space for you.")
+        is_crisis = bool(final_state.get("is_crisis", False))
+        active_tier = int(final_state.get("active_tier", 1))
     except Exception as e:
+        logger.error(f"[intake_stream_endpoint] LangGraph orchestration error: {e}", exc_info=True)
         reply_content = "Thank you for sharing. I am here listening to you with empathy and care."
+        is_crisis = False
+        active_tier = 1
 
     # Commit assistant response to session memory so subsequent turns have complete context
     history.append({"role": "assistant", "content": reply_content})
     SESSION_MEMORIES[sess_id] = history[-20:]
 
-    async def token_generator():
-        words = reply_content.split(" ")
-        for i, word in enumerate(words):
-            yield word + (" " if i < len(words) - 1 else "")
-            await asyncio.sleep(0.02)
+    async def sse_generator():
+        try:
+            words = reply_content.split(" ")
+            for i, word in enumerate(words):
+                token_text = word + (" " if i < len(words) - 1 else "")
+                delta_payload = json.dumps({
+                    "type": "text_delta",
+                    "data": {"content": token_text}
+                })
+                yield f"data: {delta_payload}\n\n"
+                await asyncio.sleep(0.02)
+
+            end_payload = json.dumps({
+                "type": "agent_end",
+                "session_id": sess_id,
+                "is_crisis": is_crisis,
+                "active_tier": active_tier
+            })
+            yield f"data: {end_payload}\n\n"
+        except Exception as gen_err:
+            logger.error(f"[intake_stream_endpoint] Generator streaming error: {gen_err}", exc_info=True)
+            err_payload = json.dumps({
+                "type": "error",
+                "error": "A streaming interruption occurred."
+            })
+            yield f"data: {err_payload}\n\n"
 
     return StreamingResponse(
-        token_generator(),
-        media_type="text/plain; charset=utf-8",
+        sse_generator(),
+        media_type="text/event-stream; charset=utf-8",
         headers={
             "X-Session-Id": sess_id,
+            "X-Is-Crisis": str(is_crisis).lower(),
+            "X-Active-Tier": str(active_tier),
             "Cache-Control": "no-cache",
             "Connection": "keep-alive"
         }
@@ -181,10 +217,39 @@ async def voice_synthesize_endpoint(req: VoiceSynthesizeRequest):
     return result
 
 @app.post("/api/v1/voice/transcribe")
-async def voice_transcribe_endpoint(request: Request):
-    """Transcribes user spoken voice audio into text using Sarvam STT."""
-    audio_bytes = await request.body()
-    result = await transcribe_audio(audio_bytes)
+async def voice_transcribe_endpoint(request: Request, authorization: Optional[str] = Header(None)):
+    """
+    Transcribes user spoken voice audio into text using Sarvam STT with Google Gemini multimodal fallback.
+    Accepts both multipart/form-data and raw binary audio bodies with arbitrary audio/webm, audio/wav, or audio/ogg MIME types.
+    """
+    if authorization and authorization.strip():
+        token = authorization.replace("Bearer ", "").strip()
+        try:
+            valid, member_id, _ = await validate_token_async(token)
+            if not valid:
+                raise HTTPException(status_code=401, detail="Invalid or expired authentication token")
+        except AuthenticationError as e:
+            raise HTTPException(status_code=401, detail=str(e))
+
+    content_type = request.headers.get("content-type", "")
+    audio_bytes = b""
+    mime_type = "audio/webm"
+
+    if "multipart/form-data" in content_type:
+        form = await request.form()
+        uploaded_file = form.get("file")
+        if uploaded_file and hasattr(uploaded_file, "read"):
+            audio_bytes = await uploaded_file.read()
+            mime_type = getattr(uploaded_file, "content_type", "audio/webm") or "audio/webm"
+    else:
+        audio_bytes = await request.body()
+        if content_type:
+            mime_type = content_type.split(";")[0].strip()
+
+    if not audio_bytes:
+        return {"status": "empty", "transcript": ""}
+
+    result = await transcribe_audio(audio_bytes, mime_type=mime_type)
     return result
 
 def pcm16_to_wav(pcm_bytes: bytes, sample_rate: int = 16000, channels: int = 1) -> bytes:
@@ -214,16 +279,26 @@ async def voice_websocket_endpoint(websocket: WebSocket):
     Real-time bidirectional WebSocket voice streaming endpoint.
     Communicates directly with VoiceIntakeTest and frontend voice components.
     Features:
+      - Authenticated connection with cryptographic EdDSA JWT validation & session isolation.
+      - Integrated LangGraph orchestration executing Safety Sentinel before generation.
       - Adaptive Voice Activity Detection (VAD) with pre-speech roll buffer.
       - Automatic language detection (Hindi, Hinglish, English) via Sarvam STT (saaras:v3).
-      - Multi-turn conversational memory for empathetic, contextual responses.
-      - Exact audio duration echo protection.
+      - Multi-turn conversational memory with non-blocking async execution.
+      - Crisis voice response synthesis with Tele-MANAS (14416) emergency audio.
     """
+    # 1. Authenticate WebSocket connection
+    token = websocket.query_params.get("token")
+    is_valid, member_id, claims = await validate_token_async(token)
+    if not is_valid:
+        logger.warning("[ws/audio] Unauthorized connection attempt rejected (missing or invalid token)")
+        await websocket.close(code=4401, reason="Unauthorized: Valid authentication token required")
+        return
+
     await websocket.accept()
-    
+    sess_id = f"voice-sess-{int(asyncio.get_event_loop().time() * 1000)}"
     session_history: List[Dict[str, str]] = []
 
-    # 1. Send greeting phase
+    # 2. Send greeting phase
     await websocket.send_json({"type": "status", "status": "greeting"})
     greeting_text = "Namaste. I am your MindSpace Voice Companion. I am here listening to you with care. How are you feeling today?"
     session_history.append({"role": "assistant", "content": greeting_text})
@@ -302,10 +377,10 @@ async def voice_websocket_endpoint(websocket: WebSocket):
                     speech_confirm_frames = 0
                     silence_frames = 0
 
-                    # Transcribe user speech via Sarvam STT with auto-detect (Hindi, Hinglish, English)
-                    stt_result = await transcribe_audio(wav_data, language_code="unknown")
+                    # Transcribe user speech via Sarvam STT with auto-detect (Hindi, Hinglish, English) and Gemini fallback
+                    stt_result = await transcribe_audio(wav_data, mime_type="audio/wav", language_code="unknown")
                     transcript = stt_result.get("transcript", "").strip()
-                    print(f"[ws/audio] Captured user speech: '{transcript}'")
+                    logger.info(f"[ws/audio] Captured user speech: '{transcript}'")
 
                     # Valid speech check: ignore empty, single punctuation, or isolated noise words
                     clean_words = [w for w in transcript.split() if w not in NOISE_TOKENS]
@@ -313,20 +388,44 @@ async def voice_websocket_endpoint(websocket: WebSocket):
                         await websocket.send_json({"type": "transcript", "text": transcript})
                         await websocket.send_json({"type": "status", "status": "thinking"})
 
-                        session_history.append({"role": "user", "content": transcript})
+                        # Construct MindSpaceAgentState according to schema
+                        initial_state = {
+                            "session_id": sess_id,
+                            "member_id": member_id or "member-sanctuary",
+                            "auth_token": token,
+                            "messages": list(session_history) + [{"role": "user", "content": transcript}],
+                            "active_tier": 1,
+                            "is_crisis": False,
+                            "crisis_reason": None,
+                            "matched_listener_name": None,
+                            "next_node": ""
+                        }
 
-                        # Dynamic empathetic response with multi-turn memory
-                        system_prompt = (
-                            "You are MindSpace Voice Companion, a warm, compassionate, and attentive listener. "
-                            "The user is speaking to you. Respond naturally, soothingly, and concisely (1-2 sentences maximum). "
-                            "Always respond in the SAME language the user is speaking (Hindi, Hinglish, or English). "
-                            "Directly address whatever they shared with deep empathy and care. Avoid long lectures or robotic repetition."
-                        )
-                        reply = invoke_gemini_chat(system_prompt, session_history[-8:])
+                        try:
+                            # Execute LangGraph asynchronously via worker thread
+                            final_state = await asyncio.to_thread(orchestrator_app.invoke, initial_state)
+                            latest_reply = final_state["messages"][-1]
+                            reply = latest_reply.get("content", "I am holding space for you.")
+                            is_crisis = bool(final_state.get("is_crisis", False))
+                        except Exception as e:
+                            logger.error(f"[ws/audio] LangGraph execution error: {e}", exc_info=True)
+                            reply = "Thank you for sharing. I am here listening to you with empathy and care."
+                            is_crisis = False
+
+                        session_history.append({"role": "user", "content": transcript})
                         session_history.append({"role": "assistant", "content": reply})
 
+                        # Spoken guidance synthesis (TTS)
+                        spoken_text = reply
+                        if is_crisis:
+                            spoken_text = (
+                                "Please know that immediate support is available. "
+                                "You can call Tele-MANAS at 14416 or dial emergency at 112. "
+                                "We are here with you."
+                            )
+
                         # Synthesize speech via Sarvam TTS (bulbul:v3 @ 24kHz)
-                        tts_result = await synthesize_speech(reply)
+                        tts_result = await synthesize_speech(spoken_text)
                         audio_b64 = tts_result.get("audio_base64")
 
                         # Cooldown calculation
@@ -341,7 +440,8 @@ async def voice_websocket_endpoint(websocket: WebSocket):
                         await websocket.send_json({
                             "type": "text",
                             "text": reply,
-                            "audio": audio_b64
+                            "audio": audio_b64,
+                            "is_crisis": is_crisis
                         })
                         await websocket.send_json({"type": "status", "status": "ready"})
             elif "text" in message and message["text"]:
@@ -352,25 +452,51 @@ async def voice_websocket_endpoint(websocket: WebSocket):
                         await websocket.send_json({"type": "transcript", "text": user_text})
                         await websocket.send_json({"type": "status", "status": "thinking"})
 
+                        initial_state = {
+                            "session_id": sess_id,
+                            "member_id": member_id or "member-sanctuary",
+                            "auth_token": token,
+                            "messages": list(session_history) + [{"role": "user", "content": user_text}],
+                            "active_tier": 1,
+                            "is_crisis": False,
+                            "crisis_reason": None,
+                            "matched_listener_name": None,
+                            "next_node": ""
+                        }
+
+                        try:
+                            final_state = await asyncio.to_thread(orchestrator_app.invoke, initial_state)
+                            latest_reply = final_state["messages"][-1]
+                            reply = latest_reply.get("content", "I am holding space for you.")
+                            is_crisis = bool(final_state.get("is_crisis", False))
+                        except Exception as e:
+                            logger.error(f"[ws/audio] Text frame LangGraph error: {e}", exc_info=True)
+                            reply = "Thank you for sharing. I am here listening to you with empathy and care."
+                            is_crisis = False
+
                         session_history.append({"role": "user", "content": user_text})
-                        system_prompt = (
-                            "You are MindSpace Voice Companion. "
-                            "Respond warmly, naturally, and concisely (1-2 sentences) in the user's language."
-                        )
-                        reply = invoke_gemini_chat(system_prompt, session_history[-8:])
                         session_history.append({"role": "assistant", "content": reply})
 
-                        tts_result = await synthesize_speech(reply)
+                        spoken_text = reply
+                        if is_crisis:
+                            spoken_text = (
+                                "Please know that immediate support is available. "
+                                "You can reach Tele-MANAS at 14416 or call emergency services at 112. "
+                                "We are here with you."
+                            )
+
+                        tts_result = await synthesize_speech(spoken_text)
                         audio_b64 = tts_result.get("audio_base64")
 
                         await websocket.send_json({
                             "type": "text",
                             "text": reply,
-                            "audio": audio_b64
+                            "audio": audio_b64,
+                            "is_crisis": is_crisis
                         })
                         await websocket.send_json({"type": "status", "status": "ready"})
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.error(f"[ws/audio] Text frame handling error: {e}", exc_info=True)
     except WebSocketDisconnect:
         pass
     except Exception as e:

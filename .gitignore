@@ -56,5 +56,6 @@ Thumbs.db
 # Local & Temporary Folders
 .agents/
 deploy/
+docs/
 
 Pranjal.md
