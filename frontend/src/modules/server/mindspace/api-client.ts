@@ -183,9 +183,10 @@ export async function createMindspaceApiClient() {
   }
 
   const token = await getMindspaceBearerToken(identity.id);
-  const request = async <T>(path: string, init?: RequestInit): Promise<T> => {
+  const request = async <T>(path: string, init?: RequestInit, retries = 2): Promise<T> => {
+    // 45-second timeout to handle Render serverless cold-start wakeups smoothly
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    const timeoutId = setTimeout(() => controller.abort(), 45000);
     try {
       const response = await fetch(new URL(path, baseUrl), {
         ...init,
@@ -198,7 +199,20 @@ export async function createMindspaceApiClient() {
         cache: "no-store",
         signal: controller.signal,
       });
+
+      // If Render backend is spinning up (502/503/504), wait 2s and retry once
+      if ((response.status === 502 || response.status === 503 || response.status === 504) && retries > 0) {
+        await new Promise((r) => setTimeout(r, 2000));
+        return request<T>(path, init, retries - 1);
+      }
+
       return readApiResponse<T>(response);
+    } catch (err: any) {
+      if (retries > 0 && (err.name === "AbortError" || err.message?.includes("fetch failed"))) {
+        await new Promise((r) => setTimeout(r, 2000));
+        return request<T>(path, init, retries - 1);
+      }
+      throw err;
     } finally {
       clearTimeout(timeoutId);
     }

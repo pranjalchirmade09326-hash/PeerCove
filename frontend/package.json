@@ -9,6 +9,7 @@
     "test": "vitest run",
     "start": "next start",
     "lint": "eslint",
+    "postinstall": "prisma generate",
     "db:generate": "pnpm exec prisma generate",
     "db:push": "pnpm exec prisma db push",
     "seed:test-data": "tsx scripts/test-data/seed.ts"

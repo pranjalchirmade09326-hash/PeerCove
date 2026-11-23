@@ -138,7 +138,7 @@ export function IntakeCompleteModal({ open, intakeId, basePath }: IntakeComplete
               className="w-full h-11 rounded-2xl bg-[#236B54] hover:bg-[#1a5240] text-white font-semibold text-xs gap-2 shadow-sm"
             >
               <Calendar className="size-4" />
-              <span>Book Appointment with Doctor</span>
+              <span>Connect with Peer Listener / Schedule Session</span>
               <ArrowRight className="size-4 ml-auto" />
             </Button>
             <Button

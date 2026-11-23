@@ -8,6 +8,7 @@ import { routing } from "@/i18n/routing";
 import NextTopLoader from "nextjs-toploader";
 import { ThemeProvider } from "@/theme/ThemeProvider";
 import { Toaster } from "@/components/ui/sonner";
+import { ServerColdStartBanner } from "@/components/common/ServerColdStartBanner";
 import { QueryProvider } from "@/providers/QueryProvider";
 
 const dmSans = { className: "" };
@@ -68,6 +69,7 @@ export default async function RootLayout({
               <TooltipProvider>{children}</TooltipProvider>
             </NextIntlClientProvider>
             <Toaster />
+            <ServerColdStartBanner />
             <NextTopLoader showSpinner={false} color="var(--progress-bar)" />
           </QueryProvider>
         </ThemeProvider>

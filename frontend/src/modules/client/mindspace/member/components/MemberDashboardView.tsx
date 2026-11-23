@@ -1269,8 +1269,8 @@ export function MemberDashboardView({
                           <div className="whitespace-pre-wrap">{msg.text}</div>
                         )}
 
-                        {/* Direct In-Chat Action to Book Appointment matching video */}
-                        {msg.sender === "companion" && (msg.text.includes("Book") || msg.text.includes("appointment") || msg.text.includes("Appointment") || msg.text.includes("Vikram Sen")) && (
+                        {/* Direct In-Chat Action to Book Support / Listening Session */}
+                        {msg.sender === "companion" && (msg.text.includes("Book") || msg.text.includes("appointment") || msg.text.includes("session") || msg.text.includes("Session") || msg.text.includes("Listener")) && (
                           <div className="pt-3">
                             <Button
                               size="sm"
@@ -1278,11 +1278,10 @@ export function MemberDashboardView({
                               className="rounded-xl bg-[#236B54] hover:bg-[#1a5240] text-white font-semibold text-xs h-9 px-4 gap-2 shadow-md w-full sm:w-auto"
                             >
                               <Calendar className="size-4" />
-                              <span>Book Appointment with Doctor (May 11th)</span>
+                              <span>Connect with Peer Listener / Schedule Session</span>
                               <ArrowRight className="size-3.5" />
                             </Button>
                           </div>
-                        )}
                         )}
                         <div className={`flex items-center justify-between text-[10px] mt-1.5 ${msg.sender === "user" ? "text-emerald-200" : "text-muted-foreground"}`}>
                           <span>{msg.timestamp}</span>

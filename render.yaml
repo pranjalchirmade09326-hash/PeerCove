@@ -1,0 +1,45 @@
+# Render Blueprint Specification for MindSpace Architecture
+# https://render.com/docs/blueprint-spec
+
+version: "1"
+
+services:
+  # ── MindSpace FastAPI Core Backend ────────────────────────────
+  - type: web
+    name: mindspace-fastapi
+    runtime: docker
+    dockerfilePath: backend/mindspace-fastapi/Dockerfile
+    dockerContext: backend/mindspace-fastapi
+    region: oregon
+    plan: free
+    healthCheckPath: /health/ready
+    envVars:
+      - key: DATABASE_URL
+        sync: false # Set in Render Dashboard with your Neon pooled connection string (-pooler & sslmode=require)
+      - key: CORS_ORIGINS
+        value: "https://*.vercel.app,http://localhost:4000,http://localhost:3000"
+      - key: INTAKE_ENCRYPTION_KEYS_JSON
+        value: '{"v1":"q2xePGHE57EuQkCoRMXPPz1zJsqpDGoqgTnImucQ1MY="}'
+      - key: INTAKE_CURRENT_ENCRYPTION_KEY_VERSION
+        value: "v1"
+      - key: AUTH_ISSUER
+        value: "http://localhost:5001"
+      - key: AUTH_AUDIENCE
+        value: "mindspace-api"
+      - key: ENVIRONMENT
+        value: "production"
+
+  # ── MindSpace Multi-Agent Intelligence (Optional) ─────────────
+  - type: web
+    name: mindspace-agents
+    runtime: docker
+    dockerfilePath: agents/Dockerfile
+    dockerContext: agents
+    region: oregon
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false # Set in Render Dashboard with your Gemini API key
+      - key: PORT
+        value: "8018"
