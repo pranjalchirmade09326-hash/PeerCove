@@ -6,7 +6,7 @@ readme = "README.md"
 authors = [
     { name = "Pranjal Chirmade", email = "pranjalchirmade09326@gmail.com" }
 ]
-requires-python = ">=3.14"
+requires-python = ">=3.11"
 dependencies = [
     "asyncpg>=0.29.0",
     "cryptography>=43.0.0",
