@@ -1,8 +1,8 @@
 services:
-  mindspace-agents:
+  peercove-agents:
     build: .
     image: kipla1412/finalvoiceagent:latest
-    container_name: mindspace-agents
+    container_name: peercove-agents
     volumes:
       - ./src:/app/src
     ports:
@@ -20,6 +20,6 @@ services:
       JINA_BASE_URL: "https://api.jina.ai/v1/embeddings"
       JINA_API_KEY: ${JINA_API_KEY:?Set JINA_API_KEY in agents/.env}
       OPENSEARCH_URL: "http://host.docker.internal:9200"
-      MEDICAL_DOCUMENT_INDEX: "mindspace_documents"
+      MEDICAL_DOCUMENT_INDEX: "peercove_documents"
       OPENSEARCH_SEARCH_PIPELINE: "hybrid-rrf-pipeline"
     restart: unless-stopped

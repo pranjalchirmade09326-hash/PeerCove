@@ -12,13 +12,13 @@ if agents_dir not in sys.path:
 
 from langgraph.graph import StateGraph, END
 
-from src.state import MindSpaceAgentState
+from src.state import PeerCoveAgentState
 from src.nodes.safety_sentinel import safety_sentinel_node
 from src.nodes.intake_agent import intake_node
 from src.nodes.companion_agent import companion_node
 from src.nodes.matcher_agent import matcher_node
 
-def route_next_node(state: MindSpaceAgentState) -> str:
+def route_next_node(state: PeerCoveAgentState) -> str:
     """Evaluates state conditions to determine the next subagent node."""
     # 1. Immediate exit if safety sentinel tripped
     if state.get("is_crisis"):
@@ -39,7 +39,7 @@ def route_next_node(state: MindSpaceAgentState) -> str:
         return "intake"
 
 # Initialize StateGraph with the shared state schema
-graph_builder = StateGraph(MindSpaceAgentState)
+graph_builder = StateGraph(PeerCoveAgentState)
 
 # Register Subagent Nodes
 graph_builder.add_node("safety_sentinel", safety_sentinel_node)

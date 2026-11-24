@@ -88,17 +88,17 @@ function buildNavGroups(app: ContextApp): NavGroupProps[] {
 const patientIntakeLinks: NavGroupProps["items"] = [
   {
     title: "Choose an intake",
-    url: "/mindspace/member/intake",
+    url: "/peercove/member/intake",
     icon: "heart",
   },
   {
     title: "Chat intake",
-    url: "/mindspace/member/chat",
+    url: "/peercove/member/chat",
     icon: "message-circle",
   },
   {
     title: "Voice intake",
-    url: "/mindspace/member/voice",
+    url: "/peercove/member/voice",
     icon: "mic",
   },
 ];
@@ -248,7 +248,7 @@ export function MenuBar(user: TUser) {
       : roleGroups;
   const isMemberWorkspace =
     pathname.includes("/telemedicine/patient") ||
-    pathname.includes("/mindspace/member");
+    pathname.includes("/peercove/member");
   const navGroups =
     !isSettings && isMemberWorkspace
       ? withPatientIntakeLinks(baseNavGroups)

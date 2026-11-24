@@ -1,14 +1,14 @@
 "use client";
 
 /**
- * LoginPage — Authenticates users into MindSpace according to their selected role.
+ * LoginPage — Authenticates users into PeerCove according to their selected role.
  *
  * Supported roles:
- * - member -> /[locale]/mindspace/member
- * - listener -> /[locale]/mindspace/listener
- * - listener-supervisor -> /[locale]/mindspace/listener-supervisor
- * - safety-operations -> /[locale]/mindspace/safety-operations
- * - platform-administrator -> /[locale]/mindspace/platform-administrator
+ * - member -> /[locale]/peercove/member
+ * - listener -> /[locale]/peercove/listener
+ * - listener-supervisor -> /[locale]/peercove/listener-supervisor
+ * - safety-operations -> /[locale]/peercove/safety-operations
+ * - platform-administrator -> /[locale]/peercove/platform-administrator
  */
 
 import { useState } from "react";
@@ -47,35 +47,35 @@ const ROLE_CONFIGS: Record<RoleOption, { title: string; subtitle: string; path: 
   member: {
     title: "Member Sanctuary",
     subtitle: "Personal reflections, guided intake & wellbeing support",
-    path: "/mindspace/member",
+    path: "/peercove/member",
     icon: Sparkles,
     color: "from-emerald-500 to-teal-600",
   },
   listener: {
     title: "Peer Listener",
     subtitle: "Active listening queue & volunteer chat workspace",
-    path: "/mindspace/listener",
+    path: "/peercove/listener",
     icon: Headphones,
     color: "from-teal-500 to-cyan-600",
   },
   "listener-supervisor": {
     title: "Listener Supervisor",
     subtitle: "Roster oversight, empathy audits & quality review",
-    path: "/mindspace/listener-supervisor",
+    path: "/peercove/listener-supervisor",
     icon: HeartHandshake,
     color: "from-blue-500 to-indigo-600",
   },
   "safety-operations": {
     title: "Safety Operations",
     subtitle: "Emergency triage, 988 crisis handoffs & alerts",
-    path: "/mindspace/safety-operations",
+    path: "/peercove/safety-operations",
     icon: ShieldCheck,
     color: "from-rose-500 to-orange-600",
   },
   "platform-administrator": {
     title: "Platform Admin",
     subtitle: "System health, encryption key rings & audit trails",
-    path: "/mindspace/platform-administrator",
+    path: "/peercove/platform-administrator",
     icon: SlidersHorizontal,
     color: "from-purple-500 to-violet-600",
   },
@@ -98,7 +98,7 @@ export default function LoginPage() {
     e.preventDefault();
     setIsSubmitting(true);
 
-    const effectiveEmail = email.trim().toLowerCase() || `${selectedRole}@mindspace.local`;
+    const effectiveEmail = email.trim().toLowerCase() || `${selectedRole}@peercove.local`;
     const effectiveName = email ? email.split("@")[0].replace(/[-_.]/g, " ") : activeConfig.title;
 
     try {
@@ -169,7 +169,7 @@ export default function LoginPage() {
         body: JSON.stringify({
           role,
           name: `${config.title} User`,
-          email: `${role}@mindspace.local`,
+          email: `${role}@peercove.local`,
           redirectUrl: config.path,
           locale,
         }),
@@ -201,7 +201,7 @@ export default function LoginPage() {
         <Link href="/" className="inline-flex items-center justify-center space-x-2.5">
           <AppLogo size={42} className="w-10 h-10 text-emerald-700" />
           <span className="text-3xl font-extrabold tracking-tight text-foreground">
-            MindSpace
+            PeerCove
           </span>
         </Link>
         <p className="text-sm text-muted-foreground font-medium">
@@ -212,7 +212,7 @@ export default function LoginPage() {
       <Card className="border border-emerald-100 dark:border-emerald-950/40 shadow-xl bg-card/95 backdrop-blur-sm rounded-2xl overflow-hidden">
         <CardHeader className="space-y-1.5 pb-4 bg-muted/30 border-b border-border/50">
           <CardTitle className="text-2xl font-bold tracking-tight text-center">
-            Sign In to MindSpace
+            Sign In to PeerCove
           </CardTitle>
           <CardDescription className="text-center text-xs sm:text-sm">
             Select your role workspace and enter your credentials to continue

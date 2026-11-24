@@ -3,7 +3,7 @@
  *
  * Layer: client / (marketing) / components
  *
- * Highlights the HL7 FHIR R4 resource model powering MindSpace's electronic
+ * Highlights the HL7 FHIR R4 resource model powering PeerCove's electronic
  * medical records layer. Shows the seven core FHIR resources used in the
  * platform with descriptions of how each maps to clinical workflows.
  *

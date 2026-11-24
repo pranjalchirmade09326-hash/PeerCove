@@ -1,5 +1,5 @@
 /**
- * MindSpace Auth Context
+ * PeerCove Auth Context
  * Manages user role, profile data, and demo mode state globally
  */
 
@@ -8,7 +8,7 @@ import type { MemberProfile, ListenerProfile } from "../../../../prisma/generate
 
 export type UserRole = "member" | "listener" | "admin";
 
-export interface MindspaceAuthContextType {
+export interface PeerCoveAuthContextType {
   userId: string | null;
   userRole: UserRole | null;
   displayName: string | null;
@@ -21,7 +21,7 @@ export interface MindspaceAuthContextType {
   refreshProfile: () => Promise<void>;
 }
 
-const AuthContext = createContext<MindspaceAuthContextType | undefined>(
+const AuthContext = createContext<PeerCoveAuthContextType | undefined>(
   undefined
 );
 
@@ -129,7 +129,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     localStorage.removeItem("isDemoMode");
   };
 
-  const value: MindspaceAuthContextType = {
+  const value: PeerCoveAuthContextType = {
     userId,
     userRole,
     displayName,

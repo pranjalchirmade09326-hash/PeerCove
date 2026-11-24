@@ -9,7 +9,7 @@
  *
  * Note on getMe: fhir-gql's /appointments/me resolves the JWT sub claim to the
  * service account (not the end user). Instead we call GET /appointments/ with a
- * user_id query param injected from the mindspace session, which achieves the same
+ * user_id query param injected from the peercove session, which achieves the same
  * row-level filter without the JWT identity mismatch.
  */
 
@@ -114,9 +114,9 @@ export class AppointmentCoreRestService {
 
   /**
    * GET /appointments/?user_id=... — returns the caller's own appointments.
-   * userId is injected from the mindspace session, not derived from the fhir-gql JWT.
+   * userId is injected from the peercove session, not derived from the fhir-gql JWT.
    *
-   * @param userId - mindspace user ID to filter by.
+   * @param userId - peercove user ID to filter by.
    * @param query - Optional additional filters (status, start_from, start_to, practitioner_search, sort, limit, offset).
    * @returns Paginated appointment list for the given user.
    */

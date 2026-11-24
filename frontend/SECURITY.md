@@ -2,7 +2,7 @@
 
 ## Reporting a vulnerability
 
-MindSpace handles healthcare data. If you find a security vulnerability,
+PeerCove handles healthcare data. If you find a security vulnerability,
 please **do not open a public GitHub issue**. Instead, report it privately
 so we can fix it before it's disclosed.
 

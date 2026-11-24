@@ -4,10 +4,10 @@ Peer Matcher Agent — Coordinates human-in-the-loop volunteer listener matching
 import asyncio
 from typing import Dict, Any
 
-from src.state import MindSpaceAgentState
+from src.state import PeerCoveAgentState
 from src.tools.core_tools import dispatch_peer_listener_match
 
-def matcher_node(state: MindSpaceAgentState) -> Dict[str, Any]:
+def matcher_node(state: PeerCoveAgentState) -> Dict[str, Any]:
     member_id = state.get("member_id", "anon-member")
     topic = state.get("messages", [{}])[-1].get("content", "General Wellbeing Reflection")
     

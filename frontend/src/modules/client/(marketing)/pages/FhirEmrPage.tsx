@@ -1,9 +1,9 @@
 /**
- * FhirEmrPage — dedicated marketing page explaining FHIR R4 EMR in MindSpace.
+ * FhirEmrPage — dedicated marketing page explaining FHIR R4 EMR in PeerCove.
  *
  * Layer: client / (marketing) / pages
  *
- * Covers: what FHIR R4 is, the seven core resources used in MindSpace,
+ * Covers: what FHIR R4 is, the seven core resources used in PeerCove,
  * how clinical workflow maps to FHIR resources, and why FHIR-native
  * records are superior to proprietary EMR formats.
  */
@@ -183,7 +183,7 @@ export function FhirEmrPage({ session }: { session: AuthResponse | null }) {
             </h1>
             <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed mb-8">
               HL7 FHIR (Fast Healthcare Interoperability Resources) R4 is the global
-              standard for representing and exchanging electronic health records. MindSpace
+              standard for representing and exchanging electronic health records. PeerCove
               uses FHIR natively — every patient record, appointment, observation, and
               clinical encounter is a structured, interoperable FHIR resource.
             </p>
@@ -234,7 +234,7 @@ export function FhirEmrPage({ session }: { session: AuthResponse | null }) {
           >
             <span className="text-primary font-semibold tracking-wider uppercase text-sm">FHIR Resources</span>
             <h2 className="mt-2 text-3xl sm:text-4xl font-bold text-foreground">
-              The Seven Core FHIR Resources in MindSpace
+              The Seven Core FHIR Resources in PeerCove
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
               Each clinical concept — from a patient registration to a completed consultation —
@@ -294,7 +294,7 @@ export function FhirEmrPage({ session }: { session: AuthResponse | null }) {
                 Every Clinical Action Creates a FHIR Record
               </h2>
               <p className="text-muted-foreground leading-relaxed mb-8">
-                MindSpace does not store clinical data in proprietary tables and convert it
+                PeerCove does not store clinical data in proprietary tables and convert it
                 later. Every user action — booking, intake, consultation, diagnosis — writes
                 directly to the corresponding FHIR resource in real time.
               </p>
@@ -369,7 +369,7 @@ export function FhirEmrPage({ session }: { session: AuthResponse | null }) {
                   <th className="text-left py-3 px-4 text-muted-foreground font-semibold w-1/4">Aspect</th>
                   <th className="text-left py-3 px-4 font-semibold w-[37.5%]">
                     <span className="flex items-center gap-2 text-primary">
-                      <CheckCircle2 className="w-4 h-4" /> MindSpace — FHIR R4 Native
+                      <CheckCircle2 className="w-4 h-4" /> PeerCove — FHIR R4 Native
                     </span>
                   </th>
                   <th className="text-left py-3 px-4 text-muted-foreground font-semibold w-[37.5%]">

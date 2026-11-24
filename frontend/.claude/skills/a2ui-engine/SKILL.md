@@ -88,7 +88,7 @@ their codebase):
 | `API_ROOT` | `src/app/api` | *(route paths, not imports)* | The `/api/workflow/*` and `/api/data-fetch` route handlers |
 
 If the project uses `src/features/`, `src/server/`, a `~/` alias, or
-anything else, set the roots to match — don't force MindSpace's own layout
+anything else, set the roots to match — don't force PeerCove's own layout
 onto a project that doesn't use it. Record the four choices; every path and
 import in the steps below is written relative to them.
 

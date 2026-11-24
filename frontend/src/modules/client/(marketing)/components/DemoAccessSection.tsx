@@ -1,6 +1,6 @@
 /**
  * Demo Access Section for Landing Page
- * Showcases demo accounts and provides quick access to explore MindSpace
+ * Showcases demo accounts and provides quick access to explore PeerCove
  */
 
 "use client";

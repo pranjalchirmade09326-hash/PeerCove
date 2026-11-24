@@ -1,15 +1,15 @@
-# Render Blueprint Specification for MindSpace Architecture
+# Render Blueprint Specification for PeerCove Architecture
 # https://render.com/docs/blueprint-spec
 
 version: "1"
 
 services:
-  # ── MindSpace FastAPI Core Backend ────────────────────────────
+  # ── PeerCove FastAPI Core Backend ────────────────────────────
   - type: web
-    name: mindspace-fastapi
+    name: peercove-fastapi
     runtime: docker
-    dockerfilePath: backend/mindspace-fastapi/Dockerfile
-    dockerContext: backend/mindspace-fastapi
+    dockerfilePath: backend/peercove-fastapi/Dockerfile
+    dockerContext: backend/peercove-fastapi
     region: oregon
     plan: free
     healthCheckPath: /health/ready
@@ -25,13 +25,13 @@ services:
       - key: AUTH_ISSUER
         value: "http://localhost:5001"
       - key: AUTH_AUDIENCE
-        value: "mindspace-api"
+        value: "peercove-api"
       - key: ENVIRONMENT
         value: "production"
 
-  # ── MindSpace Multi-Agent Intelligence (Optional) ─────────────
+  # ── PeerCove Multi-Agent Intelligence (Optional) ─────────────
   - type: web
-    name: mindspace-agents
+    name: peercove-agents
     runtime: docker
     dockerfilePath: agents/Dockerfile
     dockerContext: agents

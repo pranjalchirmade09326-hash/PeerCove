@@ -9,18 +9,18 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: mindspace-postgres-dev
+    container_name: peercove-postgres-dev
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-mindspace}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mindspace}
-      POSTGRES_DB: ${POSTGRES_DB:-mindspace}
+      POSTGRES_USER: ${POSTGRES_USER:-peercove}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-peercove}
+      POSTGRES_DB: ${POSTGRES_DB:-peercove}
     ports:
       - "5434:5432"
     volumes:
       - postgres_data_dev:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mindspace}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-peercove}"]
       interval: 10s
       timeout: 5s
       retries: 5

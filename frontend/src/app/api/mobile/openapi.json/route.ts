@@ -25,7 +25,7 @@ export async function GET() {
   const document = generator.generateDocument({
     openapi: "3.1.0",
     info: {
-      title: "MindSpace Mobile API",
+      title: "PeerCove Mobile API",
       version: "1.0.0",
       description:
         "REST endpoints for the mobile app covering Intake, Consultation, and AI " +

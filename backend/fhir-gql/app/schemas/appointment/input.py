@@ -646,7 +646,7 @@ class ListAppointmentsSchema(BaseModel):
             "'-'-prefixed for descending (e.g. '_sort=status-priority,-date'). "
             "Supported: date, status, _id, patient, type, duration, and "
             "status-priority (bucketed active/tentative/terminal ordering — a "
-            "MindSpace addition beyond the standard FHIR search params). Defaults "
+            "PeerCove addition beyond the standard FHIR search params). Defaults "
             "to -date (newest first) when omitted."
         ),
     )

@@ -64,7 +64,7 @@ export async function requirePatientProfile(
 
   const userId = session?.user?.id || "usr-patient-01";
   const userName = session?.user?.name || "Sarah Jenkins";
-  const userEmail = session?.user?.email || "patient@mindspace.app";
+  const userEmail = session?.user?.email || "patient@peercove.app";
   const orgId = session?.session?.activeOrganizationId || "org-default-01";
 
   const nameParts = userName.trim().split(/\s+/);
@@ -132,7 +132,7 @@ export async function requirePractitionerProfile(
 
   const userId = session?.user?.id || "usr-doctor-01";
   const userName = session?.user?.name || "Dr. John Smith";
-  const userEmail = session?.user?.email || "doctor@mindspace.app";
+  const userEmail = session?.user?.email || "doctor@peercove.app";
   const orgId = session?.session?.activeOrganizationId || "org-default-01";
 
   let prefix: string[] = [];

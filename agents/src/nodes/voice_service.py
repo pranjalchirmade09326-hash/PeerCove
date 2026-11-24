@@ -8,7 +8,7 @@ import logging
 import httpx
 from typing import Dict, Any, Optional
 
-logger = logging.getLogger("mindspace.voice")
+logger = logging.getLogger("peercove.voice")
 
 SARVAM_API_KEY = os.getenv("SARVAM_API_KEY", "")
 SARVAM_TTS_URL = "https://api.sarvam.ai/text-to-speech"

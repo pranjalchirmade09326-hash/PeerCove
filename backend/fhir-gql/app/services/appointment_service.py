@@ -326,7 +326,7 @@ class AppointmentService:
 
         # Specialty — copied as-is (exclude_none keeps the fhir-server payload clean).
         # Appointment.specialty is a create-only child array, so booking is the only
-        # chance to set it; MindSpace keys its preventive-medicine flow off it.
+        # chance to set it; PeerCove keys its preventive-medicine flow off it.
         if dto.specialty:
             payload["specialty"] = [s.model_dump(exclude_none=True) for s in dto.specialty]
 

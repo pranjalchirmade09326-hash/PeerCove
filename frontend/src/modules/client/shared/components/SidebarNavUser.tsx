@@ -63,16 +63,16 @@ export function SidebarNavUser(props: SidebarNavUserProps) {
 
   const settingsHref =
     rNorm === "patient" || rNorm === "member"
-      ? "/mindspace/member/profile"
+      ? "/peercove/member/profile"
       : rNorm === "doctor" || rNorm === "listener"
-      ? "/mindspace/listener/profile"
+      ? "/peercove/listener/profile"
       : rNorm === "listener-supervisor" || rNorm === "supervisor"
-      ? "/mindspace/listener-supervisor"
+      ? "/peercove/listener-supervisor"
       : rNorm === "safety-operations" || rNorm === "safety-operations-specialist" || rNorm === "safety"
-      ? "/mindspace/safety-operations"
+      ? "/peercove/safety-operations"
       : rNorm === "platform-administrator" || rNorm === "admin"
-      ? "/mindspace/platform-administrator"
-      : "/mindspace/member/profile";
+      ? "/peercove/platform-administrator"
+      : "/peercove/member/profile";
 
   async function handleLogout() {
     try {
@@ -89,7 +89,7 @@ export function SidebarNavUser(props: SidebarNavUserProps) {
       localStorage.removeItem("access_token");
       localStorage.removeItem("refresh_token");
       localStorage.removeItem("member_auth_token");
-      document.cookie = "mindspace_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+      document.cookie = "peercove_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
       document.cookie = "dev_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
       document.cookie = "activeRoleRedirectUrl=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
       document.cookie = "better-auth.session_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";

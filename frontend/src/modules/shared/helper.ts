@@ -301,7 +301,7 @@ export function buildPatientContextPrefix(
 }
 
 /**
- * Derives a display name string for a MindSpace Member.
+ * Derives a display name string for a PeerCove Member.
  */
 export function formatMemberName(member?: { name?: string | null; displayName?: string | null }): string {
   if (!member) return "Member";
@@ -309,7 +309,7 @@ export function formatMemberName(member?: { name?: string | null; displayName?: 
 }
 
 /**
- * Derives a display name string for a MindSpace Peer Listener.
+ * Derives a display name string for a PeerCove Peer Listener.
  */
 export function formatListenerName(listener?: { name?: string | null; displayName?: string | null }): string {
   if (!listener) return "Peer Listener";
@@ -326,5 +326,5 @@ export function buildMemberContextPrefix(
   const parts: string[] = [];
   if (displayName) parts.push(`member=${displayName}`);
   if (locale) parts.push(`locale=${locale}`);
-  return parts.length ? `[MindSpace Member context: ${parts.join(", ")}]` : "";
+  return parts.length ? `[PeerCove Member context: ${parts.join(", ")}]` : "";
 }

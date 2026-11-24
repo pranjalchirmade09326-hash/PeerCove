@@ -40,27 +40,27 @@ export const telemedicineSidebarData = {
       items: [
         {
           title: "Overview",
-          url: "/mindspace/listener",
+          url: "/peercove/listener",
           icon: "layout-dashboard",
         },
         {
           title: "Support Sessions",
-          url: "/mindspace/listener/conversations",
+          url: "/peercove/listener/conversations",
           icon: "calendar",
         },
         {
           title: "Listener Training",
-          url: "/mindspace/listener/training",
+          url: "/peercove/listener/training",
           icon: "file-text",
         },
         {
           title: "Availability Roster",
-          url: "/mindspace/listener/availability",
+          url: "/peercove/listener/availability",
           icon: "sparkles",
         },
         {
           title: "Peer Support Sessions",
-          url: "/mindspace/listener/conversations",
+          url: "/peercove/listener/conversations",
           icon: "message-circle",
         },
       ],
@@ -70,47 +70,47 @@ export const telemedicineSidebarData = {
       items: [
         {
           title: "Member Dashboard",
-          url: "/mindspace/member",
+          url: "/peercove/member",
           icon: "user",
         },
         {
           title: "Choose an intake",
-          url: "/mindspace/member/intake",
+          url: "/peercove/member/intake",
           icon: "heart",
         },
         {
           title: "Chat intake",
-          url: "/mindspace/member/chat",
+          url: "/peercove/member/chat",
           icon: "message-circle",
         },
         {
           title: "Voice intake",
-          url: "/mindspace/member/voice",
+          url: "/peercove/member/voice",
           icon: "mic",
         },
         {
           title: "My Support Sessions",
-          url: "/mindspace/member/appointments",
+          url: "/peercove/member/appointments",
           icon: "calendar-check",
         },
         {
           title: "Wellbeing Journal",
-          url: "/mindspace/member/journal",
+          url: "/peercove/member/journal",
           icon: "clipboard-list",
         },
         {
           title: "Daily Mood Tracking",
-          url: "/mindspace/member/mood",
+          url: "/peercove/member/mood",
           icon: "activity",
         },
         {
           title: "AI Wellbeing Companion",
-          url: "/mindspace/member/companion",
+          url: "/peercove/member/companion",
           icon: "bot",
         },
         {
           title: "Personal Goals",
-          url: "/mindspace/member/goals",
+          url: "/peercove/member/goals",
           icon: "sparkles",
         },
       ],
@@ -120,32 +120,32 @@ export const telemedicineSidebarData = {
       items: [
         {
           title: "Platform Overview",
-          url: "/mindspace/platform-administrator",
+          url: "/peercove/platform-administrator",
           icon: "shield-check",
         },
         {
           title: "Service Health",
-          url: "/mindspace/platform-administrator/service-health",
+          url: "/peercove/platform-administrator/service-health",
           icon: "activity",
         },
         {
           title: "Users & Roles",
-          url: "/mindspace/platform-administrator/users-roles",
+          url: "/peercove/platform-administrator/users-roles",
           icon: "users",
         },
         {
           title: "Audit Log",
-          url: "/mindspace/platform-administrator/audit-log",
+          url: "/peercove/platform-administrator/audit-log",
           icon: "file-text",
         },
         {
           title: "Listener Supervisor",
-          url: "/mindspace/listener-supervisor",
+          url: "/peercove/listener-supervisor",
           icon: "user-check",
         },
         {
           title: "Safety Operations",
-          url: "/mindspace/safety-operations",
+          url: "/peercove/safety-operations",
           icon: "life-buoy",
         },
       ],

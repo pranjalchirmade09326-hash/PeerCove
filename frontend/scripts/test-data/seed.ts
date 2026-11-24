@@ -304,7 +304,7 @@ export async function seedUserProfiles(connectionString?: string): Promise<{ suc
         [docId, "org-default-01"]
       ).catch(() => {});
       await client.query(
-        "INSERT INTO practitioner_telecom (practitioner_id, org_id, system, value, use) VALUES ($1, $2, 'email', 'doctor@mindspace.com', 'work') ON CONFLICT DO NOTHING",
+        "INSERT INTO practitioner_telecom (practitioner_id, org_id, system, value, use) VALUES ($1, $2, 'email', 'doctor@peercove.com', 'work') ON CONFLICT DO NOTHING",
         [docId, "org-default-01"]
       ).catch(() => {});
 
@@ -325,7 +325,7 @@ export async function seedUserProfiles(connectionString?: string): Promise<{ suc
         [patId, "org-default-01"]
       ).catch(() => {});
       await client.query(
-        "INSERT INTO patient_telecom (patient_id, org_id, system, value, use) VALUES ($1, $2, 'email', 'patient@mindspace.com', 'home') ON CONFLICT DO NOTHING",
+        "INSERT INTO patient_telecom (patient_id, org_id, system, value, use) VALUES ($1, $2, 'email', 'patient@peercove.com', 'home') ON CONFLICT DO NOTHING",
         [patId, "org-default-01"]
       ).catch(() => {});
 

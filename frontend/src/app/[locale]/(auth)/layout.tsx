@@ -14,7 +14,7 @@ export default function AuthLayout({
         <Link href="/" className="relative z-10 inline-flex w-fit items-center gap-3">
           <AppLogo size={42} className="size-10 text-emerald-800" />
           <span className="text-xl font-semibold tracking-tight text-slate-950">
-            MindSpace
+            PeerCove
           </span>
         </Link>
 

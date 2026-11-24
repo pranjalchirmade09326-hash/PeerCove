@@ -1,5 +1,5 @@
 /**
- * HowItWorksPage — dedicated deep-dive page on the MindSpace care workflow.
+ * HowItWorksPage — dedicated deep-dive page on the PeerCove care workflow.
  *
  * Layer: client / (marketing) / pages
  *
@@ -164,7 +164,7 @@ export function HowItWorksPage({ session }: { session: AuthResponse | null }) {
               The Complete AI FHIR Clinical Workflow, Step by Step
             </h1>
             <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed mb-8">
-              MindSpace combines AI-assisted intake, FHIR R4 records, and telemedicine into a single
+              PeerCove combines AI-assisted intake, FHIR R4 records, and telemedicine into a single
               coherent clinical workflow. Here is exactly how every interaction — from first
               booking to finalized FHIR record — works for both patients and doctors.
             </p>
@@ -191,7 +191,7 @@ export function HowItWorksPage({ session }: { session: AuthResponse | null }) {
             </h2>
             <p className="mt-3 text-lg text-muted-foreground max-w-2xl">
               From registration to receiving their clinical report, the patient journey in
-              MindSpace is guided, AI-assisted, and documented in FHIR.
+              PeerCove is guided, AI-assisted, and documented in FHIR.
             </p>
           </motion.div>
 
@@ -312,7 +312,7 @@ export function HowItWorksPage({ session }: { session: AuthResponse | null }) {
               How Clinical Actions Map to FHIR Resources
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              Every action in MindSpace writes to the FHIR EMR in real time.
+              Every action in PeerCove writes to the FHIR EMR in real time.
               Here is the exact resource mapping, end to end.
             </p>
           </motion.div>

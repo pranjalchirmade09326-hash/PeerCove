@@ -5,7 +5,7 @@
 implemented. This is a complete, working reference implementation — copy it
 in and adapt the URLs/claim names to your actual identity provider. It's
 built against [Better Auth](https://www.better-auth.com/) with the JWT
-plugin, which is what the reference app (MindSpace) uses, but the shape
+plugin, which is what the reference app (PeerCove) uses, but the shape
 generalizes to any cookie-session-based auth provider that can mint a bearer
 token: sign-in gives you a session cookie, and two endpoints turn that
 cookie into (a) the caller's identity and (b) a bearer token to forward

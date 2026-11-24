@@ -1,11 +1,11 @@
-# Contributing to MindSpace
+# Contributing to PeerCove
 
 Thanks for your interest in contributing. This doc covers how to get the
 project running locally and the conventions we follow.
 
 ## Before you start: what this repo does and doesn't include
 
-MindSpace is the Next.js frontend/orchestrator app. Several features depend
+PeerCove is the Next.js frontend/orchestrator app. Several features depend
 on external services that live in **separate repos**, not this one:
 
 - **IAM / BetterAuth server** — authentication (`BETTER_AUTH_URL`)
@@ -31,8 +31,8 @@ everything fits together.
 ### 1. Fork and clone
 
 ```bash
-git clone https://github.com/<your-username>/mindspace.git
-cd mindspace
+git clone https://github.com/<your-username>/peercove.git
+cd peercove
 ```
 
 If you're a maintainer working directly on this repo, just clone it

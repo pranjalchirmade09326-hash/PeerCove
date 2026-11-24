@@ -1,5 +1,5 @@
 /**
- * McpSection — dedicated section highlighting the MindSpace MCP Server integration.
+ * McpSection — dedicated section highlighting the PeerCove MCP Server integration.
  *
  * Layer: client / (marketing) / components
  *
@@ -172,7 +172,7 @@ export default function McpSection() {
               </div>
               <div className="flex items-center gap-2 text-xs text-muted-foreground font-mono">
                 <Terminal className="w-3.5 h-3.5" />
-                mindspace-mcp-server
+                peercove-mcp-server
               </div>
               <Badge variant="outline" className="text-[10px] border-emerald-500/30 text-emerald-500">
                 Running

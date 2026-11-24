@@ -1,5 +1,5 @@
 /**
- * RootNavbar — fixed top navigation for the MindSpace marketing landing page.
+ * RootNavbar — fixed top navigation for the PeerCove marketing landing page.
  *
  * Layer: client / (marketing) / components
  *
@@ -123,7 +123,7 @@ export default function RootNavbar({
                 onClick={() => {
                   const rawUrl =
                     session?.session.activeRoleRedirectUrl ??
-                    "/mindspace/member";
+                    "/peercove/member";
                   const cleanUrl = rawUrl.replace(/^\/(?:en|hi|ta)/, "");
                   router.push(cleanUrl as any);
                 }}

@@ -170,7 +170,7 @@ async def patch_appointment(
         "`_sort=status-priority,-date`. Supported fields: `date` (maps to the full `start` "
         "timestamp), `status`, `_id`, `patient` (subject_display), `type` "
         "(appointment_type_display), `duration` (minutes_duration), `status-priority` (a "
-        "MindSpace addition — buckets status into active/tentative/terminal tiers, matching "
+        "PeerCove addition — buckets status into active/tentative/terminal tiers, matching "
         "the priority the client used to apply after the fact), `day` (just the calendar-date "
         "part of `start`), and `time-of-day` (just the time part of `start`) — combine the "
         "latter two independently, e.g. `_sort=-day,time-of-day` groups by day (newest first) "

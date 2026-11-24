@@ -1,5 +1,5 @@
 /**
- * AiAgentsPage — dedicated marketing page explaining MindSpace's AI-assisted care.
+ * AiAgentsPage — dedicated marketing page explaining PeerCove's AI-assisted care.
  *
  * Layer: client / (marketing) / pages
  *
@@ -152,7 +152,7 @@ export function AiAgentsPage({ session }: { session: AuthResponse | null }) {
               Clinical AI Agents That Work Before, During, and After Every Appointment
             </h1>
             <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed mb-8">
-              MindSpace uses specialized AI agents to support each phase of the care journey.
+              PeerCove uses specialized AI agents to support each phase of the care journey.
               The Intake Agent collects and structures patient data before the appointment.
               The Consultation Agent assists the clinician in real time. All outputs become
               FHIR records — reviewed and approved by the clinician before they&apos;re finalized.
@@ -269,7 +269,7 @@ export function AiAgentsPage({ session }: { session: AuthResponse | null }) {
               AI Assists. Clinicians Decide.
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              Every AI output in MindSpace is advisory. No AI agent can finalize a FHIR
+              Every AI output in PeerCove is advisory. No AI agent can finalize a FHIR
               record, submit a diagnosis, or modify a patient chart without explicit
               clinician review and approval.
             </p>

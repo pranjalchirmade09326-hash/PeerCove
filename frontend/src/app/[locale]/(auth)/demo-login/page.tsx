@@ -36,7 +36,7 @@ export default function DemoSignInPage() {
           >
             <AppLogo size={48} className="w-12 h-12 text-emerald-700 group-hover:scale-110 transition-transform" />
             <h1 className="text-4xl font-extrabold tracking-tight text-foreground group-hover:text-emerald-700 transition-colors">
-              MindSpace
+              PeerCove
             </h1>
           </Link>
           <p className="text-lg text-muted-foreground font-medium">
@@ -55,7 +55,7 @@ export default function DemoSignInPage() {
               <Sparkles className="w-6 h-6 text-emerald-600 animate-pulse" />
             </div>
             <CardDescription className="text-center text-sm">
-              Explore MindSpace with pre-configured demo accounts. No setup needed!
+              Explore PeerCove with pre-configured demo accounts. No setup needed!
             </CardDescription>
           </CardHeader>
 

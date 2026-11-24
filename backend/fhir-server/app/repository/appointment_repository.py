@@ -102,7 +102,7 @@ def _cast_ref_type(value: str, enum_cls, field: str):
 
 def _status_priority_expr():
     """
-    Buckets Appointment.status into a 3-tier priority, matching the MindSpace
+    Buckets Appointment.status into a 3-tier priority, matching the PeerCove
     frontend's sortAppointmentsByStatusPriority so the same ordering can be
     produced server-side instead of re-sorted client-side after the fact:
       0 — active/confirmed (booked, arrived, checked-in, fulfilled)
@@ -129,7 +129,7 @@ def _status_priority_expr():
 
 
 # Maps a `_sort` token (FHIR search naming where it exists) to a sortable
-# SQLAlchemy column/expression. `status-priority` is a MindSpace addition on
+# SQLAlchemy column/expression. `status-priority` is a PeerCove addition on
 # top of the standard FHIR Appointment search params — FHIR's `_sort` only
 # sorts by a field's own natural value, it has no notion of a custom bucketed
 # priority like "active before tentative before cancelled". `patient`,

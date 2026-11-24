@@ -1,5 +1,5 @@
 """
-MindSpace LLM Client Gateway.
+PeerCove LLM Client Gateway.
 Provides resilient chat completion across LangChain Google GenAI, direct Gemini REST API,
 and safe grounded non-clinical conversational fallback.
 Supports both legacy AIza and modern AQ-format Google AI Studio keys.
@@ -211,7 +211,7 @@ def invoke_gemini_chat(system_prompt: str, messages: List[Dict[str, Any]], tempe
     elif any(k in last_user_msg for k in ["journal", "reflect", "write", "likhna"]):
         return (
             "Writing down what we carry is a powerful way to quiet racing thoughts. "
-            "Would you like to write a quick reflection in your private, encrypted MindSpace journal?"
+            "Would you like to write a quick reflection in your private, encrypted PeerCove journal?"
         )
 
     # G. Dynamic, Non-Repetitive Response Generator

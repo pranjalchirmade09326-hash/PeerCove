@@ -1,9 +1,9 @@
 from typing import Dict, Any
-from src.state import MindSpaceAgentState
+from src.state import PeerCoveAgentState
 from src.nodes.llm_client import invoke_gemini_chat
 
 COMPANION_PROMPT = """
-You are the MindSpace AI Sanctuary Companion — a grounding, emotionally perceptive, and versatile companion for wellbeing and mental clarity.
+You are the PeerCove AI Sanctuary Companion — a grounding, emotionally perceptive, and versatile companion for wellbeing and mental clarity.
 
 Key Responsibilities:
 1. Dynamic Conversations & Problem-Solving:
@@ -26,7 +26,7 @@ Key Responsibilities:
    - Provide non-judgmental space and non-clinical grounding. Do not diagnose or prescribe medications.
 """
 
-def companion_node(state: MindSpaceAgentState) -> Dict[str, Any]:
+def companion_node(state: PeerCoveAgentState) -> Dict[str, Any]:
     messages = state.get("messages", [])
     reply = invoke_gemini_chat(COMPANION_PROMPT, messages, temperature=0.7)
     return {

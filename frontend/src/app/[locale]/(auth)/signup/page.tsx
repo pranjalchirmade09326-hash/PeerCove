@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * SignupPage — Registers new members and peer listeners into MindSpace.
+ * SignupPage — Registers new members and peer listeners into PeerCove.
  *
  * Directs members directly to their personalized wellbeing dashboard workspace.
  */
@@ -42,13 +42,13 @@ const SIGNUP_ROLES: Record<
   member: {
     title: "Member Account",
     subtitle: "I want a safe, quiet space for emotional wellbeing, journaling & peer chats",
-    path: "/mindspace/member",
+    path: "/peercove/member",
     icon: Sparkles,
   },
   listener: {
     title: "Volunteer Peer Listener",
     subtitle: "I want to offer empathetic, non-clinical listening to individuals in need",
-    path: "/mindspace/listener",
+    path: "/peercove/listener",
     icon: Headphones,
   },
 };
@@ -129,7 +129,7 @@ export default function SignupPage() {
         <Link href="/" className="inline-flex items-center justify-center space-x-2.5">
           <AppLogo size={42} className="w-10 h-10 text-emerald-700" />
           <span className="text-3xl font-extrabold tracking-tight text-foreground">
-            MindSpace
+            PeerCove
           </span>
         </Link>
         <p className="text-sm text-muted-foreground font-medium">

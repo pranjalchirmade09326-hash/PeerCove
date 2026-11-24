@@ -29,7 +29,7 @@ ENV NODE_OPTIONS="--max-old-space-size=4096"
 # Build-time placeholders only; real values are injected at runtime.
 ENV DATABASE_URL=postgresql://build:build@127.0.0.1:5432/build
 ENV BETTER_AUTH_URL=http://127.0.0.1:5001
-ENV MINDSPACE_API_URL=http://127.0.0.1:8080
+ENV PEERCOVE_API_URL=http://127.0.0.1:8080
 
 RUN pnpm build
 

@@ -1,12 +1,6 @@
 # PeerCove 🏥 🌊
 **AI-Native Peer Support, Mental Wellness & Connected Telehealth Platform**
 
-[![Live Production](https://img.shields.io/badge/Production-peercove.space-emerald?style=for-the-badge&logo=vercel)](https://peercove.space)
-[![Next.js](https://img.shields.io/badge/Next.js%2016-React%2019-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-Python%203.12-009688?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon%20Serverless-4169E1?style=for-the-badge&logo=postgresql)](https://neon.tech/)
-[![HL7 FHIR](https://img.shields.io/badge/HL7%20FHIR-R4%20Compliant-orange?style=for-the-badge)](https://hl7.org/fhir/)
-
 PeerCove is an AI-assisted mental wellness and collaborative care platform designed to provide a calm, supportive harbor for individuals seeking guided conversations, peer-to-peer listening, and professional telehealth care.
 
 The platform seamlessly connects citizens, peer listeners, healthcare providers, and clinical supervisors through guided intake, real-time matching, encrypted telehealth rooms, and FHIR-compliant electronic health records.
@@ -17,8 +11,14 @@ The platform seamlessly connects citizens, peer listeners, healthcare providers,
 
 - **Production URL:** [https://peercove.space](https://peercove.space)
 - **Alternate Domain:** [https://www.peercove.space](https://www.peercove.space)
-- **Vercel Cloud Domain:** [https://mindspace-care.vercel.app](https://mindspace-care.vercel.app)
-- **Backend API Docs:** `https://mindspace-fastapi.onrender.com/docs` (Render FastAPI)
+
+---
+
+## 🌐 Live Deployments
+
+- **Production URL:** [https://peercove.space](https://peercove.space)
+- **Alternate Domain:** [https://www.peercove.space](https://www.peercove.space)
+
 
 ---
 
@@ -78,8 +78,7 @@ Intake / Reflection → Triage & Safety Check → Peer / Clinician Match → Vid
 
 ```powershell
 # 1. Clone the repository
-git clone https://github.com/pranjalchirmade09326-hash/Mindspace.git
-cd Mindspace
+git clone https://github.com/pranjalchirmade09326-hash/PeerCove.git
 
 # 2. Frontend Setup (Next.js)
 cd frontend
@@ -88,15 +87,15 @@ pnpm exec prisma generate
 pnpm dev
 
 # 3. Backend Setup (FastAPI)
-cd ..\backend\mindspace-fastapi
+cd ..\backend\peercove-fastapi
 uv pip install -r pyproject.toml
 uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
 ```
 
 ### Local Access Points
 - **Web Portal:** [http://localhost:4000/](http://localhost:4000/)
-- **Member Workspace:** [http://localhost:4000/en/mindspace/member](http://localhost:4000/en/mindspace/member)
-- **Listener Workspace:** [http://localhost:4000/en/mindspace/listener](http://localhost:4000/en/mindspace/listener)
+- **Member Workspace:** [http://localhost:4000/en/peercove/member](http://localhost:4000/en/peercove/member)
+- **Listener Workspace:** [http://localhost:4000/en/peercove/listener](http://localhost:4000/en/peercove/listener)
 - **API Swagger Documentation:** [http://localhost:8080/docs](http://localhost:8080/docs)
 - **Health Check Probe:** [http://localhost:8080/health/ready](http://localhost:8080/health/ready)
 
@@ -110,7 +109,7 @@ cd frontend
 pnpm test
 
 # Run backend API & safety tests
-cd ..\backend\mindspace-fastapi
+cd ..\backend\peercove-fastapi
 pytest tests/ -v
 ```
 

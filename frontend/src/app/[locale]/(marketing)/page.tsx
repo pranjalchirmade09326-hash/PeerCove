@@ -1,5 +1,5 @@
 /**
- * Marketing landing page for MindSpace.
+ * Marketing landing page for PeerCove.
  *
  * Route: /[locale]/(marketing)
  *
@@ -7,7 +7,7 @@
  * variants (Sign Up vs. Open Dashboard). Composes the full public-facing
  * landing page:
  *
- *   RootNavbar  — MindSpace navigation and account actions
+ *   RootNavbar  — PeerCove navigation and account actions
  *   Hero        — welcoming patient-first introduction and intake preview
  *   Features    — ways to begin and continue care
  *   HowItWorks  — three-step patient journey

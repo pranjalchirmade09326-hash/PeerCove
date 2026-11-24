@@ -14,9 +14,9 @@ interface DashboardConfig {
 }
 
 const DEFAULT_DASHBOARD_CONFIG: DashboardConfig = {
-  member: "/mindspace/member",
-  listener: "/mindspace/listener",
-  admin: "/mindspace/admin",
+  member: "/peercove/member",
+  listener: "/peercove/listener",
+  admin: "/peercove/admin",
 };
 
 /**
@@ -71,9 +71,9 @@ export const useDashboardRedirect = (config?: Partial<DashboardConfig>) => {
 export async function getDashboardPath(userRole?: string): Promise<string> {
   const role = userRole || "member";
   const dashboardMap: Record<string, string> = {
-    member: "/mindspace/member",
-    listener: "/mindspace/listener",
-    admin: "/mindspace/admin",
+    member: "/peercove/member",
+    listener: "/peercove/listener",
+    admin: "/peercove/admin",
   };
 
   return dashboardMap[role] || dashboardMap.member;

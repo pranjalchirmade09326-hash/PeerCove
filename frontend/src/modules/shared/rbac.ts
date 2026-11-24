@@ -1,5 +1,5 @@
 /**
- * MindSpace role-based access control (RBAC).
+ * PeerCove role-based access control (RBAC).
  *
  * Layer: shared / auth
  *
@@ -8,7 +8,7 @@
  * redirected to the sign-in page.
  */
 
-export const MINDSPACE_SIGNIN_ROLES = [
+export const PEERCOVE_SIGNIN_ROLES = [
   "member",
   "listener",
   "listener-supervisor",
@@ -16,15 +16,15 @@ export const MINDSPACE_SIGNIN_ROLES = [
   "platform-administrator",
 ] as const;
 
-export type MindspaceSigninRole = (typeof MINDSPACE_SIGNIN_ROLES)[number];
+export type PeerCoveSigninRole = (typeof PEERCOVE_SIGNIN_ROLES)[number];
 
 /** Route prefix each role is allowed to browse. */
-export const ROLE_HOME: Record<MindspaceSigninRole, string> = {
-  member: "/mindspace/member",
-  listener: "/mindspace/listener",
-  "listener-supervisor": "/mindspace/listener-supervisor",
-  "safety-operations": "/mindspace/safety-operations",
-  "platform-administrator": "/mindspace/platform-administrator",
+export const ROLE_HOME: Record<PeerCoveSigninRole, string> = {
+  member: "/peercove/member",
+  listener: "/peercove/listener",
+  "listener-supervisor": "/peercove/listener-supervisor",
+  "safety-operations": "/peercove/safety-operations",
+  "platform-administrator": "/peercove/platform-administrator",
 };
 
 /** Staff-only role ids still referenced by dashboards/preview tooling. */
@@ -35,20 +35,20 @@ export const STAFF_ROLES = [
   "ai-agent",
 ] as const;
 
-export function isMindspaceSigninRole(value: unknown): value is MindspaceSigninRole {
+export function isPeerCoveSigninRole(value: unknown): value is PeerCoveSigninRole {
   return (
     typeof value === "string" &&
-    (MINDSPACE_SIGNIN_ROLES as readonly string[]).includes(value)
+    (PEERCOVE_SIGNIN_ROLES as readonly string[]).includes(value)
   );
 }
 
 /**
  * Normalizes hyphenated and underscored role codes across IAM and frontend.
  */
-export function normalizeRoleCode(role?: string | null): MindspaceSigninRole | null {
+export function normalizeRoleCode(role?: string | null): PeerCoveSigninRole | null {
   if (!role || typeof role !== "string") return null;
   const trimmed = role.trim();
-  if (isMindspaceSigninRole(trimmed)) {
+  if (isPeerCoveSigninRole(trimmed)) {
     return trimmed;
   }
   const lower = trimmed.toLowerCase();
@@ -98,7 +98,7 @@ export function resolveWorkspaceAccess(
   // Normalize locale prefixes.
   const cleanPath = pathname.replace(/^\/(?:en|hi|ta)(?:\/|$)/, "/");
 
-  const workspaceMatch = cleanPath.match(/^\/mindspace\/([^/]+)/);
+  const workspaceMatch = cleanPath.match(/^\/peercove\/([^/]+)/);
   if (!workspaceMatch) {
     // Intake flows belong to the member workspace.
     if (cleanPath.startsWith("/intake")) {

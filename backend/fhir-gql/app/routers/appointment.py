@@ -285,7 +285,7 @@ async def get_appointment(
         "Sort with `_sort` (FHIR search convention): a comma-separated list of fields, "
         "each optionally prefixed with `-` for descending — e.g. `_sort=-date` or "
         "`_sort=status-priority,-date`. Supported fields: `date`, `status`, `_id`, and "
-        "`status-priority` (a MindSpace addition — buckets status into active/tentative/"
+        "`status-priority` (a PeerCove addition — buckets status into active/tentative/"
         "terminal tiers, replacing the client-side re-sort the frontend previously did "
         "after fetching). Defaults to `-date` (newest first) when omitted. "
         "Send `Accept: application/fhir+json` to receive a FHIR Bundle searchset."

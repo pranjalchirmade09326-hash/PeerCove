@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 export async function GET() {
-  const backendUrl = process.env.MINDSPACE_API_URL;
+  const backendUrl = process.env.PEERCOVE_API_URL;
   let backendStatus = "unconfigured";
 
   if (backendUrl) {
@@ -24,7 +24,7 @@ export async function GET() {
     service: "peercove-frontend",
     backend: backendStatus,
     message: "PeerCove Next.js Web Application is running",
-    dashboard: "/en/mindspace/member",
+    dashboard: "/en/peercove/member",
     timestamp: new Date().toISOString(),
   });
 }

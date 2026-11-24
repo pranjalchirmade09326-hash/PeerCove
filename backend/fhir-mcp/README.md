@@ -1,4 +1,4 @@
-# MindSpace FHIR MCP Integration Gateway
+# PeerCove FHIR MCP Integration Gateway
 
 FastMCP interoperability gateway that dynamically generates Model Context Protocol (MCP) tools from the FHIR R4 OpenAPI specification and forwards authenticated requests to `fhir-server`.
 
@@ -96,10 +96,10 @@ Add the following entry to your `claude_desktop_config.json`:
 ```json
 {
   "mcpServers": {
-    "mindspace-fhir": {
+    "peercove-fhir": {
       "url": "http://localhost:8002/mcp",
       "headers": {
-        "Authorization": "Bearer <YOUR_MINDSPACE_JWT>"
+        "Authorization": "Bearer <YOUR_PEERCOVE_JWT>"
       }
     }
   }

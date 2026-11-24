@@ -36,7 +36,7 @@ export function loadEnvConfig(envName: string): SeedEnvConfig {
   const fhirGqlUrl =
     parsed.FHIR_GQL_URL || process.env.FHIR_GQL_URL || "http://localhost:8005/api/v1";
   const email =
-    parsed.SEED_DOCTOR_EMAIL || process.env.SEED_DOCTOR_EMAIL || "doctor@mindspace.com";
+    parsed.SEED_DOCTOR_EMAIL || process.env.SEED_DOCTOR_EMAIL || "doctor@peercove.com";
   const password =
     parsed.SEED_DOCTOR_PASSWORD || process.env.SEED_DOCTOR_PASSWORD || "password";
   const defaultPatientId =

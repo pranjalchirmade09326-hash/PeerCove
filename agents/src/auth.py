@@ -1,7 +1,7 @@
 """
-Authentication & Cryptographic JWT Verification Module for MindSpace Agents Service.
+Authentication & Cryptographic JWT Verification Module for PeerCove Agents Service.
 
-Validates incoming JWT tokens using the MindSpace IAM public key infrastructure:
+Validates incoming JWT tokens using the PeerCove IAM public key infrastructure:
 - Algorithm: Strictly restricted to EdDSA (Ed25519)
 - Key Discovery: IAM JWKS endpoint (/api/auth/jwks)
 - Key Caching: In-memory cache with TTL and automatic re-fetch on unknown Key ID (kid)
@@ -29,12 +29,12 @@ from jwt.exceptions import (
     PyJWKClientConnectionError,
 )
 
-logger = logging.getLogger("mindspace.agents.auth")
+logger = logging.getLogger("peercove.agents.auth")
 
 # Configuration Constants
 DEFAULT_JWKS_URL = "http://localhost:5001/api/auth/jwks"
 DEFAULT_ISSUER = "http://localhost:5001"
-DEFAULT_AUDIENCE = "mindspace-api"
+DEFAULT_AUDIENCE = "peercove-api"
 
 ALLOWED_ALGORITHMS = ["EdDSA"]
 
@@ -112,7 +112,7 @@ def verify_token(token: Optional[str]) -> Dict[str, Any]:
             return {
                 "sub": "member-sanctuary",
                 "name": "Dev Member",
-                "email": "dev-member@mindspace.local",
+                "email": "dev-member@peercove.local",
                 "role": "member",
                 "iss": get_iam_issuer(),
                 "aud": get_iam_audience(),

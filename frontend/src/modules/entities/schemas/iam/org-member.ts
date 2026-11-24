@@ -5,9 +5,9 @@
  *
  * Not a FHIR resource — this mirrors the response shape of the sibling IAM
  * app's `GET /api/admin/org-members` endpoint (Better Auth `Member`/`User`
- * records), used to let mindspace admins pick an already-enrolled IAM user
+ * records), used to let peercove admins pick an already-enrolled IAM user
  * (e.g. a "doctor") when linking a FHIR Practitioner record to a login
- * account. Read-only — mindspace never creates/updates IAM users directly.
+ * account. Read-only — peercove never creates/updates IAM users directly.
  */
 
 import { z } from "zod";

@@ -20,10 +20,10 @@ export function getDevSession(role = "doctor"): AuthResponse {
     ? "System Administrator"
     : "Sarah Jenkins";
   const email = isDoctor
-    ? "doctor@mindspace.app"
+    ? "doctor@peercove.app"
     : isAdmin
-    ? "admin@mindspace.app"
-    : "patient@mindspace.app";
+    ? "admin@peercove.app"
+    : "patient@peercove.app";
   const redirectUrl = isDoctor
     ? "/bezs/telemedicine/doctor/dashboard"
     : isAdmin
@@ -64,8 +64,8 @@ export function getDevSession(role = "doctor"): AuthResponse {
       organizations: [
         {
           id: "org-default-01",
-          name: "MindSpace Healthcare",
-          slug: "mindspace-health",
+          name: "PeerCove Healthcare",
+          slug: "peercove-health",
           logo: null,
         },
       ],
@@ -81,7 +81,7 @@ export const getServerSession = cache(async function getServerSession(): Promise
   // 1. Check local session cookie first (for local dev mode)
   try {
     const cookieStore = await cookies();
-    const devCookie = cookieStore.get("mindspace_session");
+    const devCookie = cookieStore.get("peercove_session");
     if (devCookie?.value) {
       const raw = devCookie.value.startsWith("%")
         ? decodeURIComponent(devCookie.value)

@@ -40,8 +40,8 @@ export default function BreadCrumb({ className = "" }: { className?: string }) {
           const label =
             sLower === "bezs"
               ? "Home"
-              : sLower === "telemedicine" || sLower === "mindspace"
-              ? "MindSpace"
+              : sLower === "telemedicine" || sLower === "peercove"
+              ? "PeerCove"
               : sLower === "patient" || sLower === "member"
               ? "Member"
               : sLower === "doctor" || sLower === "listener"

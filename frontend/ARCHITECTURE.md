@@ -1,10 +1,10 @@
-# MindSpace — Frontend Application Architecture
+# PeerCove — Frontend Application Architecture
 
 [![Framework: Next.js 16](https://img.shields.io/badge/Framework-Next.js%2016%20(App%20Router)-black)](https://nextjs.org/)
 [![UI: React 19](https://img.shields.io/badge/UI-React%2019%20%7C%20Tailwind%20CSS-blue)](https://react.dev/)
 [![Architecture: Clean Architecture](https://img.shields.io/badge/Architecture-Clean%20Architecture-blue.svg)](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html)
 
-This document describes the architectural design, module layout, and state management conventions of the **MindSpace** frontend application.
+This document describes the architectural design, module layout, and state management conventions of the **PeerCove** frontend application.
 
 ---
 
@@ -19,8 +19,8 @@ frontend/src/
 │   └── [locale]/               # Internationalized localized routing (/en, etc.)
 │       ├── (auth)/             # Authentication flows (login, signup, forgot-password)
 │       ├── (marketing)/        # Public landing pages & educational content
-│       └── (mindspace)/        # Mindspace Core Role Workspaces
-│           └── mindspace/
+│       └── (peercove)/        # PeerCove Core Role Workspaces
+│           └── peercove/
 │               ├── member/     # Member Wellbeing Sanctuary & sub-routes (consultation, goals, journal, mood)
 │               ├── listener/   # Volunteer Listener Hub & sub-routes (members, profile)
 │               ├── listener-supervisor/ # Supervisor Sanctuary & sub-routes (conduct-reports, listeners, training-reviews)
@@ -32,7 +32,7 @@ frontend/src/
 │   └── common/                 # Shell layouts, navigation sidebars, and headers
 │
 ├── modules/                    # Application / Domain Use Case Modules
-│   ├── client/mindspace/       # Client-side domain modules:
+│   ├── client/peercove/       # Client-side domain modules:
 │   │   ├── member/             # Member feature logic:
 │   │   │                       #   - Mood trackers & trajectory charts
 │   │   │                       #   - AES-256 encrypted private journal
@@ -53,7 +53,7 @@ frontend/src/
 │   │   │                       #   - Zero-Knowledge mode toggle & KMS telemetry
 │   │   ├── companion/          # Voice & conversational grounding companion
 │   │   └── intake/             # Conversational intake & screener questionnaires
-│   └── server/mindspace/       # Server-side domain integration:
+│   └── server/peercove/       # Server-side domain integration:
 │       ├── api-client.ts       # Type-safe HTTP REST client for Core API (Port 8080)
 │       ├── member-dashboard.ts # Server-side data fetchers for member dashboard
 │       ├── role-dashboards.ts  # Role aggregation services for staff dashboards
@@ -75,7 +75,7 @@ flowchart LR
     Components --> Hooks["Custom Hooks (ZSA / TanStack Query)"]
     Hooks --> Client["API Client Adapter (Fetch / Axios)"]
     Client --> Auth["Better Auth / JWT Bearer"]
-    Auth --> Gateway["MindSpace Backend API (port 8080)"]
+    Auth --> Gateway["PeerCove Backend API (port 8080)"]
     Gateway --> Storage[("PostgreSQL 16 (Encrypted Store)")]
 ```
 
@@ -99,4 +99,4 @@ flowchart LR
    - Audio input streams directly through WebRTC in memory.
    - No audio buffers are written to browser storage.
 3. **Owner-Scoped JWT Protection**:
-   - All API requests attach a bearer token verified by the backend against the MindSpace JWKS provider.
+   - All API requests attach a bearer token verified by the backend against the PeerCove JWKS provider.

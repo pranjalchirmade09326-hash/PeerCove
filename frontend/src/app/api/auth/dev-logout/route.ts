@@ -3,14 +3,14 @@ import { cookies } from "next/headers";
 
 export async function POST() {
   const cookieStore = await cookies();
-  cookieStore.delete("mindspace_session");
+  cookieStore.delete("peercove_session");
   cookieStore.delete("dev_token");
   cookieStore.delete("activeRoleRedirectUrl");
   cookieStore.delete("better-auth.session_token");
   cookieStore.delete("better-auth.session_data");
 
   const response = NextResponse.json({ success: true });
-  response.cookies.set("mindspace_session", "", { path: "/", maxAge: 0, expires: new Date(0) });
+  response.cookies.set("peercove_session", "", { path: "/", maxAge: 0, expires: new Date(0) });
   response.cookies.set("dev_token", "", { path: "/", maxAge: 0, expires: new Date(0) });
   response.cookies.set("activeRoleRedirectUrl", "", { path: "/", maxAge: 0, expires: new Date(0) });
   response.cookies.set("better-auth.session_token", "", { path: "/", maxAge: 0, expires: new Date(0) });

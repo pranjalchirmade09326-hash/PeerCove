@@ -35,7 +35,7 @@ def decode_token(token: str) -> dict:
             return {
                 "sub": "usr-patient-01",
                 "name": "Sarah Jenkins",
-                "email": "patient@mindspace.com",
+                "email": "patient@peercove.com",
                 "role": "patient",
                 "org_id": "org-default-01",
                 "permissions": ["*"],
@@ -44,7 +44,7 @@ def decode_token(token: str) -> dict:
             return {
                 "sub": "usr-admin-01",
                 "name": "System Administrator",
-                "email": "admin@mindspace.com",
+                "email": "admin@peercove.com",
                 "role": "admin",
                 "org_id": "org-default-01",
                 "permissions": ["*"],
@@ -53,7 +53,7 @@ def decode_token(token: str) -> dict:
             return {
                 "sub": "usr-doctor-01",
                 "name": "Dr. John Smith",
-                "email": "doctor@mindspace.com",
+                "email": "doctor@peercove.com",
                 "role": "practitioner",
                 "org_id": "org-default-01",
                 "permissions": ["*"],
@@ -74,7 +74,7 @@ def decode_token(token: str) -> dict:
             return {
                 "sub": "usr-doctor-01",
                 "name": "Dr. John Smith",
-                "email": "doctor@mindspace.com",
+                "email": "doctor@peercove.com",
                 "role": "practitioner",
                 "org_id": "org-default-01",
                 "permissions": ["*"],
@@ -93,7 +93,7 @@ async def get_current_user(request: Request) -> dict:
             payload = {
                 "sub": "usr-patient-01",
                 "name": "Sarah Jenkins",
-                "email": "patient@mindspace.com",
+                "email": "patient@peercove.com",
                 "role": "patient",
                 "org_id": "org-default-01",
                 "permissions": ["*"],

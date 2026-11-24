@@ -7,7 +7,7 @@ import httpx
 from typing import Dict, Any, Optional, List
 
 CORE_API_URL = os.getenv("CORE_API_URL", "http://localhost:8080")
-INTERNAL_KEY = os.getenv("INTERNAL_SERVICE_KEY", "mindspace-internal-agent-secret-key-2026")
+INTERNAL_KEY = os.getenv("INTERNAL_SERVICE_KEY", "peercove-internal-agent-secret-key-2026")
 CLIENT_TIMEOUT = httpx.Timeout(2.0, connect=0.8)
 
 def get_headers(token: Optional[str] = None) -> Dict[str, str]:
@@ -60,7 +60,7 @@ async def save_encrypted_journal(
             "title": journal_title,
             "body": content_body,
             "prompt": prompt or "",
-            "tags": tags or ["Reflection", "Mindspace"],
+            "tags": tags or ["Reflection", "PeerCove"],
             "visibility": "private"
         }
         if member_id:

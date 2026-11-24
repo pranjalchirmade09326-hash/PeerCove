@@ -1,5 +1,5 @@
 /**
- * Footer — site-wide footer for the MindSpace marketing landing page.
+ * Footer — site-wide footer for the PeerCove marketing landing page.
  *
  * Layer: client / (marketing) / components
  *

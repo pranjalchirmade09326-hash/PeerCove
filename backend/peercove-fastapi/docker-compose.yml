@@ -1,0 +1,52 @@
+services:
+  peercove-postgres:
+    image: postgres:16
+    container_name: peercove-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-peercove}
+      POSTGRES_USER: ${POSTGRES_USER:-peercove}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dev-only-change-me}
+    ports:
+      - "5433:5432"
+    volumes:
+      - peercove-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - default
+      - peercove-api_default
+
+  peercove-fastapi:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: peercove-fastapi
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-peercove}:${POSTGRES_PASSWORD:-dev-only-change-me}@peercove-postgres:5432/${POSTGRES_DB:-peercove}
+      AUTH_ISSUER: ${AUTH_ISSUER:-http://localhost:5001}
+      AUTH_AUDIENCE: ${AUTH_AUDIENCE:-peercove-api}
+      AUTH_JWKS_URL: ${AUTH_JWKS_URL:-http://host.docker.internal:5001/api/auth/jwks}
+      CORS_ORIGINS: '["http://localhost:4000","http://127.0.0.1:4000"]'
+    ports:
+      - "8080:8080"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - default
+      - peercove-api_default
+
+volumes:
+  peercove-postgres-data:
+    name: peercove-api_peercove-postgres-data
+
+networks:
+  default:
+  peercove-api_default:
+    name: peercove-api_default

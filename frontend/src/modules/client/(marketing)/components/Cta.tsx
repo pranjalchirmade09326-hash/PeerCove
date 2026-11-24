@@ -1,5 +1,5 @@
 /**
- * Cta — final call-to-action section on the MindSpace marketing page.
+ * Cta — final call-to-action section on the PeerCove marketing page.
  *
  * Layer: client / (marketing) / components
  *

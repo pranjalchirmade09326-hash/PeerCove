@@ -4,7 +4,7 @@
  * Route: /[locale]/(marketing)/hipaa
  *
  * Server component. Fetches current session and renders the full
- * HipaaPage explaining MindSpace's HIPAA compliance architecture.
+ * HipaaPage explaining PeerCove's HIPAA compliance architecture.
  */
 
 import { getServerSession } from "@/modules/server/auth/get-session";

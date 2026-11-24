@@ -56,10 +56,10 @@ export function NavUser(props: NavUserProps) {
 
   const settingsHref =
     rLower === "patient" || rLower === "member"
-      ? "/mindspace/member/profile"
+      ? "/peercove/member/profile"
       : rLower === "doctor" || rLower === "listener"
-      ? "/mindspace/listener/profile"
-      : "/mindspace/member/profile";
+      ? "/peercove/listener/profile"
+      : "/peercove/member/profile";
 
   async function handleLogout() {
     try {
@@ -76,7 +76,7 @@ export function NavUser(props: NavUserProps) {
       localStorage.removeItem("access_token");
       localStorage.removeItem("refresh_token");
       localStorage.removeItem("member_auth_token");
-      document.cookie = "mindspace_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+      document.cookie = "peercove_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
       document.cookie = "dev_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
       document.cookie = "activeRoleRedirectUrl=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
       document.cookie = "better-auth.session_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";

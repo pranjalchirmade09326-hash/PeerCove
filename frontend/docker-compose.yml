@@ -1,4 +1,4 @@
-# Local development stack for MindSpace.
+# Local development stack for PeerCove.
 #
 # Redis is provisioned for future caching/session use. Nothing in the
 # app talks to it yet, so it's safe to leave running idle.
@@ -11,18 +11,18 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: mindspace-frontend-postgres
+    container_name: peercove-frontend-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-mindspace}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mindspace}
-      POSTGRES_DB: ${POSTGRES_DB:-mindspace}
+      POSTGRES_USER: ${POSTGRES_USER:-peercove}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-peercove}
+      POSTGRES_DB: ${POSTGRES_DB:-peercove}
     ports:
       - "5435:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mindspace}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-peercove}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -39,7 +39,7 @@ services:
     env_file:
       - .env
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-mindspace}:${POSTGRES_PASSWORD:-mindspace}@postgres:5432/${POSTGRES_DB:-mindspace}?schema=public
+      DATABASE_URL: postgresql://${POSTGRES_USER:-peercove}:${POSTGRES_PASSWORD:-peercove}@postgres:5432/${POSTGRES_DB:-peercove}?schema=public
     depends_on:
       postgres:
         condition: service_healthy
@@ -53,14 +53,14 @@ services:
         NEXT_PUBLIC_BETTER_AUTH_URL: ${NEXT_PUBLIC_BETTER_AUTH_URL:-http://localhost:5001}
         NEXT_PUBLIC_BETTER_AUTH_CLIENT_ID: ${NEXT_PUBLIC_BETTER_AUTH_CLIENT_ID:-}
         NEXT_DEPLOYMENT_ID: ${NEXT_DEPLOYMENT_ID:-local}
-    container_name: mindspace-frontend
+    container_name: peercove-frontend
     restart: unless-stopped
     env_file:
       - .env
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-mindspace}:${POSTGRES_PASSWORD:-mindspace}@postgres:5432/${POSTGRES_DB:-mindspace}?schema=public
+      DATABASE_URL: postgresql://${POSTGRES_USER:-peercove}:${POSTGRES_PASSWORD:-peercove}@postgres:5432/${POSTGRES_DB:-peercove}?schema=public
       BETTER_AUTH_URL: http://host.docker.internal:5001
-      MINDSPACE_API_URL: http://host.docker.internal:8080
+      PEERCOVE_API_URL: http://host.docker.internal:8080
     extra_hosts:
       - "host.docker.internal:host-gateway"
     ports:
@@ -78,7 +78,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: mindspace-redis
+    container_name: peercove-redis
     restart: unless-stopped
     ports:
       - "6379:6379"

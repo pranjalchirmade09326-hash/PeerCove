@@ -1,1 +1,1 @@
-"""MindSpace Agents package."""
+"""PeerCove Agents package."""

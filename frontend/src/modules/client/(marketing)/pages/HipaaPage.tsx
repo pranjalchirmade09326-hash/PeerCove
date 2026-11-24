@@ -1,9 +1,9 @@
 /**
- * HipaaPage — dedicated marketing page explaining MindSpace's HIPAA compliance.
+ * HipaaPage — dedicated marketing page explaining PeerCove's HIPAA compliance.
  *
  * Layer: client / (marketing) / pages
  *
- * Covers: what HIPAA requires, how MindSpace implements each safeguard,
+ * Covers: what HIPAA requires, how PeerCove implements each safeguard,
  * PHI handling policy, encryption standards, BAA availability,
  * and audit trail architecture.
  */
@@ -111,7 +111,7 @@ const safeguards = [
 const phiPractices = [
   { title: "Minimum Necessary", description: "Only the PHI required for the specific clinical task is ever accessed, processed, or transmitted." },
   { title: "Zero Third-Party Sharing", description: "PHI is never shared with third parties for advertising, analytics, or AI training without explicit consent." },
-  { title: "AI Processing Boundaries", description: "AI agents process PHI only within the secure MindSpace environment. No PHI leaves your organization's data boundary." },
+  { title: "AI Processing Boundaries", description: "AI agents process PHI only within the secure PeerCove environment. No PHI leaves your organization's data boundary." },
   { title: "Data Residency", description: "Clinical data is stored in the region you configure. Cross-region PHI transfer is disabled by default." },
 ];
 
@@ -145,12 +145,12 @@ export function HipaaPage({ session }: { session: AuthResponse | null }) {
               <Badge variant="secondary" className="text-xs">Healthcare Data Security</Badge>
             </div>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground tracking-tight leading-[1.08] mb-6">
-              HIPAA Compliance Built Into Every Layer of MindSpace
+              HIPAA Compliance Built Into Every Layer of PeerCove
             </h1>
             <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed mb-8">
               The Health Insurance Portability and Accountability Act (HIPAA) sets the
               legal standard for protecting patient health information in the US.
-              MindSpace is designed to satisfy every HIPAA safeguard requirement — not as
+              PeerCove is designed to satisfy every HIPAA safeguard requirement — not as
               a checklist, but as a fundamental architectural principle.
             </p>
             <div className="flex flex-wrap gap-3">
@@ -188,7 +188,7 @@ export function HipaaPage({ session }: { session: AuthResponse | null }) {
         </div>
       </section>
 
-      {/* ── What HIPAA requires + how MindSpace implements ── */}
+      {/* ── What HIPAA requires + how PeerCove implements ── */}
       <section id="safeguards" className="py-20 sm:py-24 bg-secondary/30">
         <div className="max-w-[110rem] mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
@@ -203,7 +203,7 @@ export function HipaaPage({ session }: { session: AuthResponse | null }) {
               Six Safeguard Areas, Fully Addressed
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              HIPAA defines six safeguard categories for protecting PHI. MindSpace
+              HIPAA defines six safeguard categories for protecting PHI. PeerCove
               implements controls across all six — from infrastructure encryption to
               patient rights management.
             </p>
@@ -256,11 +256,11 @@ export function HipaaPage({ session }: { session: AuthResponse | null }) {
             >
               <span className="text-primary font-semibold tracking-wider uppercase text-sm">PHI Handling</span>
               <h2 className="mt-2 text-3xl sm:text-4xl font-bold text-foreground mb-6">
-                How MindSpace Treats Patient Health Information
+                How PeerCove Treats Patient Health Information
               </h2>
               <p className="text-muted-foreground leading-relaxed mb-8">
                 Protected Health Information (PHI) is the most sensitive data a healthcare
-                system handles. MindSpace applies strict data minimization, isolation, and
+                system handles. PeerCove applies strict data minimization, isolation, and
                 transparency principles to every PHI interaction.
               </p>
               <div className="space-y-5">
@@ -302,7 +302,7 @@ export function HipaaPage({ session }: { session: AuthResponse | null }) {
                       <h3 className="font-bold text-foreground mb-2">Business Associate Agreement (BAA)</h3>
                       <p className="text-sm text-muted-foreground leading-relaxed">
                         A signed BAA is required under HIPAA whenever a business associate
-                        handles PHI on behalf of a covered entity. MindSpace provides a
+                        handles PHI on behalf of a covered entity. PeerCove provides a
                         standard BAA on request — making your organization&apos;s HIPAA
                         compliance straightforward from day one.
                       </p>

@@ -1,6 +1,6 @@
 import re
 from typing import Dict, Any
-from src.state import MindSpaceAgentState
+from src.state import PeerCoveAgentState
 
 # Deterministic crisis patterns across English, Hindi (Devanagari), and Hinglish (Roman Hindi).
 # Bounded phrases are used to minimize false positives from colloquial speech.
@@ -41,7 +41,7 @@ CRISIS_PATTERNS = [
     r"फांसी लगाना",
 ]
 
-def safety_sentinel_node(state: MindSpaceAgentState) -> Dict[str, Any]:
+def safety_sentinel_node(state: PeerCoveAgentState) -> Dict[str, Any]:
     messages = state.get("messages", [])
     if not messages:
         return {"is_crisis": False}

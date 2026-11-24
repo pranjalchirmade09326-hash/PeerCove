@@ -1,5 +1,5 @@
 /**
- * Features — patient-focused overview of MindSpace's care journey.
+ * Features — patient-focused overview of PeerCove's care journey.
  *
  * Layer: client / (marketing) / components
  *

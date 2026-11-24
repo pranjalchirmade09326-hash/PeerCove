@@ -165,7 +165,7 @@ export default function AppearanceSettings() {
                   <div className="size-2.5 rounded-full bg-yellow-400/60" />
                   <div className="size-2.5 rounded-full bg-green-500/60" />
                   <div className="mx-auto h-5 w-32 rounded-md bg-background/80 border text-[9px] flex items-center justify-center text-muted-foreground font-mono">
-                    app.mindspace.com
+                    app.peercove.com
                   </div>
                 </div>
                 <div className="p-4 space-y-3">

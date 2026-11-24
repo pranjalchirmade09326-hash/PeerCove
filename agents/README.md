@@ -1,16 +1,16 @@
-# MindSpace — AI Voice & Chat Agent Service
+# PeerCove — AI Voice & Chat Agent Service
 
-The **Agent Intelligence Engine (Engine 2)** for the MindSpace platform. It powers conversational AI companions, active-listening voice agents, and structured wellbeing reflection assistance.
+The **Agent Intelligence Engine (Engine 2)** for the PeerCove platform. It powers conversational AI companions, active-listening voice agents, and structured wellbeing reflection assistance.
 
 ---
 
 ## 🏛️ Clean Architectural Boundaries
 
-In accordance with MindSpace's Clean Architecture and Three-Engine isolation model:
+In accordance with PeerCove's Clean Architecture and Three-Engine isolation model:
 
 ```
 ┌────────────────────────────────────────────────────────┐
-│              MindSpace Agent Runtime                   │
+│              PeerCove Agent Runtime                   │
 │                                                        │
 │  ┌────────────────────────┐  ┌──────────────────────┐  │
 │  │   Conversational AI    │  │ Voice Stream Server  │  │
@@ -76,7 +76,7 @@ In accordance with MindSpace's Clean Architecture and Three-Engine isolation mod
 
 Check running agent logs:
 ```bash
-docker compose logs -f mindspace-agents
+docker compose logs -f peercove-agents
 ```
 
 Check container status:

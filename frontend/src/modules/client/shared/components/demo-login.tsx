@@ -115,7 +115,7 @@ export const DemoLoginComponent: React.FC<DemoLoginComponentProps> = ({
       localStorage.setItem("displayName", account.name);
       localStorage.setItem("isDemoMode", "true");
 
-      // Establish authenticated mindspace_session cookie for server components
+      // Establish authenticated peercove_session cookie for server components
       try {
         await fetch("/api/auth/dev-login", {
           method: "POST",
@@ -137,14 +137,14 @@ export const DemoLoginComponent: React.FC<DemoLoginComponentProps> = ({
       // Redirect to appropriate dashboard
       const dashboardPath =
         account.role === "member"
-          ? "/mindspace/member"
+          ? "/peercove/member"
           : account.role === "listener"
-            ? "/mindspace/listener"
+            ? "/peercove/listener"
             : account.role === "listener-supervisor"
-              ? "/mindspace/listener-supervisor"
+              ? "/peercove/listener-supervisor"
               : account.role === "safety-operations"
-                ? "/mindspace/safety-operations"
-                : "/mindspace/platform-administrator";
+                ? "/peercove/safety-operations"
+                : "/peercove/platform-administrator";
 
       onLoginComplete?.(account.role);
       router.push(dashboardPath);
@@ -166,7 +166,7 @@ export const DemoLoginComponent: React.FC<DemoLoginComponentProps> = ({
       <div className="text-center">
         <h2 className="text-2xl font-bold tracking-tight">🎭 Demo Access</h2>
         <p className="text-sm text-muted-foreground mt-2">
-          Quick sign-in with pre-configured demo accounts to explore MindSpace
+          Quick sign-in with pre-configured demo accounts to explore PeerCove
         </p>
       </div>
 

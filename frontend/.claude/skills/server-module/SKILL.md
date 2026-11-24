@@ -1,6 +1,6 @@
 ---
 name: server-module
-description: "Scaffold a new clean-architecture server module (domain → infra → usecases → controllers → DI → server actions) for the MindSpace project. Supports both REST (default) and GraphQL transports via DI switching."
+description: "Scaffold a new clean-architecture server module (domain → infra → usecases → controllers → DI → server actions) for the PeerCove project. Supports both REST (default) and GraphQL transports via DI switching."
 trigger: /server-module
 ---
 

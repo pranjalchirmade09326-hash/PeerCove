@@ -5,7 +5,7 @@ import { Pool } from "pg";
 /**
  * Dev-login & Registration Handler
  *
- * 1. Asynchronously writes to PostgreSQL (port 5433 / mindspace):
+ * 1. Asynchronously writes to PostgreSQL (port 5433 / peercove):
  *      - app_principals
  *      - member_profiles
  *      - role_assignments
@@ -13,10 +13,10 @@ import { Pool } from "pg";
  *      - iam.user
  *    Without blocking the user response so dashboard navigation is instant.
  *
- * 2. Issues an authenticated `mindspace_session` cookie for seamless dashboard access.
+ * 2. Issues an authenticated `peercove_session` cookie for seamless dashboard access.
  */
 
-const MINDSPACE_ROLES = [
+const PEERCOVE_ROLES = [
   "member",
   "listener",
   "listener-supervisor",
@@ -24,20 +24,20 @@ const MINDSPACE_ROLES = [
   "platform-administrator",
 ] as const;
 
-type MindspaceRole = (typeof MINDSPACE_ROLES)[number];
+type PeerCoveRole = (typeof PEERCOVE_ROLES)[number];
 
-// Connection pool for local MindSpace PostgreSQL
+// Connection pool for local PeerCove PostgreSQL
 const pgPool = new Pool({
   connectionString:
-    process.env.MINDSPACE_DATABASE_URL ||
-    process.env.DATABASE_URL_MINDSPACE ||
-    "postgresql://mindspace:dev-only-change-me@localhost:5433/mindspace?schema=public",
+    process.env.PEERCOVE_DATABASE_URL ||
+    process.env.DATABASE_URL_PEERCOVE ||
+    "postgresql://peercove:dev-only-change-me@localhost:5433/peercove?schema=public",
   connectionTimeoutMillis: 200,
   idleTimeoutMillis: 10000,
   max: 5,
 });
 
-function normalizeRole(raw: string): { dbRole: string; roleKey: MindspaceRole } {
+function normalizeRole(raw: string): { dbRole: string; roleKey: PeerCoveRole } {
   const r = (raw || "member").trim().toLowerCase().replace(/[-_]/g, "");
   if (r.includes("supervisor")) {
     return { dbRole: "listener_supervisor", roleKey: "listener-supervisor" };
@@ -54,7 +54,7 @@ function normalizeRole(raw: string): { dbRole: string; roleKey: MindspaceRole } 
   return { dbRole: "member", roleKey: "member" };
 }
 
-async function persistToMindspaceDatabase(
+async function persistToPeerCoveDatabase(
   userId: string,
   name: string,
   dbRole: string
@@ -82,7 +82,7 @@ async function persistToMindspaceDatabase(
     // 3. RoleAssignment (assigned role, prevent duplicate active rows)
     await client.query(
       `INSERT INTO role_assignments (id, user_id, role_code, assignment_state, decision_reason, granted_at)
-       SELECT gen_random_uuid(), $1, $2, 'active', 'User registration from MindSpace portal', NOW()
+       SELECT gen_random_uuid(), $1, $2, 'active', 'User registration from PeerCove portal', NOW()
        WHERE NOT EXISTS (
          SELECT 1 FROM role_assignments WHERE user_id = $1 AND role_code = $2 AND assignment_state = 'active'
        );`,
@@ -127,7 +127,7 @@ export async function POST(req: Request) {
     const email =
       typeof body.email === "string" && body.email.trim()
         ? body.email.trim().toLowerCase()
-        : `${roleKey}@mindspace.local`;
+        : `${roleKey}@peercove.local`;
 
     const name =
       typeof body.name === "string" && body.name.trim()
@@ -135,9 +135,9 @@ export async function POST(req: Request) {
         : email.split("@")[0].replace(/[-_.]/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase());
 
     // Trigger database persistence in background without blocking instant HTTP redirect
-    persistToMindspaceDatabase(email, name, dbRole).catch(() => {});
+    persistToPeerCoveDatabase(email, name, dbRole).catch(() => {});
 
-    const defaultRedirect = `/mindspace/${roleKey}`;
+    const defaultRedirect = `/peercove/${roleKey}`;
     let redirectPath = (
       typeof body.redirectUrl === "string" && body.redirectUrl
         ? body.redirectUrl
@@ -176,13 +176,13 @@ export async function POST(req: Request) {
         activeOrganizationId: "org-default-01",
         activeTeamId: null,
         impersonatedBy: null,
-        apps: ["mindspace"],
+        apps: ["peercove"],
         permissions: ["*"],
         organizations: [
           {
             id: "org-default-01",
-            name: "MindSpace",
-            slug: "mindspace",
+            name: "PeerCove",
+            slug: "peercove",
             logo: null,
           },
         ],
@@ -202,7 +202,7 @@ export async function POST(req: Request) {
     };
 
     const cookieStore = await cookies();
-    cookieStore.set("mindspace_session", JSON.stringify(sessionData), cookieOptions);
+    cookieStore.set("peercove_session", JSON.stringify(sessionData), cookieOptions);
     cookieStore.set("dev_token", "dev-jwt-token", cookieOptions);
     cookieStore.set("activeRoleRedirectUrl", fullRedirectUrl, cookieOptions);
 
@@ -211,7 +211,7 @@ export async function POST(req: Request) {
       redirectUrl: fullRedirectUrl,
       user: { email, name, role: roleKey, dbRole },
     });
-    response.cookies.set("mindspace_session", JSON.stringify(sessionData), cookieOptions);
+    response.cookies.set("peercove_session", JSON.stringify(sessionData), cookieOptions);
     response.cookies.set("dev_token", "dev-jwt-token", cookieOptions);
     return response;
   } catch (err: unknown) {

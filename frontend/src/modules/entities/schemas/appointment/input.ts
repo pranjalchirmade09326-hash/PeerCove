@@ -406,7 +406,7 @@ export const ListAppointmentsValidationSchema = z.object({
    * Comma-separated fields, each optionally "-"-prefixed for descending —
    * e.g. "status-priority,-date". Supported: date, status, _id, patient, type,
    * duration, and status-priority (buckets status into active/tentative/terminal
-   * tiers — a mindspace addition on top of the standard FHIR search params,
+   * tiers — a peercove addition on top of the standard FHIR search params,
    * replacing the client-side re-sort tables previously applied after fetching).
    */
   sort: z.string().optional(),

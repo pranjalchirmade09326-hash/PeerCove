@@ -31,7 +31,7 @@ enum TrainingStatus {
 }
 
 /**
- * MindSpace member profile linked to Better Auth user.
+ * PeerCove member profile linked to Better Auth user.
  * Stores member-specific data like mood tracking, journal entries, and engagement metrics.
  */
 model MemberProfile {
@@ -55,7 +55,7 @@ model MemberProfile {
 }
 
 /**
- * MindSpace listener (supporter) profile linked to Better Auth user.
+ * PeerCove listener (supporter) profile linked to Better Auth user.
  * Stores listener-specific data like ratings, availability, and specialties.
  */
 model ListenerProfile {

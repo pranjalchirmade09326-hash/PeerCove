@@ -1,9 +1,9 @@
 /**
- * McpPage — dedicated marketing page explaining the MindSpace MCP Server.
+ * McpPage — dedicated marketing page explaining the PeerCove MCP Server.
  *
  * Layer: client / (marketing) / pages
  *
- * Covers: what the Model Context Protocol (MCP) is, how MindSpace exposes FHIR
+ * Covers: what the Model Context Protocol (MCP) is, how PeerCove exposes FHIR
  * resources as AI-callable tools, the available MCP tools, use cases, and
  * HIPAA-scoped security. Intentionally generic — no specific AI products named.
  */
@@ -76,7 +76,7 @@ const howItWorks = [
     step: "01",
     title: "AI Tool Client Connects",
     description:
-      "Any MCP-compatible AI tool client connects to the MindSpace MCP Server using a HIPAA-scoped authentication token issued to your organization.",
+      "Any MCP-compatible AI tool client connects to the PeerCove MCP Server using a HIPAA-scoped authentication token issued to your organization.",
   },
   {
     step: "02",
@@ -129,7 +129,7 @@ const useCases = [
     icon: <Plug className="w-5 h-5 text-primary" />,
     title: "Third-Party AI Integration",
     description:
-      "Connect any MCP-compatible AI system to your FHIR EMR. Your existing AI tooling can query MindSpace clinical data without proprietary integrations or data exports.",
+      "Connect any MCP-compatible AI system to your FHIR EMR. Your existing AI tooling can query PeerCove clinical data without proprietary integrations or data exports.",
   },
 ];
 
@@ -181,7 +181,7 @@ export function McpPage({ session }: { session: AuthResponse | null }) {
             </h1>
             <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed mb-8">
               The Model Context Protocol (MCP) is an open standard that lets AI tools
-              call external systems in a structured, secure way. MindSpace ships with a
+              call external systems in a structured, secure way. PeerCove ships with a
               built-in MCP server that exposes your entire FHIR EMR as a queryable,
               AI-accessible tool layer — with HIPAA compliance enforced at every call.
             </p>
@@ -241,7 +241,7 @@ export function McpPage({ session }: { session: AuthResponse | null }) {
                 server — and any compatible AI tool can connect to it.
               </p>
               <p className="text-muted-foreground leading-relaxed mb-8">
-                MindSpace&apos;s MCP server turns your FHIR EMR into a set of callable tools.
+                PeerCove&apos;s MCP server turns your FHIR EMR into a set of callable tools.
                 An AI system can call <span className="font-mono text-xs bg-secondary px-1.5 py-0.5 rounded">get_patient</span>,{" "}
                 <span className="font-mono text-xs bg-secondary px-1.5 py-0.5 rounded">list_appointments</span>, or{" "}
                 <span className="font-mono text-xs bg-secondary px-1.5 py-0.5 rounded">get_intake_summary</span>{" "}
@@ -278,7 +278,7 @@ export function McpPage({ session }: { session: AuthResponse | null }) {
                 </div>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground font-mono">
                   <Terminal className="w-3.5 h-3.5" />
-                  mindspace-mcp-server
+                  peercove-mcp-server
                 </div>
                 <Badge variant="outline" className="text-[10px] border-emerald-500/30 text-emerald-500">Running</Badge>
               </div>
@@ -362,7 +362,7 @@ export function McpPage({ session }: { session: AuthResponse | null }) {
           >
             <span className="text-primary font-semibold tracking-wider uppercase text-sm">Available Tools</span>
             <h2 className="mt-2 text-3xl sm:text-4xl font-bold text-foreground">
-              MCP Tools Available on MindSpace
+              MCP Tools Available on PeerCove
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
               Each tool returns structured FHIR R4 data and is scoped to the
@@ -418,7 +418,7 @@ export function McpPage({ session }: { session: AuthResponse | null }) {
             className="text-center max-w-3xl mx-auto mb-16"
           >
             <h2 className="text-3xl sm:text-4xl font-bold text-foreground">
-              What You Can Build with MindSpace MCP
+              What You Can Build with PeerCove MCP
             </h2>
           </motion.div>
           <div className="grid md:grid-cols-2 gap-6">
@@ -461,7 +461,7 @@ export function McpPage({ session }: { session: AuthResponse | null }) {
               Ready to Connect Your AI Tooling to FHIR?
             </h2>
             <p className="text-lg text-muted-foreground max-w-xl mx-auto mb-10">
-              Start using the MindSpace MCP server to query live FHIR records from any
+              Start using the PeerCove MCP server to query live FHIR records from any
               MCP-compatible AI tool — securely and without custom integrations.
             </p>
             {!session && (

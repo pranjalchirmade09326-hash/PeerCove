@@ -1,1 +1,1 @@
-"""MindSpace Agents nodes package."""
+"""PeerCove Agents nodes package."""

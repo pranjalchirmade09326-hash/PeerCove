@@ -1,5 +1,5 @@
 """
-MindSpace Multi-Agent Service Entrypoint (Port :8018).
+PeerCove Multi-Agent Service Entrypoint (Port :8018).
 Exposes HTTP, streaming, and voice endpoints for Next.js frontend consumption.
 """
 import os
@@ -36,7 +36,7 @@ from src.nodes.llm_client import invoke_gemini_chat
 from src.auth import validate_token, validate_token_async, verify_token, AuthenticationError
 
 app = FastAPI(
-    title="MindSpace Multi-Agent Service",
+    title="PeerCove Multi-Agent Service",
     description="Engine 2: Multi-Agent Intelligence and Triage Service",
     version="2.1.0"
 )
@@ -69,7 +69,7 @@ class VoiceSynthesizeRequest(BaseModel):
 def root():
     """Root endpoint for quick browser verification."""
     return {
-        "service": "MindSpace Multi-Agent Engine",
+        "service": "PeerCove Multi-Agent Engine",
         "status": "online",
         "port": 8018,
         "health": "/health",
@@ -81,7 +81,7 @@ def health_check():
     """Service health verification endpoint."""
     return {
         "status": "healthy",
-        "service": "MindSpace Multi-Agent Engine",
+        "service": "PeerCove Multi-Agent Engine",
         "port": 8018,
         "framework": "LangGraph (StateGraph)"
     }
@@ -119,7 +119,7 @@ async def chat_endpoint(req: ChatRequest, authorization: Optional[str] = Header(
         "matched_listener": final_state.get("matched_listener_name")
     }
 
-logger = logging.getLogger("mindspace.agents")
+logger = logging.getLogger("peercove.agents")
 
 # Global in-memory multi-turn session cache
 SESSION_MEMORIES: Dict[str, List[Dict[str, str]]] = {}
@@ -300,7 +300,7 @@ async def voice_websocket_endpoint(websocket: WebSocket):
 
     # 2. Send greeting phase
     await websocket.send_json({"type": "status", "status": "greeting"})
-    greeting_text = "Namaste. I am your MindSpace Voice Companion. I am here listening to you with care. How are you feeling today?"
+    greeting_text = "Namaste. I am your PeerCove Voice Companion. I am here listening to you with care. How are you feeling today?"
     session_history.append({"role": "assistant", "content": greeting_text})
 
     greeting_voice = await synthesize_speech(greeting_text)
@@ -388,7 +388,7 @@ async def voice_websocket_endpoint(websocket: WebSocket):
                         await websocket.send_json({"type": "transcript", "text": transcript})
                         await websocket.send_json({"type": "status", "status": "thinking"})
 
-                        # Construct MindSpaceAgentState according to schema
+                        # Construct PeerCoveAgentState according to schema
                         initial_state = {
                             "session_id": sess_id,
                             "member_id": member_id or "member-sanctuary",

@@ -1,0 +1,55 @@
+services:
+  peercove-postgres:
+    image: postgres:16
+    container_name: peercove-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-peercove}
+      POSTGRES_USER: ${POSTGRES_USER:-peercove}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dev-only-change-me}
+    ports:
+      - "5433:5432"
+    volumes:
+      - peercove-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - default
+      - peercove-api_default
+
+  peercove-iam:
+    build: .
+    container_name: peercove-iam
+    restart: unless-stopped
+    depends_on:
+      peercove-postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 5001
+      DATABASE_URL: postgresql://${POSTGRES_USER:-peercove}:${POSTGRES_PASSWORD:-dev-only-change-me}@peercove-postgres:5432/${POSTGRES_DB:-peercove}?schema=iam
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:5001}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-dev-only-replace-with-a-generated-32-byte-secret-0123456789abcdef}
+      JWT_ISSUER: ${JWT_ISSUER:-http://localhost:5001}
+      JWT_AUDIENCE: ${JWT_AUDIENCE:-peercove-api}
+      TRUSTED_ORIGINS: ${TRUSTED_ORIGINS:-http://localhost:4000}
+      SEED_PEERCOVE_API: "false"
+    ports:
+      - "5001:5001"
+    volumes:
+      - ./app:/app/app:ro
+    networks:
+      - default
+      - peercove-api_default
+
+volumes:
+  peercove-postgres-data:
+    name: peercove-api_peercove-postgres-data
+
+networks:
+  default:
+  peercove-api_default:
+    name: peercove-api_default

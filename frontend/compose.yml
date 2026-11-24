@@ -1,18 +1,18 @@
 services:
   nextjs:
-    image: ghcr.io/naveenraj-g/mindspace-frontend:latest
-    container_name: mindspace-frontend
+    image: ghcr.io/naveenraj-g/peercove-frontend:latest
+    container_name: peercove-frontend
     env_file:
       - .env
     networks:
-      - mindspace-net
+      - peercove-net
     volumes:
-      - /root/mindspace/logs:/app/logs
-      - /root/mindspace/uploads:/app/uploads
+      - /root/peercove/logs:/app/logs
+      - /root/peercove/uploads:/app/uploads
     ports:
       - "3000:3000"
     restart: unless-stopped
 
 networks:
-  mindspace-net:
+  peercove-net:
     external: true

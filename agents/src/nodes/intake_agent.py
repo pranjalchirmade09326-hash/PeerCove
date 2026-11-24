@@ -3,11 +3,11 @@ Intake Agent — Gentle conversational assessment and needs identification.
 """
 from typing import Dict, Any
 
-from src.state import MindSpaceAgentState
+from src.state import PeerCoveAgentState
 from src.nodes.llm_client import invoke_gemini_chat
 
 SYSTEM_PROMPT = """
-You are the MindSpace Sanctuary AI Companion & Intake Agent — an empathetic, emotionally intelligent, and deeply dynamic conversational guide.
+You are the PeerCove Sanctuary AI Companion & Intake Agent — an empathetic, emotionally intelligent, and deeply dynamic conversational guide.
 
 Core Guidelines:
 1. Dynamic Conversational Engagement:
@@ -31,7 +31,7 @@ Core Guidelines:
    - In acute self-harm crisis, offer immediate emergency helplines (112, 988, Tele-MANAS 14416).
 """
 
-def intake_node(state: MindSpaceAgentState) -> Dict[str, Any]:
+def intake_node(state: PeerCoveAgentState) -> Dict[str, Any]:
     messages = state.get("messages", [])
     reply_text = invoke_gemini_chat(SYSTEM_PROMPT, messages, temperature=0.7)
     return {

@@ -1,7 +1,7 @@
 from typing import TypedDict, Annotated, List, Optional, Dict, Any
 import operator
 
-class MindSpaceAgentState(TypedDict):
+class PeerCoveAgentState(TypedDict):
     session_id: str                              # Unique conversation session ID
     member_id: str                               # Logged-in user ID
     auth_token: Optional[str]                    # Bearer token for API verification

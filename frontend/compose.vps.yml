@@ -1,61 +1,61 @@
 services:
 
   # ─── PostgreSQL ───────────────────────────────────────────────────────────────
-  # Not exposed outside — only reachable within mindspace-net
+  # Not exposed outside — only reachable within peercove-net
   postgres:
     image: postgres:16-alpine
-    container_name: mindspace-postgres
+    container_name: peercove-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: mindspace
-      POSTGRES_PASSWORD: mindspace
-      POSTGRES_DB: mindspace_main
+      POSTGRES_USER: peercove
+      POSTGRES_PASSWORD: peercove
+      POSTGRES_DB: peercove_main
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - mindspace-net
+      - peercove-net
     configs:
       - source: init_db
         target: /docker-entrypoint-initdb.d/01_init.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-mindspace} -d mindspace_main"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-peercove} -d peercove_main"]
       interval: 10s
       timeout: 5s
       retries: 5
 
   # ─── App ─────────────────────────────────────────────────────────────────────
   app:
-    image: ghcr.io/naveenraj-g/mindspace-frontend:latest
-    container_name: mindspace-frontend
+    image: ghcr.io/naveenraj-g/peercove-frontend:latest
+    container_name: peercove-frontend
     restart: unless-stopped
     env_file:
       - .env.vps
     volumes:
-      - /root/mindspace/logs:/app/logs
-      - /root/mindspace/uploads:/app/uploads
+      - /root/peercove/logs:/app/logs
+      - /root/peercove/uploads:/app/uploads
     ports:
       - "3003:3000"
     networks:
-      - mindspace-net
+      - peercove-net
       - fhir-server_fhir-net
       - iam-app_bezs-net
       - a2ui-agent_default
-      - mindspace-agents_default
+      - peercove-agents_default
     depends_on:
       postgres:
         condition: service_healthy
 
-# ─── Creates mindspace_telemedicine on first postgres start ─────────────────────
+# ─── Creates peercove_telemedicine on first postgres start ─────────────────────
 configs:
   init_db:
     content: |
-      CREATE DATABASE mindspace_telemedicine;
+      CREATE DATABASE peercove_telemedicine;
 
 volumes:
   postgres_data:
 
 networks:
-  mindspace-net:
+  peercove-net:
     external: true
   # FHIR REST + GQL services
   fhir-server_fhir-net:
@@ -66,6 +66,6 @@ networks:
   # A2UI agents (intake, consultation)
   a2ui-agent_default:
     external: true
-  # MindSpace agents (assessment, doctor report, etc.)
-  mindspace-agents_default:
+  # PeerCove agents (assessment, doctor report, etc.)
+  peercove-agents_default:
     external: true
