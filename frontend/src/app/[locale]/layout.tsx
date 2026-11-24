@@ -14,23 +14,23 @@ import { QueryProvider } from "@/providers/QueryProvider";
 const dmSans = { className: "" };
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:4000"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "https://peercove.space"),
   title: {
-    default: "MindSpace",
-    template: "%s | MindSpace",
+    default: "PeerCove",
+    template: "%s | PeerCove",
   },
   description:
     "A calmer space for mental wellness, guided conversations, and connected care.",
-  applicationName: "MindSpace",
+  applicationName: "PeerCove",
   icons: {
     icon: "/icon.svg",
     apple: "/apple-icon",
   },
   openGraph: {
-    title: "MindSpace",
+    title: "PeerCove",
     description:
       "A calmer space for mental wellness, guided conversations, and connected care.",
-    siteName: "MindSpace",
+    siteName: "PeerCove",
     type: "website",
   },
 };

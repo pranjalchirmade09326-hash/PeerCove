@@ -49,7 +49,7 @@ const capabilities = [
 // ── Mock terminal log lines ─────────────────────────────────────────────────
 
 const terminalLogs = [
-  { prefix: "[INIT]", text: "MindSpace MCP Server v1.0 started on port 3100", color: "text-muted-foreground" },
+  { prefix: "[INIT]", text: "PeerCove MCP Server v1.0 started on port 3100", color: "text-muted-foreground" },
   { prefix: "[FHIR]", text: "FHIR R4 base URL registered as MCP tool context", color: "text-blue-400" },
   { prefix: "[AUTH]", text: "HIPAA-scoped JWT session validated for org-0028", color: "text-emerald-400" },
   { prefix: "[TOOL]", text: "get_patient_by_id called → PAT-00241 returned", color: "text-violet-400" },
@@ -86,7 +86,7 @@ export default function McpSection() {
             Your FHIR EMR as an AI Tool
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            MindSpace ships with a built-in{" "}
+            PeerCove ships with a built-in{" "}
             <span className="text-foreground font-semibold">Model Context Protocol (MCP) server</span>{" "}
             — turning your entire clinical record system into a structured, queryable tool
             for any AI assistant.

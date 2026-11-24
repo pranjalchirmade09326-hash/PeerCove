@@ -1,162 +1,130 @@
-# SevaHealth AI 🏥
-**AI-Native Preventive Healthcare & NCD Early-Warning Platform**
+# PeerCove 🏥 🌊
+**AI-Native Peer Support, Mental Wellness & Connected Telehealth Platform**
 
-SevaHealth AI is an AI-assisted preventive healthcare platform designed to support early identification of Non-Communicable Disease (NCD) risks, explain contributing risk factors, and encourage preventive lifestyle changes.
+[![Live Production](https://img.shields.io/badge/Production-peercove.space-emerald?style=for-the-badge&logo=vercel)](https://peercove.space)
+[![Next.js](https://img.shields.io/badge/Next.js%2016-React%2019-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-Python%203.12-009688?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon%20Serverless-4169E1?style=for-the-badge&logo=postgresql)](https://neon.tech/)
+[![HL7 FHIR](https://img.shields.io/badge/HL7%20FHIR-R4%20Compliant-orange?style=for-the-badge)](https://hl7.org/fhir/)
 
-The platform supports citizens, healthcare workers, clinicians, and public health administrators through integrated screening, risk assessment, care planning, and health monitoring workflows.
+PeerCove is an AI-assisted mental wellness and collaborative care platform designed to provide a calm, supportive harbor for individuals seeking guided conversations, peer-to-peer listening, and professional telehealth care.
+
+The platform seamlessly connects citizens, peer listeners, healthcare providers, and clinical supervisors through guided intake, real-time matching, encrypted telehealth rooms, and FHIR-compliant electronic health records.
+
+---
+
+## 🌐 Live Deployments
+
+- **Production URL:** [https://peercove.space](https://peercove.space)
+- **Alternate Domain:** [https://www.peercove.space](https://www.peercove.space)
+- **Vercel Cloud Domain:** [https://mindspace-care.vercel.app](https://mindspace-care.vercel.app)
+- **Backend API Docs:** `https://mindspace-fastapi.onrender.com/docs` (Render FastAPI)
 
 ---
 
 ## ✨ Key Features
 
-- **Health Screening**: CBAC (Community-Based Assessment Checklist) and IDRS (Indian Diabetes Risk Score) screening workflows.
-- **Risk Assessment**: Multi-factor NCD risk stratification with explainable risk factors.
-- **Preventive Care Plans**: Personalized 30-day lifestyle, nutrition, and habit recommendations.
-- **Health Monitoring**: Daily check-ins, encrypted reflections, and wearable biometric integration.
-- **Clinical Triage & Telehealth**: High-risk alerts, automated doctor recommendation, video rooms, and AI-assisted SOAP notes.
-- **Ambient Voice Capture**: In-person clinical ambient audio recording with real-time waveform and transcript synthesis.
-- **FHIR Clinical Data Extractions**: Automated extraction of FHIR resources (Conditions, Observations, Medications, and Orders).
-- **Population Health Analytics**: District-level dashboards, supervisor oversight, and outcome monitoring.
-- **Clinical Safety**: Deterministic crisis sentinel circuit breakers and human-in-the-loop review for escalated cases.
+- **Guided Mental Wellness Intake**: Conversational text and voice intake that adapts to patient pace and comfort level.
+- **Peer & Listener Matching**: Real-time matching queue connecting individuals with empathetic, trained listeners and clinicians.
+- **Live Consultation Rooms**: LiveKit-powered WebRTC video, audio, and secure text rooms with in-session clinical safety monitors.
+- **Ambient Voice & SOAP Notes**: Real-time clinical audio capture with automated transcript synthesis and clinician SOAP note generation.
+- **FHIR R4 Electronic Health Records**: Native HL7 FHIR R4 clinical data storage (Conditions, Observations, Encounters, and ServiceRequests).
+- **Model Context Protocol (MCP)**: Built-in MCP server allowing authenticated AI assistants to query clinical records safely under HIPAA boundaries.
+- **Deterministic Crisis Sentinel**: Automatic keyword and sentiment circuit breakers routing to emergency resources (Tele-MANAS 14416 / US 988).
+- **Multi-Role Workspaces**: Tailored dashboards for Members, Listeners, Supervisors, and Safety Administrators.
 
 ---
 
 ## 🛠️ Technology Stack
 
-| Technology | Purpose |
-|---|---|
-| **Python 3.12+** | Backend development |
-| **FastAPI** | High-performance asynchronous REST & WebSocket API development |
-| **Next.js 16 & React 19** | Modern frontend web portal with Clean Architecture |
-| **TypeScript & Tailwind CSS** | Type-safe UI components with Radix UI and Lucide icons |
-| **PostgreSQL 16** | Relational database (Core Data on port 5433, App Data on port 5435) |
-| **JSONB & AES-256-GCM** | Flexible data storage with envelope encryption |
-| **Prisma ORM & SQLAlchemy** | Database modeling and asynchronous queries |
-| **AI/LLM Providers & LangGraph** | Google Gemini 2.5/Flash, Sarvam AI voice models, CDS Copilot |
-| **Docker & Docker Compose** | Multi-service containerization |
-| **Swagger/OpenAPI** | Interactive API documentation |
+| Layer | Technology | Purpose |
+|---|---|---|
+| **Frontend** | **Next.js 16 & React 19** | Clean Architecture, Server Components, multi-language internationalization (`next-intl`) |
+| **Styling & UI** | **Tailwind CSS & Radix UI** | Modern, accessible, responsive design with Lucide icons and Framer Motion animations |
+| **Backend API** | **FastAPI (Python 3.12)** | Asynchronous REST and WebSocket endpoints powered by Uvicorn |
+| **Database** | **PostgreSQL 18 on Neon** | Serverless PostgreSQL with SSL connection pooling (`-pooler`) and auto-scaling |
+| **ORM & Schema** | **Prisma ORM & SQLAlchemy** | Type-safe database queries and schema migrations |
+| **Realtime Media** | **LiveKit WebRTC** | Low-latency audio/video consultation and listening rooms |
+| **AI & Intelligence** | **Google Gemini & LangGraph** | Guided conversational agents, ambient documentation, and advisory triage |
+| **Security & Privacy** | **AES-256-GCM & JWT** | Envelope encryption for sensitive intakes, role-based access control, and audit logging |
+| **Hosting** | **Vercel & Render** | Global Edge CDN hosting for Next.js; containerized Docker deployment for FastAPI |
 
 ---
 
-## 🏗️ Architecture
+## 🏗️ Clean Architecture
 
-The project follows Clean Architecture with strict separation of concerns across Domain, Application, Infrastructure, and Presentation layers for screening, risk assessment, preventive interventions, clinical workflows, wearable data, and population health analytics.
+PeerCove follows Clean Architecture principles with strict layer boundaries across frontend and backend services:
 
-### Core Workflow:
 ```text
-Screen → Understand → Assess Risk → Predict → Intervene → Monitor → Escalate → Measure
+Intake / Reflection → Triage & Safety Check → Peer / Clinician Match → Video Consultation → FHIR Documentation
 ```
 
-### Clean Architecture Layers:
+### Architecture Layers:
 1. **Domain Layer**: Pure business entities, value objects, and repository interfaces (zero external dependencies).
-2. **Application Layer**: Use cases, workflow orchestrators, and validation logic.
-3. **Infrastructure Layer**: PostgreSQL adapters, external AI connectors, FHIR mappers, WebSocket gateways, and envelope encryption.
-4. **Presentation Layer**: Next.js views, interactive components, modals, and FastAPI routers.
+2. **Application Layer**: Use cases, matching logic, and intake orchestration.
+3. **Infrastructure Layer**: PostgreSQL adapters, Neon connection poolers, LiveKit SDK, and external AI connectors.
+4. **Presentation Layer**: Next.js App Router views, interactive modals, WebRTC rooms, and FastAPI REST routers.
 
 ---
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Python 3.12+
 - Node.js 20+ & pnpm
+- Python 3.12+ & uv
 - Git
-- Docker & Docker Compose (optional for containerized setup)
 
 ### Installation & Local Setup
 
 ```powershell
 # 1. Clone the repository
-git clone <YOUR_GITHUB_REPOSITORY_URL>
-cd sevahealth-ai
+git clone https://github.com/pranjalchirmade09326-hash/Mindspace.git
+cd Mindspace
 
-# 2. Start PostgreSQL Databases (Ports 5433 & 5435)
-docker compose -f backend\mindspace-fastapi\docker-compose.yml up -d mindspace-postgres
-docker compose -f frontend\docker-compose.yml up -d
+# 2. Frontend Setup (Next.js)
+cd frontend
+pnpm install
+pnpm exec prisma generate
+pnpm dev
 
 # 3. Backend Setup (FastAPI)
-cd backend\mindspace-fastapi
-uv run uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
-
-# 4. Frontend Setup (Next.js)
-cd ..\..\frontend
-pnpm install
-pnpm db:generate
-pnpm db:push
-pnpm dev
+cd ..\backend\mindspace-fastapi
+uv pip install -r pyproject.toml
+uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
 ```
 
-### Access the Application
+### Local Access Points
 - **Web Portal:** [http://localhost:4000/](http://localhost:4000/)
-- **Member / Citizen Workspace:** [http://localhost:4000/mindspace/member](http://localhost:4000/mindspace/member)
-- **Doctor / Listener Hub:** [http://localhost:4000/mindspace/listener](http://localhost:4000/mindspace/listener)
-- **API Documentation (Swagger):** [http://localhost:8080/docs](http://localhost:8080/docs)
-- **API Documentation (ReDoc):** [http://localhost:8080/redoc](http://localhost:8080/redoc)
+- **Member Workspace:** [http://localhost:4000/en/mindspace/member](http://localhost:4000/en/mindspace/member)
+- **Listener Workspace:** [http://localhost:4000/en/mindspace/listener](http://localhost:4000/en/mindspace/listener)
+- **API Swagger Documentation:** [http://localhost:8080/docs](http://localhost:8080/docs)
 - **Health Check Probe:** [http://localhost:8080/health/ready](http://localhost:8080/health/ready)
-
-*Note: These commands assume the project dependencies and local environment configuration (`.env`) are set up correctly.*
 
 ---
 
 ## 🧪 Testing
 
 ```powershell
-# Run frontend automated tests (Vitest - 405 unit & integration tests)
+# Run frontend unit & component tests
 cd frontend
-pnpm test --run
+pnpm test
 
-# Run backend automated tests (Pytest - 37 unit & workflow tests)
+# Run backend API & safety tests
 cd ..\backend\mindspace-fastapi
-uv run pytest tests/ -v
+pytest tests/ -v
 ```
 
 ---
 
-## 🔐 Clinical Safety
+## 🔐 Clinical Safety & Crisis Sentinel
 
-- SevaHealth AI is designed as a **clinical decision-support platform**, not a diagnostic system.
-- Risk estimates and triage recommendations do not represent confirmed diagnoses.
-- AI supports preventive guidance, ambient documentation, and doctor recommendation.
-- Medication prescribing and autonomous medical decisions are strictly outside the intended scope.
-- Escalated cases require mandatory human-in-the-loop review by qualified healthcare professionals.
-- Deterministic crisis sentinel circuit breakers monitor inputs to immediately trigger emergency resources (e.g. Tele-MANAS 14416 / 988).
+- PeerCove is designed for **peer listening, supportive guidance, and care coordination**.
+- It is **not** a replacement for emergency psychiatric intervention or emergency medical care.
+- Automated crisis detection continuously monitors intake text and voice transcripts for acute distress or self-harm markers.
+- When triggered, immediate crisis hotlines (Tele-MANAS: **14416** in India, **988** Suicide & Crisis Lifeline in the US) and local emergency resources are presented to the user.
 
 ---
 
-## 📂 Project Structure
+## 📄 License & Attribution
 
-```text
-sevahealth-ai/
-├── apps/ / frontend/         # Citizen, clinician, supervisor, and public health interfaces
-│   ├── src/
-│   │   ├── app/              # Next.js App Router endpoints & route handlers
-│   │   ├── components/       # Shared UI primitives, consultation modals, soundwaves
-│   │   └── modules/client/   # Clean Architecture domains (member, listener, supervisor)
-│   │       ├── domain/       # Pure entities & value objects
-│   │       ├── application/  # Use cases & workflow handlers
-│   │       ├── infrastructure/# API clients & storage adapters
-│   │       └── presentation/ # View components & consultation rooms
-├── services/ / backend/      # API, screening, risk, and clinical services
-│   ├── mindspace-fastapi/    # Engine 3: Core Health API, peer matching, AES-256 encryption
-│   └── mindspace-iam-py/     # Identity provider, JWT verification & JWKS
-├── agents/                   # Engine 2: LangGraph multi-agent intelligence & voice companion
-├── packages/                 # Shared schemas, FHIR converters, and validation utilities
-├── infrastructure/           # Docker compose definitions, database migrations, Caddy proxies
-├── docs/                     # Architecture specifications, diagrams, and operational guides
-└── tests/                    # Automated unit, integration, and security verification tests
-```
-
----
-
-## 📜 Open-Source Attribution
-
-Third-party repositories, licenses, and reuse details are documented in [docs/REUSE_MATRIX.md](docs/REUSE_MATRIX.md) and [docs/repository-reuse-analysis.md](docs/repository-reuse-analysis.md).
-
----
-
-## ⚠️ Disclaimer
-
-This project is intended for preventive health support, education, clinical documentation assistance, and demonstration. It is not a substitute for professional medical advice, diagnosis, or treatment. Use synthetic data for demonstrations and protect all sensitive health information.
-
-**Project:** SevaHealth AI  
-**Focus:** Preventive Healthcare • AI-Assisted Risk Assessment • NCD Early Warning • Clinical Decision Support
+All rights reserved &copy; 2026 PeerCove. Built with modern open-source foundations.

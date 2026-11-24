@@ -64,11 +64,11 @@ export default function DemoAccessSection() {
           </Badge>
 
           <h2 className="text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl">
-            Explore MindSpace in seconds
+            Explore PeerCove in seconds
           </h2>
           <p className="mx-auto mt-6 max-w-2xl text-lg text-slate-600">
             No setup required. Sign in with pre-configured demo accounts to experience all
-            MindSpace features across different user roles.
+            PeerCove features across different user roles.
           </p>
         </motion.div>
 

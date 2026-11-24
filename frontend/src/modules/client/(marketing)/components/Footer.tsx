@@ -32,7 +32,7 @@ export default function Footer() {
           <div className="col-span-2 lg:col-span-1">
             <a href="#" className="flex items-center space-x-2 text-primary">
               <AppLogo size={32} className="w-8 h-8" />
-              <span className="text-2xl font-bold text-foreground">MindSpace</span>
+              <span className="text-2xl font-bold text-foreground">PeerCove</span>
             </a>
             <p className="mt-4 text-muted-foreground text-sm leading-relaxed">
               A supportive space for mental wellness, guided conversations,
@@ -106,7 +106,7 @@ export default function Footer() {
         {/* Bottom bar */}
         <div className="mt-12 pt-8 border-t border-border flex flex-col sm:flex-row justify-between items-center gap-4">
           <p className="text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} MindSpace. All rights reserved.
+            &copy; {new Date().getFullYear()} PeerCove. All rights reserved.
           </p>
           <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
             <span>HL7® FHIR® R4 Compliant</span>

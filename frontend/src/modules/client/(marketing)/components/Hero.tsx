@@ -40,7 +40,7 @@ export default function Hero({ session }: { session: AuthResponse | null }) {
           </h1>
           <p className="mx-auto mt-6 max-w-xl text-lg leading-8 text-slate-600 lg:mx-0">
             When you&apos;re ready, start with a guided chat or voice conversation.
-            MindSpace helps you take the next step at your own pace.
+            PeerCove helps you take the next step at your own pace.
           </p>
 
           <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row lg:justify-start">
@@ -101,7 +101,7 @@ export default function Hero({ session }: { session: AuthResponse | null }) {
                   <Heart className="size-5" />
                 </div>
                 <div>
-                  <p className="font-semibold text-slate-900">MindSpace AI guide</p>
+                  <p className="font-semibold text-slate-900">PeerCove AI guide</p>
                   <p className="text-sm text-slate-500">A guided way to get started</p>
                 </div>
               </div>

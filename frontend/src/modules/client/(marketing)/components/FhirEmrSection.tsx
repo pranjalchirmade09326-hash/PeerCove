@@ -121,7 +121,7 @@ export default function FhirEmrSection() {
             Electronic Medical Records Powered by FHIR
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            Every piece of clinical data in MindSpace — from patient demographics to
+            Every piece of clinical data in PeerCove — from patient demographics to
             AI-generated observations — is stored as a structured HL7 FHIR R4 resource,
             enabling true interoperability with any compliant health system.
           </p>
@@ -188,7 +188,7 @@ export default function FhirEmrSection() {
                   <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
                     <CheckCircle2 className="w-4 h-4 text-primary" />
                   </div>
-                  <span className="font-bold text-foreground">MindSpace — FHIR R4 Native</span>
+                  <span className="font-bold text-foreground">PeerCove — FHIR R4 Native</span>
                 </div>
                 <ul className="space-y-3">
                   {fhirAdvantages.map((adv, i) => (

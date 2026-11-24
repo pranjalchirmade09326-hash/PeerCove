@@ -67,7 +67,7 @@ function MindspaceTitle({ home, subtitle }: { home: string; subtitle: string }) 
           <Link href={home} onClick={() => setOpenMobile(false)}>
             <AppLogo size={32} className="aspect-square size-8" />
             <div className="grid flex-1 text-start text-sm leading-tight">
-              <span className="truncate font-bold">MindSpace</span>
+              <span className="truncate font-bold">PeerCove</span>
               <span className="truncate text-xs text-muted-foreground">{subtitle}</span>
             </div>
           </Link>

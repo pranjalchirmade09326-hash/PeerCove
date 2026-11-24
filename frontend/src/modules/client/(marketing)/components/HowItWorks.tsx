@@ -33,7 +33,7 @@ const steps = [
     title: "Create your space",
     badge: "A simple start",
     description:
-      "Sign up and tell MindSpace a little about yourself. You can move at your own pace.",
+      "Sign up and tell PeerCove a little about yourself. You can move at your own pace.",
   },
   {
     number: "02",

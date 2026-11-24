@@ -63,7 +63,7 @@ export default function RootNavbar({
           <Link href="/" className="flex items-center space-x-2 text-primary">
             <AppLogo size={32} className="w-8 h-8" />
             <span className="text-2xl font-bold text-foreground tracking-tight">
-              MindSpace
+              PeerCove
             </span>
           </Link>
 

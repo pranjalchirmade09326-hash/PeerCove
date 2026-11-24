@@ -21,9 +21,9 @@ export async function GET() {
 
   return NextResponse.json({
     status: "ok",
-    service: "mindspace-frontend",
+    service: "peercove-frontend",
     backend: backendStatus,
-    message: "MindSpace Next.js Web Application is running",
+    message: "PeerCove Next.js Web Application is running",
     dashboard: "/en/mindspace/member",
     timestamp: new Date().toISOString(),
   });

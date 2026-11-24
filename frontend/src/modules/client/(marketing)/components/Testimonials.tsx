@@ -111,7 +111,7 @@ export default function Testimonials() {
         >
           <Heart className="mt-1 size-5 shrink-0 text-emerald-700" />
           <p>
-            MindSpace offers guided intake and care coordination; it is not a
+            PeerCove offers guided intake and care coordination; it is not a
             crisis service or a replacement for professional medical care. If
             you may be in immediate danger, contact your local emergency service.
           </p>

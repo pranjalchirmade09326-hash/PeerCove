@@ -46,7 +46,7 @@ const features = [
     title: "Choose how to share",
     badge: "Chat or voice",
     description:
-      "Write things down or talk them through. MindSpace gives you options for starting your care journey.",
+      "Write things down or talk them through. PeerCove gives you options for starting your care journey.",
   },
   {
     icon: <Heart className="h-8 w-8 text-primary" />,
@@ -72,7 +72,7 @@ const features = [
   {
     icon: <Heart className="h-8 w-8 text-primary" />,
     title: "Your care, connected",
-    badge: "MindSpace",
+    badge: "PeerCove",
     description:
       "Appointments, care conversations, and health records are brought together in one place.",
   },

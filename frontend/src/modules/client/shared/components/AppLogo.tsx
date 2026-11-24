@@ -11,7 +11,7 @@ export function AppLogo({
   return (
     <svg
       role="img"
-      aria-label="MindSpace"
+      aria-label="PeerCove"
       viewBox="0 0 48 48"
       width={size}
       height={size}

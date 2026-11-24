@@ -44,7 +44,7 @@ export default function Cta({ session }: { session: AuthResponse | null }) {
             </h2>
             <p className="mt-6 text-lg sm:text-xl text-primary-foreground/80 max-w-2xl mx-auto">
               Take the first step with a guided chat or voice intake, then keep
-              appointments and health information together in MindSpace.
+              appointments and health information together in PeerCove.
             </p>
 
             <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
