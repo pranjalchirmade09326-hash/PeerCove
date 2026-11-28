@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * MemberAppointmentsView — Remapping the Telemedicine Patient Appointments Workflow into PeerCove Member Sessions.
+ * MemberAppointmentsView — PeerCove Member Sessions & Appointment Management.
  *
  * Layer: modules / client / peercove / member / components
  *

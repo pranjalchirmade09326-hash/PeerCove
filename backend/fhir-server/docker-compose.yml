@@ -22,7 +22,7 @@ services:
       start_period: 15s
       retries: 3
     networks:
-      - bezs-net
+      - fhir-net
 
   db:
     image: postgres:15-alpine
@@ -41,7 +41,7 @@ services:
       start_period: 10s
       retries: 5
     networks:
-      - bezs-net
+      - fhir-net
 
   redis:
     image: redis:7-alpine
@@ -57,12 +57,12 @@ services:
       start_period: 5s
       retries: 5
     networks:
-      - bezs-net
+      - fhir-net
 
 volumes:
   postgres_data:
   redis_data:
 
 networks:
-  bezs-net:
+  fhir-net:
     driver: bridge

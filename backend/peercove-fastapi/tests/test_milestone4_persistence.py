@@ -109,7 +109,7 @@ def test_supervisor_training_reviews_query_and_verification():
         tr = ListenerTrainingRecord(
             id=uuid.uuid4(),
             listener_id=lp.id,
-            module_code="MS-BE-201",
+            module_code="PC-BE-201",
             module_version="v1.0",
             completion_state="in_progress",
             completed_at=datetime.now(timezone.utc),
@@ -122,7 +122,7 @@ def test_supervisor_training_reviews_query_and_verification():
         svc = SupervisorService(mock_db)
         reviews = await svc.get_training_reviews()
         assert len(reviews) == 1
-        assert reviews[0]["moduleCode"] == "MS-BE-201"
+        assert reviews[0]["moduleCode"] == "PC-BE-201"
         assert "Non-Clinical Peer Boundaries" in reviews[0]["moduleTitle"]
         assert reviews[0]["listenerName"] == "Jordan Lee"
 

@@ -62,11 +62,11 @@ export interface BookSessionModalProps {
 const AVAILABLE_LISTENERS = [
   {
     id: "l-3",
-    name: "Dr. Vikram Sen",
-    role: "Licensed Clinical Counselor / Doctor",
-    specialty: "Clinical Anxiety, Somatic Symptoms & Stress Management",
-    rating: "4.95 ★",
-    avatar: "VS",
+    name: "Kabir Mehta",
+    role: "Verified Peer Listener",
+    specialty: "Social Anxiety, Burnout & Grounding",
+    rating: "4.9 ★",
+    avatar: "KM",
     languages: ["en", "hi"],
   },
   {
@@ -173,7 +173,7 @@ export function BookSessionModal({
   const [channel, setChannel] = useState<SupportChannel>("chat");
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>(["en"]);
   const [topic, setTopic] = useState("Feeling overwhelmed with work deadlines and somatic tension.");
-  const [consentShareIntake, setConsentShareIntake] = useState(true);
+  const [consentShareIntake, setConsentShareIntake] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Toggle language selection
@@ -322,15 +322,15 @@ export function BookSessionModal({
         <DialogHeader className="space-y-1.5 pb-2">
           <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400 font-semibold text-xs uppercase tracking-wider">
             <Sparkles className="size-4 animate-pulse" />
-            PeerCove Peer Support & Doctor Intake
+            PeerCove Non-Clinical Peer Support
           </div>
           <DialogTitle className="text-xl font-bold font-serif">
-            {activeTab === "instant" ? "Request Peer Support Session" : "Book Doctor Appointment"}
+            {activeTab === "instant" ? "Request Peer Support Session" : "Schedule Peer Support Session"}
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
             {activeTab === "instant"
               ? "Select your emotional focus topic, preferred communication channel, and enter the active matching queue."
-              : "Choose an in-person or virtual consultation with a specialist and select your preferred slot."}
+              : "Choose a video, voice, or text listening session with a verified peer listener and select your preferred slot."}
           </DialogDescription>
         </DialogHeader>
 

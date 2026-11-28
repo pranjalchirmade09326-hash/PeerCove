@@ -108,8 +108,11 @@ async def chat_endpoint(req: ChatRequest, authorization: Optional[str] = Header(
         "next_node": ""
     }
     
-    # Execute the Multi-Agent State Machine
-    final_state = orchestrator_app.invoke(initial_state)
+    # Execute the Multi-Agent State Machine with session thread_id checkpointing
+    final_state = orchestrator_app.invoke(
+        initial_state,
+        config={"configurable": {"thread_id": req.session_id}},
+    )
     latest_reply = final_state["messages"][-1]
     
     return {
@@ -151,8 +154,12 @@ async def intake_stream_endpoint(req: IntakeRequest, authorization: Optional[str
     }
 
     try:
-        # Offload synchronous LangGraph execution to worker thread to avoid blocking the event loop
-        final_state = await asyncio.to_thread(orchestrator_app.invoke, initial_state)
+        # Offload synchronous LangGraph execution to worker thread with session checkpointing
+        final_state = await asyncio.to_thread(
+            orchestrator_app.invoke,
+            initial_state,
+            {"configurable": {"thread_id": sess_id}},
+        )
         latest_reply = final_state["messages"][-1]
         reply_content = latest_reply.get("content", "I am holding space for you.")
         is_crisis = bool(final_state.get("is_crisis", False))

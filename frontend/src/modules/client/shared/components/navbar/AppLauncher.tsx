@@ -19,7 +19,7 @@ interface AppEntry {
 
 const APP_CONFIG: Record<string, { icon: LucideIcon; bg: string; fg: string }> =
   {
-    telemedicine: { icon: Stethoscope, bg: "bg-blue-500", fg: "text-white" },
+    peercove: { icon: Stethoscope, bg: "bg-blue-500", fg: "text-white" },
   };
 
 export function AppLauncher({ apps = [] }: { apps?: AppEntry[] }) {
@@ -55,7 +55,7 @@ export function AppLauncher({ apps = [] }: { apps?: AppEntry[] }) {
               return (
                 <Link
                   key={app.id}
-                  href={`/bezs/${app.slug}`}
+                  href={`/${app.slug}`}
                   onClick={() => setOpen(false)}
                   className="flex flex-col items-center gap-2 rounded-xl px-5 py-3 hover:bg-muted transition-colors group"
                 >

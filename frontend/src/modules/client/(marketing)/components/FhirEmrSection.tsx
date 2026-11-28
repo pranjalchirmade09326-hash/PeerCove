@@ -1,13 +1,11 @@
 /**
- * FhirEmrSection — dedicated FHIR EMR interoperability showcase section.
+ * FhirEmrSection — Auxiliary HL7 FHIR R4 interoperability showcase section.
  *
  * Layer: client / (marketing) / components
  *
- * Highlights the HL7 FHIR R4 resource model powering PeerCove's electronic
- * medical records layer. Shows the seven core FHIR resources used in the
- * platform with descriptions of how each maps to clinical workflows.
- *
- * Also surfaces the "why FHIR matters" comparison vs. proprietary EMR formats.
+ * Highlights PeerCove's optional Auxiliary Clinical Interoperability Tier
+ * (backend/fhir-server :8000, fhir-gql :8001, fhir-staging) supporting 34
+ * HL7 FHIR R4 resources with dual-format JSON and multi-tenant JWT scoping.
  */
 
 "use client";
@@ -28,60 +26,65 @@ import {
   XCircle,
 } from "lucide-react";
 
-// ── FHIR resource cards ─────────────────────────────────────────────────────
+// ── Representative FHIR resource cards (34 total in fhir-server) ────────────
 
 const fhirResources = [
   {
-    icon: <User className="w-5 h-5 text-blue-500" />,
+    icon: <User className="w-5 h-5 text-primary" />,
     resource: "Patient",
-    color: "bg-blue-500/10 border-blue-500/20",
-    description: "Complete demographic and contact information for every patient.",
+    description: "Structured member/patient demographics and scoped identifiers for external clinical handoffs.",
   },
   {
-    icon: <UserCheck className="w-5 h-5 text-emerald-500" />,
+    icon: <UserCheck className="w-5 h-5 text-primary" />,
     resource: "Practitioner",
-    color: "bg-emerald-500/10 border-emerald-500/20",
-    description: "Verified clinician profiles, specialties, and scheduling data.",
+    description: "External clinical provider profiles, credentials, and organization roles.",
   },
   {
-    icon: <Calendar className="w-5 h-5 text-violet-500" />,
+    icon: <Calendar className="w-5 h-5 text-primary" />,
     resource: "Appointment",
-    color: "bg-violet-500/10 border-violet-500/20",
-    description: "Bookings with FHIR status codes: booked, fulfilled, cancelled.",
+    description: "Stepped-care clinical referrals with standardized FHIR status codes.",
   },
   {
-    icon: <ClipboardList className="w-5 h-5 text-amber-500" />,
+    icon: <ClipboardList className="w-5 h-5 text-primary" />,
     resource: "Encounter",
-    color: "bg-amber-500/10 border-amber-500/20",
-    description: "Clinical encounters created on consultation completion with SOAP notes.",
+    description: "Structured encounter summaries bridged during authorized stepped-care referrals.",
   },
   {
-    icon: <Activity className="w-5 h-5 text-rose-500" />,
+    icon: <Activity className="w-5 h-5 text-primary" />,
     resource: "Observation",
-    color: "bg-rose-500/10 border-rose-500/20",
-    description: "AI-extracted vitals, symptoms, and clinical measurements from intake.",
+    description: "Structured vitals, wellness scores, and intake measurements when exported.",
   },
   {
-    icon: <Pill className="w-5 h-5 text-cyan-500" />,
+    icon: <Pill className="w-5 h-5 text-primary" />,
     resource: "Condition",
-    color: "bg-cyan-500/10 border-cyan-500/20",
-    description: "Diagnoses and conditions linked to SNOMED CT terminology codes.",
+    description: "Standardized condition codes supported across SNOMED CT terminology endpoints.",
   },
   {
-    icon: <FileText className="w-5 h-5 text-indigo-500" />,
+    icon: <FileText className="w-5 h-5 text-primary" />,
     resource: "DocumentReference",
-    color: "bg-indigo-500/10 border-indigo-500/20",
-    description: "Clinical documents, discharge summaries, and intake reports.",
+    description: "Clinical referrals, safety summaries, and staging extraction documents.",
   },
 ];
 
-// ── Comparison: FHIR vs. Proprietary ─────────────────────────────────────
+// ── Comparison: Auxiliary FHIR R4 vs. Proprietary Formats ──────────────────
 
 const fhirAdvantages = [
-  { pro: "Interoperability with any FHIR-compatible system", con: "Vendor lock-in — data trapped in proprietary formats" },
-  { pro: "AI tools query structured resources natively (MCP)", con: "AI must parse unstructured text or fragile CSV exports" },
-  { pro: "HIPAA-aligned data model with standardized fields", con: "Compliance requires expensive middleware mappings" },
-  { pro: "Ecosystem of FHIR apps, libraries, and validators", con: "Closed API requiring expensive integration contracts" },
+  {
+    pro: "34 HL7 FHIR R4 resources with dual-format application/fhir+json + application/json",
+    con: "Vendor lock-in — data trapped in proprietary record formats",
+  },
+  {
+    pro: "Read-only (GET) FastMCP gateway exposes 16 resource groups over streamable-HTTP",
+    con: "Integrations must parse unstructured text or fragile CSV exports",
+  },
+  {
+    pro: "Isolated from Engine 3 AES-256-GCM member journals via multi-tenant JWT scoping",
+    con: "Monolithic storage couples private wellbeing notes with external clinic APIs",
+  },
+  {
+    pro: "Built-in AuditEvent, Provenance, CarePlan, and RiskAssessment R4 endpoints",
+    con: "Compliance requires costly custom middleware mappings",
+  },
 ];
 
 // ── Animation variants ──────────────────────────────────────────────────────
@@ -99,7 +102,7 @@ const itemVariants = {
 // ── Component ──────────────────────────────────────────────────────────────
 
 /**
- * FHIR EMR interoperability section with resource showcase and comparison table.
+ * Auxiliary FHIR R4 interoperability section with resource showcase and comparison.
  */
 export default function FhirEmrSection() {
   return (
@@ -115,15 +118,19 @@ export default function FhirEmrSection() {
         >
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 mb-4">
             <Database className="w-4 h-4 text-primary" />
-            <span className="text-sm font-semibold text-primary">HL7 FHIR R4 Native</span>
+            <span className="text-sm font-semibold text-primary">
+              Auxiliary HL7 FHIR R4 Tier
+            </span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-bold text-foreground">
-            Electronic Medical Records Powered by FHIR
+            Optional Clinical Interoperability Powered by FHIR R4
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            Every piece of clinical data in PeerCove — from patient demographics to
-            AI-generated observations — is stored as a structured HL7 FHIR R4 resource,
-            enabling true interoperability with any compliant health system.
+            While PeerCove&apos;s core wellbeing sanctuary runs on Engine 3 with
+            AES-256-GCM envelope encryption, our auxiliary{" "}
+            <span className="font-mono text-sm text-foreground">fhir-server</span>{" "}
+            supports 34 HL7 FHIR R4 resources for seamless external healthcare
+            interoperability.
           </p>
         </motion.div>
 
@@ -137,13 +144,11 @@ export default function FhirEmrSection() {
         >
           {fhirResources.map((res, i) => (
             <motion.div key={i} variants={itemVariants}>
-              <Card
-                className={`border ${res.color} hover:shadow-md transition-shadow`}
-              >
+              <Card className="h-full border border-border bg-card hover:border-primary/40 hover:shadow-md transition-all">
                 <CardContent className="pt-5 space-y-3">
                   <div className="flex items-center gap-2">
                     {res.icon}
-                    <Badge variant="outline" className="text-[10px] font-mono border-border/60">
+                    <Badge variant="outline" className="text-[10px] font-mono border-border">
                       {res.resource}
                     </Badge>
                   </div>
@@ -155,13 +160,16 @@ export default function FhirEmrSection() {
             </motion.div>
           ))}
 
-          {/* "And more" placeholder */}
+          {/* 27 more R4 resources */}
           <motion.div variants={itemVariants}>
-            <Card className="border border-dashed border-border/60 bg-transparent h-full">
+            <Card className="border border-dashed border-border bg-card/50 h-full">
               <CardContent className="pt-5 flex flex-col items-center justify-center h-full text-center gap-2 min-h-[100px]">
-                <Database className="w-5 h-5 text-muted-foreground/40" />
-                <p className="text-xs text-muted-foreground">
-                  + More FHIR resources coming
+                <Database className="w-5 h-5 text-primary" />
+                <p className="text-xs font-medium text-foreground">
+                  34 Total R4 Resources
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  Including CarePlan, RiskAssessment, QuestionnaireResponse &amp; AuditEvent
                 </p>
               </CardContent>
             </Card>
@@ -177,7 +185,7 @@ export default function FhirEmrSection() {
           className="max-w-4xl mx-auto"
         >
           <h3 className="text-2xl font-bold text-foreground text-center mb-8">
-            Why FHIR EMR vs. Proprietary Record Formats?
+            Why Auxiliary FHIR R4 vs. Proprietary Record Silos?
           </h3>
 
           <div className="grid md:grid-cols-2 gap-6">
@@ -188,12 +196,14 @@ export default function FhirEmrSection() {
                   <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
                     <CheckCircle2 className="w-4 h-4 text-primary" />
                   </div>
-                  <span className="font-bold text-foreground">PeerCove — FHIR R4 Native</span>
+                  <span className="font-bold text-foreground">
+                    PeerCove — Auxiliary FHIR R4 Tier
+                  </span>
                 </div>
                 <ul className="space-y-3">
                   {fhirAdvantages.map((adv, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                      <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                       <span className="text-foreground/80">{adv.pro}</span>
                     </li>
                   ))}
@@ -202,18 +212,20 @@ export default function FhirEmrSection() {
             </Card>
 
             {/* Proprietary column */}
-            <Card className="border-border/50 opacity-80">
+            <Card className="border-border bg-card/70">
               <CardContent className="pt-6 space-y-4">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center">
                     <XCircle className="w-4 h-4 text-muted-foreground" />
                   </div>
-                  <span className="font-bold text-muted-foreground">Legacy Proprietary EMR</span>
+                  <span className="font-bold text-muted-foreground">
+                    Legacy Proprietary Formats
+                  </span>
                 </div>
                 <ul className="space-y-3">
                   {fhirAdvantages.map((adv, i) => (
                     <li key={i} className="flex items-start gap-2 text-sm">
-                      <XCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                      <XCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
                       <span className="text-muted-foreground">{adv.con}</span>
                     </li>
                   ))}

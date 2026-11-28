@@ -16,7 +16,7 @@
  * resource's own search fetcher (server-side name search where the backend
  * supports it, fetch-all + client-side filter otherwise) lives beside that
  * resource's other query helpers, e.g. `searchLocationOptions` in
- * `telemedicine/admin/queries/location.queries.ts`.
+ * `peercove/admin/queries/location.queries.ts`.
  *
  * Unlike TerminologySelect's plain-code value, the selected option's label is
  * always known up front (it travels with `value`) — no lookup against a

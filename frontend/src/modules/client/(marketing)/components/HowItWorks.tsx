@@ -1,22 +1,29 @@
 /**
- * HowItWorks — animated timeline introducing the patient care journey.
+ * HowItWorks — animated timeline introducing the PeerCove member stepped-care journey.
  *
  * Layer: client / (marketing) / components
  *
- * Shows the three-step path from sign-up through intake to the care workspace.
+ * Shows the path from entering the Member Sanctuary through guided intake and
+ * Crisis Sentinel guardrails to Peer Listener LiveKit rooms and ongoing wellbeing tracking.
  */
 
 "use client";
 
 import { motion } from "framer-motion";
-import { CheckCircle2, UserCheck, ClipboardList } from "lucide-react";
+import {
+  CheckCircle2,
+  UserCheck,
+  Mic,
+  Headphones,
+  ShieldCheck,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 // ── Animation variants ──────────────────────────────────────────────────────
 
 const containerVariants = {
   hidden: {},
-  visible: { transition: { staggerChildren: 0.25 } },
+  visible: { transition: { staggerChildren: 0.2 } },
 };
 
 const itemVariants = {
@@ -30,33 +37,41 @@ const steps = [
   {
     number: "01",
     icon: <UserCheck className="w-6 h-6 text-primary" />,
-    title: "Create your space",
-    badge: "A simple start",
+    title: "Enter your Member Sanctuary",
+    badge: "Consent-first",
     description:
-      "Sign up and tell PeerCove a little about yourself. You can move at your own pace.",
+      "Sign up or try a demo role. Start in a private space with somatic grounding exercises (4-7-8 breathing, 5-4-3-2-1 sensory grounding, Box Breathing, PMR).",
   },
   {
     number: "02",
-    icon: <ClipboardList className="w-6 h-6 text-primary" />,
-    title: "Share what feels important",
-    badge: "Chat or voice",
+    icon: <Mic className="w-6 h-6 text-primary" />,
+    title: "Guided text or voice intake with <2ms Safety Sentinel",
+    badge: "Transcript-only",
     description:
-      "Choose a guided chat or voice intake to share what is going on in the way that feels right for you.",
+      "Share at your own pace via SSE text chat or LiveKit/WebSocket voice intake. Our deterministic Safety Sentinel checks every turn in under 2ms before inference.",
   },
   {
     number: "03",
-    icon: <UserCheck className="w-6 h-6 text-primary" />,
-    title: "Find your next step",
-    badge: "Care workspace",
+    icon: <Headphones className="w-6 h-6 text-primary" />,
+    title: "Match with a trained Peer Listener",
+    badge: "WebRTC / LiveKit",
     description:
-      "Continue to your dashboard to explore appointments, care information, and available follow-up options.",
+      "Connect 1-on-1 in an encrypted listening room with supervisor-verified peers, an in-call 4-7-8 breathwork pacer, and structured SOAP reflection.",
+  },
+  {
+    number: "04",
+    icon: <ShieldCheck className="w-6 h-6 text-primary" />,
+    title: "Track mood, encrypted journal & stepped care",
+    badge: "AES-256-GCM",
+    description:
+      "Continue with daily mood pulse check-ins, an AES-256-GCM encrypted journal, wellbeing goals, and human Safety Operations handoffs whenever needed.",
   },
 ];
 
 // ── Component ──────────────────────────────────────────────────────────────
 
 /**
- * Animated alternating-side timeline showing how patients get started.
+ * Animated alternating-side timeline showing how members move through PeerCove.
  */
 export default function HowItWorks() {
   return (
@@ -73,14 +88,14 @@ export default function HowItWorks() {
       <div className="max-w-[110rem] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <motion.div variants={itemVariants} className="text-center max-w-3xl mx-auto">
           <span className="text-primary font-semibold tracking-wider uppercase text-sm">
-            Getting started
+            Stepped-care flow
           </span>
           <h2 className="mt-2 text-3xl sm:text-4xl font-bold text-foreground">
-            Three small steps
+            Four calm steps, at your own pace
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            You can begin with what feels manageable today and return to the rest
-            when you are ready.
+            Begin with self-guided grounding, escalate smoothly to a trained Peer
+            Listener room, and stay protected by deterministic safety guardrails.
           </p>
         </motion.div>
 
@@ -136,6 +151,9 @@ export default function HowItWorks() {
                         !isEven ? "lg:flex-row-reverse" : ""
                       }`}
                     >
+                      <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 shrink-0">
+                        {step.icon}
+                      </span>
                       <h3 className="text-xl font-bold text-foreground">
                         {step.title}
                       </h3>

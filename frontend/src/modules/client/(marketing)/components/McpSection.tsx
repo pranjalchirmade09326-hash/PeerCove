@@ -1,14 +1,11 @@
 /**
- * McpSection — dedicated section highlighting the PeerCove MCP Server integration.
+ * McpSection — dedicated section highlighting PeerCove's Read-Only FastMCP Gateway.
  *
  * Layer: client / (marketing) / components
  *
- * Explains how the Model Context Protocol (MCP) server exposes the FHIR EMR
- * as a structured AI tool, enabling AI assistants (e.g., Claude) to query
- * patient records, appointments, and clinical data natively.
- *
- * Visually mirrors the AetherEHR terminal demo concept: left panel describes
- * the MCP server capabilities, right panel shows a live mock terminal log.
+ * Explains how PeerCove's auxiliary FastMCP gateway (fhir-mcp on port 8002 at /mcp)
+ * uses FastMCP.from_openapi() to expose strictly read-only (GET) tools across 16
+ * HL7 FHIR R4 resource groups with JWKS JWT forwarding.
  */
 
 "use client";
@@ -18,11 +15,10 @@ import { Badge } from "@/components/ui/badge";
 import {
   Server,
   Terminal,
-  CheckCircle2,
   Database,
   Brain,
   Shield,
-  Zap,
+  Lock,
 } from "lucide-react";
 
 // ── MCP capability list ─────────────────────────────────────────────────────
@@ -30,39 +26,71 @@ import {
 const capabilities = [
   {
     icon: <Database className="w-4 h-4 text-primary shrink-0" />,
-    text: "Query FHIR Patient, Appointment, Observation, and Encounter resources",
+    text: "Auto-generated from fhir-server OpenAPI schema across 16 HL7 FHIR R4 resource groups",
   },
   {
     icon: <Brain className="w-4 h-4 text-primary shrink-0" />,
-    text: "Connect Claude, GPT-4, or any MCP-compatible AI to your live clinical data",
+    text: "Connect any standards-compliant MCP client over streamable-HTTP (/mcp on port 8002)",
   },
   {
     icon: <Shield className="w-4 h-4 text-primary shrink-0" />,
-    text: "All tool calls are HIPAA-scoped — PHI never leaves your secure environment",
+    text: "AuthForwardingMiddleware validates Bearer JWTs against IAM Ed25519 JWKS on every call",
   },
   {
-    icon: <Zap className="w-4 h-4 text-primary shrink-0" />,
-    text: "Real-time FHIR resource creation via AI tool calls — no manual data entry",
+    icon: <Lock className="w-4 h-4 text-primary shrink-0" />,
+    text: "Strictly read-only (GET only) — all POST, PATCH, and DELETE methods are excluded",
   },
 ];
 
-// ── Mock terminal log lines ─────────────────────────────────────────────────
+// ── Terminal log lines ──────────────────────────────────────────────────────
 
 const terminalLogs = [
-  { prefix: "[INIT]", text: "PeerCove MCP Server v1.0 started on port 3100", color: "text-muted-foreground" },
-  { prefix: "[FHIR]", text: "FHIR R4 base URL registered as MCP tool context", color: "text-blue-400" },
-  { prefix: "[AUTH]", text: "HIPAA-scoped JWT session validated for org-0028", color: "text-emerald-400" },
-  { prefix: "[TOOL]", text: "get_patient_by_id called → PAT-00241 returned", color: "text-violet-400" },
-  { prefix: "[TOOL]", text: "list_appointments called → 3 upcoming records", color: "text-violet-400" },
-  { prefix: "[TOOL]", text: "get_intake_summary called → AI SOAP note attached", color: "text-amber-400" },
-  { prefix: "[AI]  ", text: "Claude: Based on intake, patient shows moderate migraine risk.", color: "text-primary" },
-  { prefix: "[FHIR]", text: "RiskAssessment resource created → fhir_id: RSK-0041", color: "text-emerald-400" },
+  {
+    prefix: "[INIT]",
+    text: "PeerCove FastMCP Gateway started on :8002 (/mcp streamable-http)",
+    color: "text-muted-foreground",
+  },
+  {
+    prefix: "[SPEC]",
+    text: "FastMCP.from_openapi() loaded fhir-server:8000/openapi.json (16 GET groups)",
+    color: "text-primary",
+  },
+  {
+    prefix: "[RULE]",
+    text: "RouteMap: GET -> MCPType.TOOL | POST/PATCH/DELETE -> MCPType.EXCLUDE",
+    color: "text-foreground",
+  },
+  {
+    prefix: "[AUTH]",
+    text: "Ed25519 JWKS validated Bearer token -> forwarding scoped context",
+    color: "text-primary",
+  },
+  {
+    prefix: "[TOOL]",
+    text: "GET /api/fhir/v1/Patient/PAT-00241 -> 200 application/fhir+json",
+    color: "text-foreground",
+  },
+  {
+    prefix: "[TOOL]",
+    text: "GET /api/fhir/v1/Observations?patient=PAT-00241 -> 3 resources",
+    color: "text-foreground",
+  },
+  {
+    prefix: "[TOOL]",
+    text: "GET /api/fhir/v1/Conditions?patient=PAT-00241 -> 2 resources",
+    color: "text-foreground",
+  },
+  {
+    prefix: "[SAFE]",
+    text: "Write operations disabled at gateway boundary — zero mutations permitted",
+    color: "text-primary",
+  },
 ];
 
 // ── Component ──────────────────────────────────────────────────────────────
 
 /**
- * Dedicated MCP Server section with terminal simulation.
+ * Dedicated Read-Only FastMCP Gateway section with terminal simulation.
  */
 export default function McpSection() {
   return (
@@ -80,16 +108,17 @@ export default function McpSection() {
           className="text-center max-w-3xl mx-auto mb-16"
         >
           <span className="text-primary font-semibold tracking-wider uppercase text-sm">
-            MCP Integration
+            Auxiliary FastMCP Gateway
           </span>
           <h2 className="mt-2 text-3xl sm:text-4xl font-bold text-foreground">
-            Your FHIR EMR as an AI Tool
+            Read-Only FHIR R4 Context via MCP
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            PeerCove ships with a built-in{" "}
-            <span className="text-foreground font-semibold">Model Context Protocol (MCP) server</span>{" "}
-            — turning your entire clinical record system into a structured, queryable tool
-            for any AI assistant.
+            PeerCove&apos;s auxiliary interoperability tier includes a{" "}
+            <span className="text-foreground font-semibold">FastMCP server</span>{" "}
+            on port <span className="font-mono text-sm text-foreground">8002</span>{" "}
+            that exposes strictly read-only (<span className="font-mono text-sm">GET</span>)
+            FHIR tools across 16 resource groups.
           </p>
         </motion.div>
 
@@ -108,18 +137,27 @@ export default function McpSection() {
                 <Server className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <h3 className="text-xl font-bold text-foreground">MCP Server for FHIR EMR</h3>
+                <h3 className="text-xl font-bold text-foreground">
+                  FastMCP Read-Only Gateway
+                </h3>
                 <Badge variant="outline" className="text-[10px] mt-1 border-primary/30 text-primary">
-                  Model Context Protocol
+                  GET-Only · 16 FHIR Groups
                 </Badge>
               </div>
             </div>
 
             <p className="text-muted-foreground leading-relaxed">
-              The MCP server exposes your FHIR resources as AI-callable tools. An AI
-              assistant can query patient history, retrieve lab results, create
-              RiskAssessments, and update clinical records — all through structured,
-              HIPAA-compliant tool calls with no raw database access.
+              Generated at startup via{" "}
+              <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-foreground">
+                FastMCP.from_openapi()
+              </span>{" "}
+              against{" "}
+              <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded text-foreground">
+                fhir-server:8000/openapi.json
+              </span>
+              , the gateway validates every request via IAM JWKS and forwards the
+              user&apos;s scoped Bearer token — with zero direct database access
+              and zero write mutations.
             </p>
 
             <ul className="space-y-4">
@@ -143,10 +181,15 @@ export default function McpSection() {
             {/* Compatible clients */}
             <div className="pt-4 border-t border-border/50">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-                Works With Any MCP-Compatible AI Client
+                Works With Standards-Compliant MCP Clients
               </p>
               <div className="flex flex-wrap gap-2">
-                {["AI Chat Assistants", "AI Coding Tools", "AI Agents", "Open Source MCP Clients"].map((ai) => (
+                {[
+                  "Streamable-HTTP Clients",
+                  "Clinical Research Tools",
+                  "Workflow Orchestrators",
+                  "Open Source MCP Clients",
+                ].map((ai) => (
                   <Badge key={ai} variant="secondary" className="text-xs">
                     {ai}
                   </Badge>
@@ -166,16 +209,16 @@ export default function McpSection() {
             {/* Terminal top bar */}
             <div className="flex items-center justify-between px-5 py-3 border-b border-border bg-muted/40">
               <div className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-full bg-red-400/80" />
-                <div className="w-2.5 h-2.5 rounded-full bg-yellow-400/80" />
-                <div className="w-2.5 h-2.5 rounded-full bg-green-400/80" />
+                <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/30" />
+                <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/30" />
+                <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/30" />
               </div>
               <div className="flex items-center gap-2 text-xs text-muted-foreground font-mono">
                 <Terminal className="w-3.5 h-3.5" />
-                peercove-mcp-server
+                peercove-fhir-mcp :8002/mcp
               </div>
-              <Badge variant="outline" className="text-[10px] border-emerald-500/30 text-emerald-500">
-                Running
+              <Badge variant="outline" className="text-[10px] border-primary/30 text-primary">
+                Read-Only
               </Badge>
             </div>
 
@@ -190,7 +233,7 @@ export default function McpSection() {
                   transition={{ delay: i * 0.08, duration: 0.4 }}
                   className="flex gap-3 leading-relaxed"
                 >
-                  <span className="text-muted-foreground/50 shrink-0 select-none">
+                  <span className="text-muted-foreground/60 shrink-0 select-none">
                     {log.prefix}
                   </span>
                   <span className={log.color}>{log.text}</span>
@@ -199,9 +242,11 @@ export default function McpSection() {
 
               {/* Blinking cursor */}
               <div className="flex gap-3">
-                <span className="text-muted-foreground/50 shrink-0 select-none">[WAIT] </span>
+                <span className="text-muted-foreground/60 shrink-0 select-none">
+                  [WAIT]{" "}
+                </span>
                 <span className="text-muted-foreground">
-                  Listening for next tool call
+                  Listening for authenticated GET tool calls
                   <span className="inline-block w-2 h-4 bg-primary ml-1 animate-pulse" />
                 </span>
               </div>

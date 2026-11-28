@@ -5,17 +5,17 @@ export const settingsSidebarData = {
       items: [
         {
           title: "Profile",
-          url: "/bezs/settings/profile",
+          url: "/peercove/member/profile",
           icon: "user-circle",
         },
         {
           title: "Password & Auth",
-          url: "/bezs/settings/security",
+          url: "/peercove/member/profile",
           icon: "key-round",
         },
         {
           title: "Active Sessions",
-          url: "/bezs/settings/sessions",
+          url: "/peercove/member/profile",
           icon: "monitor-smartphone",
         },
       ],
@@ -25,7 +25,7 @@ export const settingsSidebarData = {
       items: [
         {
           title: "Appearance",
-          url: "/bezs/settings/appearance",
+          url: "/peercove/member/profile",
           icon: "palette",
         },
       ],
@@ -33,7 +33,7 @@ export const settingsSidebarData = {
   ],
 };
 
-export const telemedicineSidebarData = {
+export const peercoveSidebarData = {
   navGroups: [
     {
       title: "Peer Listener Workspace",

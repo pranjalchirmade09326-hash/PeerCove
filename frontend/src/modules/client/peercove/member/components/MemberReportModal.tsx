@@ -94,7 +94,7 @@ export function MemberReportModal({
             Encounter Summary & SOAP Report
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
-            Session ID: <span className="font-mono">{session?.id || "MS-SESS-9082"}</span> • Date: {sessionDate}
+            Session ID: <span className="font-mono">{session?.id || "PC-SESS-9082"}</span> • Date: {sessionDate}
           </DialogDescription>
         </DialogHeader>
 

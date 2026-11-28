@@ -38,7 +38,7 @@ services:
     networks:
       - peercove-net
       - fhir-server_fhir-net
-      - iam-app_bezs-net
+      - iam-app_peercove-net
       - a2ui-agent_default
       - peercove-agents_default
     depends_on:
@@ -61,7 +61,7 @@ networks:
   fhir-server_fhir-net:
     external: true
   # IAM / BetterAuth
-  iam-app_bezs-net:
+  iam-app_peercove-net:
     external: true
   # A2UI agents (intake, consultation)
   a2ui-agent_default:

@@ -2,33 +2,30 @@ import { headers, cookies } from "next/headers";
 import { cache } from "react";
 import { AuthResponse } from "./types";
 
-export function getDevSession(role = "doctor"): AuthResponse {
-  const normalizedRole = (role || "doctor").toString().trim().toLowerCase();
+export function getDevSession(role = "member"): AuthResponse {
+  const normalizedRole = (role || "member").toString().trim().toLowerCase().replace(/_/g, "-");
   const cleanRole =
-    normalizedRole === "doctor" || normalizedRole === "admin" || normalizedRole === "patient"
-      ? normalizedRole
-      : normalizedRole.includes("doctor")
-      ? "doctor"
-      : normalizedRole.includes("admin")
-      ? "admin"
-      : "patient";
-  const isDoctor = cleanRole === "doctor";
-  const isAdmin = cleanRole === "admin";
-  const name = isDoctor
-    ? "Dr. John Smith"
-    : isAdmin
-    ? "System Administrator"
-    : "Sarah Jenkins";
-  const email = isDoctor
-    ? "doctor@peercove.app"
-    : isAdmin
-    ? "admin@peercove.app"
-    : "patient@peercove.app";
-  const redirectUrl = isDoctor
-    ? "/bezs/telemedicine/doctor/dashboard"
-    : isAdmin
-    ? "/bezs/telemedicine/admin/organizations"
-    : "/bezs/telemedicine/patient";
+    normalizedRole === "platform-administrator" || normalizedRole === "admin"
+      ? "platform-administrator"
+      : normalizedRole === "safety-operations" ||
+          normalizedRole === "safety-operations-specialist" ||
+          normalizedRole === "safety"
+        ? "safety-operations"
+        : normalizedRole === "listener-supervisor" || normalizedRole === "supervisor"
+          ? "listener-supervisor"
+          : normalizedRole === "listener" || normalizedRole === "doctor"
+            ? "listener"
+            : "member";
+
+  const roleDisplay: Record<string, { name: string; email: string }> = {
+    member: { name: "Sarah Jenkins", email: "member@peercove.app" },
+    listener: { name: "Aarav Sharma", email: "listener@peercove.app" },
+    "listener-supervisor": { name: "Dr. Alok Verma", email: "supervisor@peercove.app" },
+    "safety-operations": { name: "Riya Kapoor", email: "safety@peercove.app" },
+    "platform-administrator": { name: "System Administrator", email: "admin@peercove.app" },
+  };
+  const { name, email } = roleDisplay[cleanRole];
+  const redirectUrl = `/peercove/${cleanRole}`;
 
   return {
     user: {
@@ -59,13 +56,13 @@ export function getDevSession(role = "doctor"): AuthResponse {
       activeOrganizationId: "org-default-01",
       activeTeamId: null,
       impersonatedBy: null,
-      apps: ["telemedicine", "emr", "ai-hub"],
+      apps: ["peercove"],
       permissions: ["*"],
       organizations: [
         {
           id: "org-default-01",
-          name: "PeerCove Healthcare",
-          slug: "peercove-health",
+          name: "PeerCove",
+          slug: "peercove",
           logo: null,
         },
       ],

@@ -42,23 +42,37 @@ export function NavUser(props: NavUserProps) {
     .toUpperCase()
     .slice(0, 2) || "U";
 
-  const rLower = (role ?? "").toLowerCase();
+  const rNorm = (role ?? "").toLowerCase().replace(/_/g, "-");
   const displayRole =
-    rLower === "patient" || rLower === "member"
+    rNorm === "patient" || rNorm === "member"
       ? "Member"
-      : rLower === "doctor" || rLower === "listener"
+      : rNorm === "doctor" || rNorm === "listener"
       ? "Listener"
-      : rLower === "admin" || rLower === "platform-administrator"
+      : rNorm === "listener-supervisor" || rNorm === "supervisor"
+      ? "Listener Supervisor"
+      : rNorm === "safety-operations" ||
+          rNorm === "safety-operations-specialist" ||
+          rNorm === "safety"
+      ? "Safety Specialist"
+      : rNorm === "admin" || rNorm === "platform-administrator"
       ? "Administrator"
       : role
       ? role.charAt(0).toUpperCase() + role.slice(1)
       : "Member";
 
   const settingsHref =
-    rLower === "patient" || rLower === "member"
+    rNorm === "patient" || rNorm === "member"
       ? "/peercove/member/profile"
-      : rLower === "doctor" || rLower === "listener"
+      : rNorm === "doctor" || rNorm === "listener"
       ? "/peercove/listener/profile"
+      : rNorm === "listener-supervisor" || rNorm === "supervisor"
+      ? "/peercove/listener-supervisor"
+      : rNorm === "safety-operations" ||
+          rNorm === "safety-operations-specialist" ||
+          rNorm === "safety"
+      ? "/peercove/safety-operations"
+      : rNorm === "platform-administrator" || rNorm === "admin"
+      ? "/peercove/platform-administrator"
       : "/peercove/member/profile";
 
   async function handleLogout() {

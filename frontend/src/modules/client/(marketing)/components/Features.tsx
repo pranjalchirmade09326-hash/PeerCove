@@ -1,9 +1,12 @@
 /**
- * Features — patient-focused overview of PeerCove's care journey.
+ * Features — member-centered overview of PeerCove's stepped-care wellness platform.
  *
  * Layer: client / (marketing) / components
  *
- * Highlights: guided chat and voice intake, appointments, and connected care.
+ * Highlights the 6 implemented pillars: AI Wellbeing Companion & Grounding,
+ * Guided Text & Live Voice Intake, Peer Listener Matching & LiveKit Rooms,
+ * Mood Pulse + AES-256-GCM Encrypted Journal + Goals, Deterministic <2ms Crisis Sentinel,
+ * and Zero-Knowledge Admin Governance & Auxiliary FHIR R4 / FastMCP Interop.
  */
 
 "use client";
@@ -12,11 +15,12 @@ import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  MessageCircle,
-  CalendarDays,
-  ClipboardList,
-  Heart,
+  Sparkles,
   Mic,
+  Headphones,
+  Heart,
+  ShieldAlert,
+  Lock,
 } from "lucide-react";
 
 // ── Animation variants ──────────────────────────────────────────────────────
@@ -35,53 +39,53 @@ const itemVariants = {
 
 const features = [
   {
-    icon: <MessageCircle className="h-8 w-8 text-primary" />,
-    title: "Start with a conversation",
-    badge: "Your pace",
+    icon: <Sparkles className="h-8 w-8 text-primary" />,
+    title: "AI Wellbeing Companion & Grounding",
+    badge: "Tier 1 · Live",
     description:
-      "Share what is on your mind through a guided chat or voice intake. Start wherever feels easiest, and take your time.",
+      "Start in your Member Sanctuary with guided 4-7-8 Breathing, 5-4-3-2-1 Sensory Grounding, Box Breathing, and Progressive Muscle Relaxation in English, Hindi, and Hinglish.",
   },
   {
     icon: <Mic className="h-8 w-8 text-primary" />,
-    title: "Choose how to share",
-    badge: "Chat or voice",
+    title: "Guided Text & Live Voice Intake",
+    badge: "Chat & Voice",
     description:
-      "Write things down or talk them through. PeerCove gives you options for starting your care journey.",
+      "Consent-gated SSE text intake and bidirectional WebSocket voice intake (Saaras v3, Bulbul v3, and Gemini fallback) store encrypted transcripts only — never raw audio.",
+  },
+  {
+    icon: <Headphones className="h-8 w-8 text-primary" />,
+    title: "Peer Listener Matching & LiveKit Rooms",
+    badge: "Tier 2 · E2EE",
+    description:
+      "Connect 1-on-1 with supervisor-verified Peer Listeners over WebRTC/LiveKit video, voice, or chat rooms with an in-call 4-7-8 breathwork pacer and encrypted SOAP debrief.",
   },
   {
     icon: <Heart className="h-8 w-8 text-primary" />,
-    title: "Keep your care together",
-    badge: "One space",
+    title: "Mood Pulse, Encrypted Journal & Goals",
+    badge: "AES-256-GCM",
     description:
-      "Find your appointments, health information, and care updates in your patient dashboard.",
+      "Track daily mood pulse trends, write privately in an AES-256-GCM envelope-encrypted journal with KMS key rotation, and set personal wellbeing goals.",
   },
   {
-    icon: <CalendarDays className="h-8 w-8 text-primary" />,
-    title: "Prepare for appointments",
-    badge: "Feel ready",
+    icon: <ShieldAlert className="h-8 w-8 text-primary" />,
+    title: "Deterministic <2ms Crisis Sentinel",
+    badge: "Tier 3 · Safety",
     description:
-      "Share relevant details before your appointment so your care team has context for the conversation.",
+      "A pre-inference safety tripwire runs in under 2ms before any AI inference, surfacing Tele-MANAS 14416, 988, 112, and human-led Safety Operations escalation.",
   },
   {
-    icon: <ClipboardList className="h-8 w-8 text-primary" />,
-    title: "A guided next step",
-    badge: "When ready",
+    icon: <Lock className="h-8 w-8 text-primary" />,
+    title: "Zero-Knowledge Governance & Interop",
+    badge: "FHIR R4 & MCP",
     description:
-      "After intake, continue to your patient workspace to see available care options and follow-up steps.",
-  },
-  {
-    icon: <Heart className="h-8 w-8 text-primary" />,
-    title: "Your care, connected",
-    badge: "PeerCove",
-    description:
-      "Appointments, care conversations, and health records are brought together in one place.",
+      "Least-privilege 5-role Ed25519 JWKS RBAC keeps Platform Admins isolated from private journals, alongside an optional 34-resource HL7 FHIR R4 and read-only FastMCP tier.",
   },
 ];
 
 // ── Component ──────────────────────────────────────────────────────────────
 
 /**
- * Animated six-card feature grid.
+ * Animated six-card feature grid showcasing PeerCove's implemented capabilities.
  */
 export default function Features() {
   return (
@@ -96,14 +100,15 @@ export default function Features() {
       <div className="max-w-[110rem] mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div variants={itemVariants} className="text-center max-w-3xl mx-auto mb-16">
           <span className="text-primary font-semibold tracking-wider uppercase text-sm">
-            A calmer way to get started
+            Stepped-Care Mental Wellness
           </span>
           <h2 className="mt-2 text-3xl sm:text-4xl font-bold text-foreground">
             Support that meets you where you are
           </h2>
           <p className="mt-4 text-lg text-muted-foreground">
-            Start with a conversation, choose how you want to share, and find your
-            next steps without having to do everything at once.
+            From private grounding tools and guided voice intake to trained peer
+            listening rooms and deterministic crisis escalation, every layer is
+            built around your safety and privacy.
           </p>
         </motion.div>
 

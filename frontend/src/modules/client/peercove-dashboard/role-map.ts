@@ -1,16 +1,16 @@
 export const peercoveRoleWorkspaces = {
   member: "/peercove/member",
   listener: "/peercove/listener",
-  listener_supervisor: "/peercove/supervisor",
-  "listener-supervisor": "/peercove/supervisor",
-  supervisor: "/peercove/supervisor",
-  safety_operations_specialist: "/peercove/safety",
-  safety_operations: "/peercove/safety",
-  "safety-operations": "/peercove/safety",
-  safety: "/peercove/safety",
-  platform_administrator: "/peercove/admin",
-  "platform-administrator": "/peercove/admin",
-  admin: "/peercove/admin",
+  listener_supervisor: "/peercove/listener-supervisor",
+  "listener-supervisor": "/peercove/listener-supervisor",
+  supervisor: "/peercove/listener-supervisor",
+  safety_operations_specialist: "/peercove/safety-operations",
+  safety_operations: "/peercove/safety-operations",
+  "safety-operations": "/peercove/safety-operations",
+  safety: "/peercove/safety-operations",
+  platform_administrator: "/peercove/platform-administrator",
+  "platform-administrator": "/peercove/platform-administrator",
+  admin: "/peercove/platform-administrator",
 } as const;
 
 export type PeerCoveRoleCode = keyof typeof peercoveRoleWorkspaces;

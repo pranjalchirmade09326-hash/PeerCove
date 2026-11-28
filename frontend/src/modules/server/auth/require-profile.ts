@@ -1,5 +1,5 @@
 /**
- * Profile guard utilities for telemedicine server components.
+ * Profile guard utilities for PeerCove server components.
  *
  * Layer: server / auth
  *
@@ -23,11 +23,10 @@ import type { TPractitionerResponse } from "@/modules/entities/schemas/practitio
 // ── Default redirect targets ───────────────────────────────────────────────────
 
 /** Default redirect path (no locale prefix) when no Patient record is found. */
-const DEFAULT_PATIENT_PROFILE_PATH = "/bezs/telemedicine/patient/profile";
+const DEFAULT_PATIENT_PROFILE_PATH = "/peercove/member/profile";
 
 /** Default redirect path (no locale prefix) when no Practitioner record is found. */
-const DEFAULT_DOCTOR_PROFILE_PATH =
-  "/bezs/telemedicine/doctor/settings/profile";
+const DEFAULT_DOCTOR_PROFILE_PATH = "/peercove/listener/profile";
 
 // ── Guards ────────────────────────────────────────────────────────────────────
 

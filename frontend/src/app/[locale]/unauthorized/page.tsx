@@ -5,7 +5,7 @@
  * Route: /[locale]/unauthorized
  *
  * Displayed by requireRole() when the user's activeRole does not match the
- * required role (e.g. accessing /telemedicine/admin without the "admin" role).
+ * required role (e.g. accessing /peercove/platform-administrator without the "platform-administrator" role).
  */
 
 import Link from "next/link";

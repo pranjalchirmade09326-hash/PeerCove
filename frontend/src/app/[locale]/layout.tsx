@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     template: "%s | PeerCove",
   },
   description:
-    "A calmer space for mental wellness, guided conversations, and connected care.",
+    "Stepped-care peer mental wellness platform with AI grounding companion, guided chat and LiveKit voice intake, trained Peer Listener rooms, and <2ms Crisis Sentinel guardrails.",
   applicationName: "PeerCove",
   icons: {
     icon: "/icon.svg",
@@ -29,9 +29,24 @@ export const metadata: Metadata = {
   openGraph: {
     title: "PeerCove",
     description:
-      "A calmer space for mental wellness, guided conversations, and connected care.",
+      "Stepped-care peer mental wellness platform with AI grounding companion, guided chat and LiveKit voice intake, trained Peer Listener rooms, and <2ms Crisis Sentinel guardrails.",
     siteName: "PeerCove",
     type: "website",
+    images: [
+      {
+        url: "/en/opengraph-image",
+        width: 1200,
+        height: 630,
+        alt: "PeerCove — Stepped-Care Peer Mental Wellness & Guided Support",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "PeerCove",
+    description:
+      "Stepped-care peer mental wellness platform with AI grounding companion, guided chat and LiveKit voice intake, trained Peer Listener rooms, and <2ms Crisis Sentinel guardrails.",
+    images: ["/en/opengraph-image"],
   },
 };
 

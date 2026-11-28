@@ -8,7 +8,7 @@ from app.core.config import settings
 from app.core.init_db import init_and_seed_db
 from app.core.database import AsyncSessionLocal
 from app.services.peer_service import PeerService
-from app.routers import health, dashboards, member, wellbeing, intakes, peer, operations, admins, supervisors, safetys
+from app.routers import health, dashboards, member, wellbeing, intakes, peer, operations, admins, supervisors, safetys, mcp, workflows
 
 sweeper_logger = logging.getLogger("peercove.sweeper")
 
@@ -23,6 +23,9 @@ async def run_request_expiry_sweeper():
                 count = await service.sweep_expired_requests()
                 if count > 0:
                     sweeper_logger.info(f"Sweeper expired {count} overdue match requests.")
+                outbox_count = await workflows.process_pending_outbox_events(session)
+                if outbox_count > 0:
+                    sweeper_logger.info(f"Outbox dispatched {outbox_count} pending events.")
         except asyncio.CancelledError:
             break
         except Exception as e:
@@ -74,6 +77,8 @@ app.include_router(admins.router)
 app.include_router(supervisors.router)
 app.include_router(safetys.router)
 app.include_router(safetys.safety_alias_router)
+app.include_router(mcp.router)
+app.include_router(workflows.router)
 
 @app.get("/api-docs", include_in_schema=False)
 async def api_docs_redirect():

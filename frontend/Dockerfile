@@ -7,7 +7,6 @@ WORKDIR /app
 
 FROM base AS deps
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY vendor ./vendor
 COPY patches ./patches
 RUN pnpm install --frozen-lockfile
 

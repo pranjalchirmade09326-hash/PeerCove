@@ -38,13 +38,11 @@ export default function BreadCrumb({ className = "" }: { className?: string }) {
           const rawLabel = segment.split("-").join(" ").toLowerCase();
           const sLower = segment.toLowerCase();
           const label =
-            sLower === "bezs"
-              ? "Home"
-              : sLower === "telemedicine" || sLower === "peercove"
+            sLower === "peercove"
               ? "PeerCove"
-              : sLower === "patient" || sLower === "member"
+              : sLower === "member"
               ? "Member"
-              : sLower === "doctor" || sLower === "listener"
+              : sLower === "listener"
               ? "Listener"
               : capitalizeString(rawLabel);
 

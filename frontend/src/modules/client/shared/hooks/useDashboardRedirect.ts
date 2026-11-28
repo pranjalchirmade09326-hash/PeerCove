@@ -10,13 +10,23 @@ import { useSession } from "@/modules/client/auth/betterauth/auth-client";
 interface DashboardConfig {
   member: string;
   listener: string;
+  "listener-supervisor": string;
+  "safety-operations": string;
+  "platform-administrator": string;
+  supervisor: string;
+  safety: string;
   admin: string;
 }
 
 const DEFAULT_DASHBOARD_CONFIG: DashboardConfig = {
   member: "/peercove/member",
   listener: "/peercove/listener",
-  admin: "/peercove/admin",
+  "listener-supervisor": "/peercove/listener-supervisor",
+  "safety-operations": "/peercove/safety-operations",
+  "platform-administrator": "/peercove/platform-administrator",
+  supervisor: "/peercove/listener-supervisor",
+  safety: "/peercove/safety-operations",
+  admin: "/peercove/platform-administrator",
 };
 
 /**
@@ -35,7 +45,10 @@ export const useDashboardRedirect = (config?: Partial<DashboardConfig>) => {
     }
 
     // Get role from session metadata or custom field
-    const role = userRole || (session.user as any)?.role || "member";
+    const role = (userRole || (session.user as any)?.role || "member")
+      .toString()
+      .toLowerCase()
+      .replace(/_/g, "-");
 
     // Determine target dashboard
     const targetDashboard = (dashboardConfig as Record<string, string>)[role];
@@ -69,11 +82,17 @@ export const useDashboardRedirect = (config?: Partial<DashboardConfig>) => {
  * Alternative server-side version for use in callbacks and server actions
  */
 export async function getDashboardPath(userRole?: string): Promise<string> {
-  const role = userRole || "member";
+  const role = (userRole || "member").toLowerCase().replace(/_/g, "-");
   const dashboardMap: Record<string, string> = {
     member: "/peercove/member",
     listener: "/peercove/listener",
-    admin: "/peercove/admin",
+    "listener-supervisor": "/peercove/listener-supervisor",
+    supervisor: "/peercove/listener-supervisor",
+    "safety-operations": "/peercove/safety-operations",
+    "safety-operations-specialist": "/peercove/safety-operations",
+    safety: "/peercove/safety-operations",
+    "platform-administrator": "/peercove/platform-administrator",
+    admin: "/peercove/platform-administrator",
   };
 
   return dashboardMap[role] || dashboardMap.member;

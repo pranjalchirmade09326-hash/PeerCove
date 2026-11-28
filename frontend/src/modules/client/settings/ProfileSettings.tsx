@@ -127,7 +127,7 @@ export default function ProfileSettings({ user }: { user: User }) {
 
   async function handleLink(provider: "google" | "github") {
     setLinkingProvider(provider);
-    await authClient.linkSocial({ provider, callbackURL: "/bezs/settings/profile" });
+    await authClient.linkSocial({ provider, callbackURL: "/peercove/member/profile" });
     setLinkingProvider(null);
   }
 

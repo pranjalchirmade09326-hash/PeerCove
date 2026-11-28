@@ -20,7 +20,11 @@ ADMIN_ID = "usr-demo-admin-01"
 async def seed_iam_users() -> None:
     now = datetime.now(timezone.utc).replace(tzinfo=None)
     for user in DEMO_USERS:
-        existing = await pool().fetchrow('SELECT id FROM "user" WHERE email = $1', user.email)
+        existing = await pool().fetchrow(
+            'SELECT id FROM "user" WHERE id = $1 OR email = $2 ORDER BY (id = $1) DESC LIMIT 1',
+            user.id,
+            user.email,
+        )
         if existing is None:
             async with pool().acquire() as conn, conn.transaction():
                 await conn.execute(
@@ -41,9 +45,9 @@ async def seed_iam_users() -> None:
                 "Remove the existing demo account before reseeding."
             )
         await pool().execute(
-            'UPDATE "user" SET role=$2, name=$3, "emailVerified"=true, banned=false, "banReason"=NULL, '
-            '"banExpires"=NULL, "updatedAt"=$4 WHERE id=$1',
-            user.id, user.role, user.name, now,
+            'UPDATE "user" SET email=$2, role=$3, name=$4, "emailVerified"=true, banned=false, "banReason"=NULL, '
+            '"banExpires"=NULL, "updatedAt"=$5 WHERE id=$1',
+            user.id, user.email, user.role, user.name, now,
         )
         print(f"updated IAM user {user.email} ({user.role})")
 

@@ -75,34 +75,34 @@ describe("Milestone 5: Role Workspace Navigation & Normalization", () => {
       expect(workspaceForRoles("listener", "hi")).toBe("/hi/peercove/listener");
     });
 
-    it("routes listener_supervisor and listener-supervisor to supervisor workspace", () => {
-      expect(workspaceForRoles("listener_supervisor")).toBe("/peercove/supervisor");
-      expect(workspaceForRoles("listener-supervisor")).toBe("/peercove/supervisor");
-      expect(workspaceForRoles("supervisor")).toBe("/peercove/supervisor");
-      expect(workspaceForRoles("listener_supervisor", "en")).toBe("/en/peercove/supervisor");
-      expect(workspaceForRoles("listener-supervisor", "en")).toBe("/en/peercove/supervisor");
+    it("routes listener_supervisor and listener-supervisor to canonical listener-supervisor workspace", () => {
+      expect(workspaceForRoles("listener_supervisor")).toBe("/peercove/listener-supervisor");
+      expect(workspaceForRoles("listener-supervisor")).toBe("/peercove/listener-supervisor");
+      expect(workspaceForRoles("supervisor")).toBe("/peercove/listener-supervisor");
+      expect(workspaceForRoles("listener_supervisor", "en")).toBe("/en/peercove/listener-supervisor");
+      expect(workspaceForRoles("listener-supervisor", "en")).toBe("/en/peercove/listener-supervisor");
     });
 
-    it("routes safety_operations_specialist and safety-operations to safety workspace", () => {
-      expect(workspaceForRoles("safety_operations_specialist")).toBe("/peercove/safety");
-      expect(workspaceForRoles("safety-operations")).toBe("/peercove/safety");
-      expect(workspaceForRoles("safety")).toBe("/peercove/safety");
-      expect(workspaceForRoles("safety_operations_specialist", "en")).toBe("/en/peercove/safety");
-      expect(workspaceForRoles("safety-operations", "en")).toBe("/en/peercove/safety");
+    it("routes safety_operations_specialist and safety-operations to canonical safety-operations workspace", () => {
+      expect(workspaceForRoles("safety_operations_specialist")).toBe("/peercove/safety-operations");
+      expect(workspaceForRoles("safety-operations")).toBe("/peercove/safety-operations");
+      expect(workspaceForRoles("safety")).toBe("/peercove/safety-operations");
+      expect(workspaceForRoles("safety_operations_specialist", "en")).toBe("/en/peercove/safety-operations");
+      expect(workspaceForRoles("safety-operations", "en")).toBe("/en/peercove/safety-operations");
     });
 
-    it("routes platform_administrator and platform-administrator to admin workspace", () => {
-      expect(workspaceForRoles("platform_administrator")).toBe("/peercove/admin");
-      expect(workspaceForRoles("platform-administrator")).toBe("/peercove/admin");
-      expect(workspaceForRoles("admin")).toBe("/peercove/admin");
-      expect(workspaceForRoles("platform_administrator", "en")).toBe("/en/peercove/admin");
-      expect(workspaceForRoles("platform-administrator", "en")).toBe("/en/peercove/admin");
+    it("routes platform_administrator and platform-administrator to canonical platform-administrator workspace", () => {
+      expect(workspaceForRoles("platform_administrator")).toBe("/peercove/platform-administrator");
+      expect(workspaceForRoles("platform-administrator")).toBe("/peercove/platform-administrator");
+      expect(workspaceForRoles("admin")).toBe("/peercove/platform-administrator");
+      expect(workspaceForRoles("platform_administrator", "en")).toBe("/en/peercove/platform-administrator");
+      expect(workspaceForRoles("platform-administrator", "en")).toBe("/en/peercove/platform-administrator");
     });
 
     it("prioritizes highest privilege role when multiple roles are passed", () => {
-      expect(workspaceForRoles("member, platform-administrator")).toBe("/peercove/admin");
-      expect(workspaceForRoles("member, listener-supervisor")).toBe("/peercove/supervisor");
-      expect(workspaceForRoles("listener, safety-operations")).toBe("/peercove/safety");
+      expect(workspaceForRoles("member, platform-administrator")).toBe("/peercove/platform-administrator");
+      expect(workspaceForRoles("member, listener-supervisor")).toBe("/peercove/listener-supervisor");
+      expect(workspaceForRoles("listener, safety-operations")).toBe("/peercove/safety-operations");
     });
 
     it("defaults to member workspace when role is undefined or empty", () => {

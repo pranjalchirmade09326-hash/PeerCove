@@ -119,11 +119,4 @@ Dedicated authentication and token issuer service:
 
 ## Quick Start (All Backend Services)
 
-From the project root:
-```powershell
-# Start core and IAM backend services via root script:
-.\START-ALL.bat
-
-# Stop all running services:
-.\STOP-ALL.bat
-```
+Start each service in its own terminal using the per-service startup commands above (`peercove-fastapi` on `:8080` and `peercove-iam-py` on `:5001`, or via `docker compose -f docker-compose.dev.yml up -d`).

@@ -819,7 +819,7 @@ export function ListenerSessionRoomModal({
                     <div className="flex items-center gap-2">
                       <ShieldAlert className="size-5 text-rose-400 animate-pulse" />
                       <span className="font-bold text-sm tracking-wide text-white">
-                        Clinical Crisis Sentinel Alert ({crisisLatencyMs.toFixed(2)}ms Pre-Inference Intercept)
+                        Safety Sentinel Alert ({crisisLatencyMs.toFixed(2)}ms Pre-Inference Intercept)
                       </span>
                       {crisisMatchedKeyword && (
                         <Badge variant="outline" className="bg-rose-900/60 text-rose-200 border-rose-500 text-[10px]">
@@ -1042,7 +1042,7 @@ export function ListenerSessionRoomModal({
                     <div className="flex items-center justify-between pb-1 border-b border-slate-800 text-xs">
                       <span className="font-bold text-slate-200 flex items-center gap-1.5">
                         <Sparkles className="size-3.5 text-amber-400" />
-                        Clinical Decision Support System
+                        Non-Clinical Listener Copilot (US-020)
                       </span>
                       <div className="flex items-center gap-1.5">
                         <span className="size-2 rounded-full bg-emerald-400 animate-ping" />
@@ -1051,7 +1051,7 @@ export function ListenerSessionRoomModal({
                     </div>
 
                     <div className="p-2.5 rounded-xl bg-emerald-950/40 border border-emerald-900/60 text-slate-300 text-[11px] leading-relaxed">
-                      <strong className="text-emerald-300 block mb-0.5">Real-Time Clinical Decision Support</strong>
+                      <strong className="text-emerald-300 block mb-0.5">Peer Support Copilot (Review Before Sending)</strong>
                       The AI is analyzing the conversation in background and suggesting targeted questions to ask the patient.
                     </div>
 
@@ -1111,7 +1111,7 @@ export function ListenerSessionRoomModal({
                                   {
                                     id: `msg-${Date.now()}`,
                                     sender: "listener",
-                                    senderName: "You (Doctor)",
+                                    senderName: "You (Peer Listener)",
                                     text: item.question,
                                     time: "Just now",
                                   },
@@ -1331,7 +1331,7 @@ export function ListenerSessionRoomModal({
               <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
                   <FileText className="size-4 text-emerald-400" />
-                  Clinical & Peer Record Summary (AES-256 Encrypted)
+                  Peer Session Reflection Summary (AES-256 Encrypted)
                 </h3>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">

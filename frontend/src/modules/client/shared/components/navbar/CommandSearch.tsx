@@ -187,7 +187,7 @@ export function CommandSearch({ orgId }: ICommandSearchProps) {
               {appList.map((app) => (
                 <CommandItem
                   key={app.id}
-                  onSelect={() => { close(); router.push(`/bezs/${app.slug}`); }}
+                  onSelect={() => { close(); router.push(`/${app.slug}`); }}
                 >
                   <LayoutGrid className="size-4 shrink-0 text-muted-foreground" />
                   <span>{app.name}</span>

@@ -122,7 +122,7 @@ export default function SecuritySettings({ user }: { user: User }) {
   async function onEmailSubmit(values: EmailForm) {
     const { error } = await authClient.changeEmail({
       newEmail: values.newEmail,
-      callbackURL: `${process.env.NEXT_PUBLIC_APP_URL}/bezs/settings/security`,
+      callbackURL: `${process.env.NEXT_PUBLIC_APP_URL}/peercove/member/profile`,
     });
     if (error) {
       toast.error(error.message ?? "Failed to change email.");

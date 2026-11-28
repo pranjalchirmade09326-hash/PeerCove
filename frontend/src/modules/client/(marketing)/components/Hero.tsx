@@ -12,14 +12,21 @@ import {
   MessageCircle,
   Mic,
   ShieldCheck,
+  Users,
 } from "lucide-react";
 
 export default function Hero({ session }: { session: AuthResponse | null }) {
+  const dashboardHref =
+    (session?.session.activeRoleRedirectUrl ?? "/peercove/member").replace(
+      /^\/(?:en|hi|ta)/,
+      "",
+    ) || "/peercove/member";
+
   return (
-    <section className="relative isolate overflow-hidden bg-[#f7faf8] pb-20 pt-28 sm:pt-36 lg:pb-28">
+    <section className="relative isolate overflow-hidden bg-background pb-20 pt-28 sm:pt-36 lg:pb-28">
       <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
-        <div className="absolute -left-32 top-12 size-[28rem] rounded-full bg-emerald-100/70 blur-3xl" />
-        <div className="absolute -right-32 top-24 size-[32rem] rounded-full bg-sky-100/70 blur-3xl" />
+        <div className="absolute -left-32 top-12 size-[28rem] rounded-full bg-primary/10 blur-3xl" />
+        <div className="absolute -right-32 top-24 size-[32rem] rounded-full bg-accent/30 blur-3xl" />
       </div>
 
       <div className="mx-auto grid max-w-7xl items-center gap-14 px-5 sm:px-8 lg:grid-cols-[1.05fr_0.95fr] lg:gap-20">
@@ -29,18 +36,20 @@ export default function Hero({ session }: { session: AuthResponse | null }) {
           transition={{ duration: 0.6 }}
           className="mx-auto max-w-2xl text-center lg:mx-0 lg:text-left"
         >
-          <Badge className="mb-6 gap-2 rounded-full border border-emerald-200 bg-white/80 px-4 py-2 text-sm font-medium text-emerald-900 shadow-none hover:bg-white">
-            <Heart className="size-4 fill-emerald-100 text-emerald-700" />
-            You don&apos;t have to figure it out all at once
+          <Badge className="mb-6 gap-2 rounded-full border border-primary/20 bg-card/80 px-4 py-2 text-sm font-medium text-foreground shadow-none hover:bg-card">
+            <Heart className="size-4 fill-primary/15 text-primary" />
+            Stepped-care peer mental wellness, at your pace
           </Badge>
 
-          <h1 className="text-4xl font-semibold leading-[1.08] tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
-            A little space to
-            <span className="block text-emerald-800">talk things through.</span>
+          <h1 className="text-4xl font-semibold leading-[1.08] tracking-tight text-foreground sm:text-5xl lg:text-6xl">
+            A calm harbor to
+            <span className="block text-primary">talk things through.</span>
           </h1>
-          <p className="mx-auto mt-6 max-w-xl text-lg leading-8 text-slate-600 lg:mx-0">
-            When you&apos;re ready, start with a guided chat or voice conversation.
-            PeerCove helps you take the next step at your own pace.
+          <p className="mx-auto mt-6 max-w-xl text-lg leading-8 text-muted-foreground lg:mx-0">
+            Start with PeerCove&apos;s AI Wellbeing Companion through guided chat
+            or LiveKit voice intake, match with a trained Peer Listener in a
+            confidential listening room, and track mood, encrypted journaling,
+            and goals in one sanctuary.
           </p>
 
           <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row lg:justify-start">
@@ -49,7 +58,7 @@ export default function Hero({ session }: { session: AuthResponse | null }) {
                 <OAuthPkceButton
                   href="/signup"
                   size="lg"
-                  className="h-12 rounded-full bg-emerald-800 px-7 text-base text-white shadow-sm hover:bg-emerald-900"
+                  className="h-12 rounded-full bg-primary px-7 text-base text-primary-foreground shadow-sm hover:bg-primary/90"
                 >
                   Get started
                   <ArrowRight className="ml-2 size-4" />
@@ -58,31 +67,43 @@ export default function Hero({ session }: { session: AuthResponse | null }) {
                   href="/login"
                   variant="outline"
                   size="lg"
-                  className="h-12 rounded-full border-slate-300 bg-white/70 px-7 text-base text-slate-800 hover:bg-white"
+                  className="h-12 rounded-full border-border bg-card/70 px-7 text-base text-foreground hover:bg-card"
                 >
                   Sign in
                 </OAuthPkceButton>
+                <Link href="/demo-login">
+                  <Button
+                    variant="ghost"
+                    size="lg"
+                    className="h-12 rounded-full px-5 text-base text-muted-foreground hover:text-foreground"
+                  >
+                    Try 5-role demo
+                  </Button>
+                </Link>
               </>
             ) : (
-              <Link href="/signup">
+              <Link href={dashboardHref as any}>
                 <Button
                   size="lg"
-                  className="h-12 rounded-full bg-emerald-800 px-7 text-base text-white hover:bg-emerald-900"
+                  className="h-12 rounded-full bg-primary px-7 text-base text-primary-foreground hover:bg-primary/90"
                 >
-                  Go to your care space
+                  Go to your sanctuary
                   <ArrowRight className="ml-2 size-4" />
                 </Button>
               </Link>
             )}
           </div>
 
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-sm text-slate-600 lg:justify-start">
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-3 text-sm text-muted-foreground lg:justify-start">
             <span className="inline-flex items-center gap-2">
-              <ShieldCheck className="size-4 text-emerald-700" />
-              A gentle place to begin
+              <ShieldCheck className="size-4 text-primary" />
+              &lt;2ms Crisis Sentinel guardrails
             </span>
-            <span>Chat or voice, your choice</span>
-            <span>            Support, at your pace</span>
+            <span className="inline-flex items-center gap-2">
+              <Users className="size-4 text-primary" />
+              Trained peer listening rooms
+            </span>
+            <span>Support, at your pace</span>
           </div>
         </motion.div>
 
@@ -92,65 +113,75 @@ export default function Hero({ session }: { session: AuthResponse | null }) {
           transition={{ duration: 0.7, delay: 0.12 }}
           className="relative mx-auto w-full max-w-lg"
         >
-          <div className="absolute -left-8 top-12 size-28 rounded-full bg-emerald-200/50 blur-2xl" />
-          <div className="absolute -right-6 bottom-10 size-32 rounded-full bg-sky-200/60 blur-2xl" />
-          <div className="relative rounded-[2rem] border border-white bg-white/90 p-5 shadow-[0_24px_80px_-32px_rgba(15,80,65,0.28)] sm:p-7">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-5">
+          <div className="absolute -left-8 top-12 size-28 rounded-full bg-primary/15 blur-2xl" />
+          <div className="absolute -right-6 bottom-10 size-32 rounded-full bg-accent/25 blur-2xl" />
+          <div className="relative rounded-[2rem] border border-border bg-card/95 p-5 shadow-xl shadow-primary/10 sm:p-7">
+            <div className="flex items-center justify-between border-b border-border pb-5">
               <div className="flex items-center gap-3">
-                <div className="flex size-11 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-800">
+                <div className="flex size-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                   <Heart className="size-5" />
                 </div>
                 <div>
-                  <p className="font-semibold text-slate-900">PeerCove AI guide</p>
-                  <p className="text-sm text-slate-500">A guided way to get started</p>
+                  <p className="font-semibold text-card-foreground">
+                    PeerCove Wellbeing Companion
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Guided intake &amp; peer matching
+                  </p>
                 </div>
               </div>
-              <span className="size-2.5 rounded-full bg-emerald-500 ring-4 ring-emerald-100" />
+              <span className="size-2.5 rounded-full bg-primary ring-4 ring-primary/20" />
             </div>
 
             <div className="space-y-4 py-6">
-              <div className="max-w-[85%] rounded-2xl rounded-tl-sm bg-[#f0f7f4] p-4 text-sm leading-6 text-slate-700">
-                Hi, welcome. What&apos;s been on your mind lately?
+              <div className="max-w-[85%] rounded-2xl rounded-tl-sm bg-muted p-4 text-sm leading-6 text-foreground">
+                Welcome to your sanctuary. Would you like a 4-7-8 grounding
+                exercise, guided intake, or a confidential Peer Listener room?
               </div>
-              <div className="ml-auto max-w-[78%] rounded-2xl rounded-tr-sm bg-emerald-800 p-4 text-sm leading-6 text-white">
-                I&apos;m not sure where to start.
+              <div className="ml-auto max-w-[78%] rounded-2xl rounded-tr-sm bg-primary p-4 text-sm leading-6 text-primary-foreground">
+                I&apos;m feeling overwhelmed and would like to talk with someone.
               </div>
-              <div className="flex items-center gap-2 px-1 text-xs text-slate-500">
+              <div className="flex items-center gap-2 px-1 text-xs text-muted-foreground">
                 <span className="flex gap-1">
-                  <span className="size-1.5 animate-pulse rounded-full bg-emerald-500" />
-                  <span className="size-1.5 animate-pulse rounded-full bg-emerald-500 [animation-delay:120ms]" />
-                  <span className="size-1.5 animate-pulse rounded-full bg-emerald-500 [animation-delay:240ms]" />
+                  <span className="size-1.5 animate-pulse rounded-full bg-primary" />
+                  <span className="size-1.5 animate-pulse rounded-full bg-primary [animation-delay:120ms]" />
+                  <span className="size-1.5 animate-pulse rounded-full bg-primary [animation-delay:240ms]" />
                 </span>
-                That&apos;s okay. We can take it one step at a time.
+                Take a breath — matching you with an active Peer Listener.
               </div>
             </div>
 
-            <div className="grid gap-3 border-t border-slate-100 pt-5 sm:grid-cols-2">
-              <div className="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50/70 p-4">
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white text-emerald-800 shadow-sm">
+            <div className="grid gap-3 border-t border-border pt-5 sm:grid-cols-2">
+              <div className="flex items-center gap-3 rounded-2xl border border-primary/25 bg-primary/10 p-4">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-card text-primary shadow-sm">
                   <MessageCircle className="size-5" />
                 </span>
                 <span>
-                  <span className="block font-medium text-slate-900">
-                    Chat when you&apos;re ready
+                  <span className="block font-medium text-card-foreground">
+                    Guided text intake
                   </span>
-                  <span className="text-xs text-slate-500">Write when ready</span>
+                  <span className="text-xs text-muted-foreground">
+                    Write at your own pace
+                  </span>
                 </span>
               </div>
-              <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4">
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-sky-50 text-sky-800">
+              <div className="flex items-center gap-3 rounded-2xl border border-border bg-background p-4">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-secondary text-primary">
                   <Mic className="size-5" />
                 </span>
                 <span>
-                  <span className="block font-medium text-slate-900">
+                  <span className="block font-medium text-card-foreground">
                     Talk it through
                   </span>
-                  <span className="text-xs text-slate-500">Talk it through</span>
+                  <span className="text-xs text-muted-foreground">
+                    Live voice &amp; peer rooms
+                  </span>
                 </span>
               </div>
             </div>
-            <p className="mt-4 text-center text-xs leading-5 text-slate-500">
-              Choose what feels comfortable. You can continue at your own pace.
+            <p className="mt-4 text-center text-xs leading-5 text-muted-foreground">
+              Consent-first transcripts only. Deterministic Crisis Sentinel active
+              before every response.
             </p>
           </div>
         </motion.div>

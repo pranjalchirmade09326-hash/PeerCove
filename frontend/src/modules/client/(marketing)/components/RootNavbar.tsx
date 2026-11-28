@@ -3,7 +3,7 @@
  *
  * Layer: client / (marketing) / components
  *
- * Renders the brand logo, patient-focused navigation, and action buttons (Sign In / Sign Up or Open App if
+ * Renders the brand logo, member-centered navigation, and action buttons (Sign In / Get started or Open Dashboard if
  * already authenticated). Becomes opaque + blurred on scroll.
  */
 
@@ -19,7 +19,7 @@ import type { AuthResponse } from "@/modules/server/auth/types";
 import { AppLogo } from "@/modules/client/shared/components/AppLogo";
 
 /**
- * Top navigation bar for the marketing landing page.
+ * Top navigation bar for the PeerCove marketing landing page.
  *
  * @param session - Current server session (null if unauthenticated).
  */
@@ -68,7 +68,25 @@ export default function RootNavbar({
           </Link>
 
           {/* Nav links */}
-          <nav className="hidden md:flex items-center space-x-7">
+          <nav className="hidden md:flex items-center gap-5 lg:gap-7 text-sm">
+            <Link
+              href="/#features"
+              className="text-muted-foreground font-medium hover:text-primary transition-colors"
+            >
+              Features
+            </Link>
+            <Link
+              href="/#how-it-works"
+              className="text-muted-foreground font-medium hover:text-primary transition-colors"
+            >
+              Journey
+            </Link>
+            <Link
+              href="/#demo-access"
+              className="text-muted-foreground font-medium hover:text-primary transition-colors"
+            >
+              Demo
+            </Link>
             <Link
               href="/how-it-works"
               className="text-muted-foreground font-medium hover:text-primary transition-colors"
@@ -76,16 +94,10 @@ export default function RootNavbar({
               How it works
             </Link>
             <Link
-              href="#support"
+              href="/ai-agents"
               className="text-muted-foreground font-medium hover:text-primary transition-colors"
             >
-              Your support
-            </Link>
-            <Link
-              href="#how-it-works"
-              className="text-muted-foreground font-medium hover:text-primary transition-colors"
-            >
-              How it works
+              AI Companion
             </Link>
             <Link
               href="/hipaa"
@@ -124,7 +136,8 @@ export default function RootNavbar({
                   const rawUrl =
                     session?.session.activeRoleRedirectUrl ??
                     "/peercove/member";
-                  const cleanUrl = rawUrl.replace(/^\/(?:en|hi|ta)/, "");
+                  const cleanUrl =
+                    rawUrl.replace(/^\/(?:en|hi|ta)/, "") || "/peercove/member";
                   router.push(cleanUrl as any);
                 }}
               >

@@ -34,7 +34,7 @@ export interface UseEmrSessionParams {
   /** Session UUID from the URL params — undefined on the blank new-chat page. */
   urlSessionId?: string;
   locale: string;
-  /** Base path without locale prefix, e.g. "/bezs/telemedicine/doctor/emr". */
+  /** Base path without locale prefix, e.g. "/peercove/listener/emr". */
   basePath: string;
   router: AppRouterInstance;
   /** Used by startNewChat to restore focus to the input after clearing state. */

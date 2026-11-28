@@ -295,7 +295,7 @@ function SectionPage({
     }
   }
 
-  // Remapped Telemedicine Admin -> PeerCove Supervisor, Safety & Platform Admin workflows
+  // PeerCove Supervisor, Safety & Platform Admin workflows
   if (role.id === "listener-supervisor") {
     return (
       <SupervisorDashboardView

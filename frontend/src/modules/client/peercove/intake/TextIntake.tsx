@@ -1,7 +1,7 @@
 /**
- * TextIntake — patient-facing text chat intake component.
+ * TextIntake — member-facing text chat intake component.
  *
- * Layer: client / telemedicine / patient / intake
+ * Layer: client / peercove / member / intake
  *
  * Flow:
  *  1. After explicit consent, the PeerCove intake record is created.
@@ -44,7 +44,7 @@ interface TextIntakeProps {
  * PeerCove when the member completes the session.
  *
  * @param intakeId - PeerCove intake UUID created after consent.
- * @param basePath - Locale-prefixed base path (e.g. "/en/bezs/telemedicine/patient").
+ * @param basePath - Locale-prefixed base path (e.g. "/en/peercove/member").
  * @param userName - Patient display name, used as avatar initial.
  */
 export function TextIntake({

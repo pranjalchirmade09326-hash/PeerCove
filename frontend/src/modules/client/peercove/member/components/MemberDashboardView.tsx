@@ -122,32 +122,7 @@ const CRISIS_TRIGGER_KEYWORDS = [
   "cut myself",
 ];
 
-const DEFAULT_SESSIONS: TMemberSessionItem[] = [
-  {
-    id: "sess-1",
-    date: new Date().toISOString(),
-    listenerName: "Dr. Vikram Sen (Licensed Clinical Specialist)",
-    status: "active",
-    channel: "video",
-    note: "May 11th • Tension-type headache & clinical intake consultation",
-  },
-  {
-    id: "sess-2",
-    date: new Date(Date.now() - 86400000).toISOString(),
-    listenerName: "Dr. Vikram Sen (In-Person Ambient Capture)",
-    status: "completed",
-    channel: "voice",
-    note: "May 11th • Ambient consultation with auto-generated SOAP note",
-  },
-  {
-    id: "sess-3",
-    date: new Date(Date.now() - 172800000).toISOString(),
-    listenerName: "Aarav Sharma (Verified Peer Listener)",
-    status: "completed",
-    channel: "chat",
-    note: "May 11th • Stress management & somatic breathing exercises",
-  },
-];
+const DEFAULT_SESSIONS: TMemberSessionItem[] = [];
 
 const DEFAULT_GOALS: ActiveGoalItem[] = [
   {
@@ -309,12 +284,23 @@ export function MemberDashboardView({
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const speechRecognitionRef = useRef<any>(null);
+  const browserTranscriptRef = useRef<string>("");
 
   // Clean up all audio capture hardware tracks and timers
   const cleanupAudioRecording = useCallback(() => {
     if (recordingTimerRef.current) {
       clearInterval(recordingTimerRef.current);
       recordingTimerRef.current = null;
+    }
+    if (speechRecognitionRef.current) {
+      try {
+        speechRecognitionRef.current.stop();
+      } catch {
+        // ignore stop errors
+      }
+      speechRecognitionRef.current = null;
     }
     if (mediaStreamRef.current) {
       try {
@@ -445,20 +431,27 @@ export function MemberDashboardView({
 
         setIsTranscribingVoice(true);
         try {
-          const formData = new FormData();
-          formData.append("file", audioBlob, "speech.webm");
+          let transcript = "";
+          try {
+            const formData = new FormData();
+            formData.append("file", audioBlob, "speech.webm");
 
-          const res = await fetch("/api/voice-transcribe", {
-            method: "POST",
-            body: formData,
-          });
+            const res = await fetch("/api/voice-transcribe", {
+              method: "POST",
+              body: formData,
+            });
 
-          if (!res.ok) {
-            throw new Error(`Transcription failed with status ${res.status}`);
+            if (res.ok) {
+              const data = await res.json();
+              transcript = (data.transcript || "").trim();
+            }
+          } catch (proxyErr) {
+            console.warn("Server voice transcription unavailable, checking browser STT:", proxyErr);
           }
 
-          const data = await res.json();
-          const transcript = (data.transcript || "").trim();
+          if (!transcript && browserTranscriptRef.current.trim()) {
+            transcript = browserTranscriptRef.current.trim();
+          }
 
           if (!transcript) {
             toast.info("No speech detected. Please try speaking again.");
@@ -472,9 +465,38 @@ export function MemberDashboardView({
           console.error("Transcription error:", err);
           toast.error("Could not transcribe speech. Please try typing your message.");
         } finally {
+          browserTranscriptRef.current = "";
           setIsTranscribingVoice(false);
         }
       };
+
+      // Start parallel browser SpeechRecognition as zero-dependency fallback
+      browserTranscriptRef.current = "";
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const SpeechRec = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      if (SpeechRec) {
+        try {
+          const rec = new SpeechRec();
+          rec.continuous = true;
+          rec.interimResults = true;
+          rec.lang = "en-IN";
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          rec.onresult = (event: any) => {
+            let combined = "";
+            for (let i = 0; i < event.results.length; i++) {
+              combined += event.results[i][0].transcript + " ";
+            }
+            if (combined.trim()) {
+              browserTranscriptRef.current = combined.trim();
+            }
+          };
+          rec.onerror = () => {};
+          rec.start();
+          speechRecognitionRef.current = rec;
+        } catch {
+          // ignore browser STT init failure
+        }
+      }
 
       // Start recording with 250ms chunk slicing
       recorder.start(250);
@@ -535,31 +557,18 @@ export function MemberDashboardView({
 
     setSpeakingMessageId(messageId);
 
-    // 2. High-Fidelity Natural Voice via Sarvam AI (Direct 8018 or Next.js Proxy)
+    // 2. High-Fidelity Natural Voice via /api/voice-synthesize proxy
     try {
       const cleanText = text.replace(/[*_#`]/g, "").trim().slice(0, 480);
-      const voicePayload = JSON.stringify({
-        text: cleanText,
-        target_language_code: "hi-IN",
-        speaker: "priya"
+      const res = await fetch("/api/voice-synthesize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: cleanText,
+          target_language_code: "hi-IN",
+          speaker: "priya",
+        }),
       });
-
-      // Try direct agent service endpoint on port 8018 first (CORS enabled, 0ms proxy latency)
-      let res: Response | null = null;
-      try {
-        res = await fetch("http://localhost:8018/api/v1/voice/synthesize", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: voicePayload
-        });
-      } catch {
-        // Fallback to Next.js API route if direct port 8018 fetch fails
-        res = await fetch("/api/voice-synthesize", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: voicePayload
-        });
-      }
 
       if (res && res.ok) {
         const data = await res.json();
@@ -1052,9 +1061,9 @@ export function MemberDashboardView({
   };
 
   return (
-    <div className="space-y-4 max-w-[105rem] mx-auto pb-4">
+    <div className="space-y-3 max-w-[105rem] mx-auto">
       {/* ── FULL-SCREEN CHATGPT SANCTUARY ── */}
-      <div className="w-full h-[calc(100vh-8.5rem)] min-h-[660px] flex flex-col">
+      <div className="w-full h-[calc(100vh-6.5rem)] min-h-[500px] flex flex-col">
         <main className="flex-1 flex flex-col rounded-3xl border border-border/70 bg-card/75 backdrop-blur-sm shadow-xs overflow-hidden h-full">
           {/* Top Bar for Center Area with Quick Sanctuary Actions */}
           <div className="flex flex-wrap items-center justify-between px-5 py-3 border-b border-border/60 bg-muted/30 gap-2 shrink-0">
@@ -1095,6 +1104,31 @@ export function MemberDashboardView({
 
             {/* Quick Actions & View Switcher */}
             <div className="flex items-center gap-1.5 flex-wrap">
+              <div className="inline-flex items-center rounded-xl border border-border/70 bg-background/70 p-0.5 mr-1">
+                <button
+                  type="button"
+                  onClick={() => setActiveCenterView("chat")}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+                    activeCenterView === "chat"
+                      ? "bg-[#236B54] text-white shadow-xs"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Chat
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveCenterView("analytics")}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+                    activeCenterView === "analytics"
+                      ? "bg-[#236B54] text-white shadow-xs"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Overview
+                </button>
+              </div>
+
               <Button
                 variant="ghost"
                 size="icon"
@@ -1105,6 +1139,15 @@ export function MemberDashboardView({
               >
                 <RefreshCw className={`size-3.5 ${isRefreshing ? "animate-spin text-emerald-600" : ""}`} />
               </Button>
+
+              <Link
+                href="/peercove/member/voice"
+                className="inline-flex items-center rounded-xl border border-emerald-500/30 bg-emerald-50/70 hover:bg-emerald-100/80 dark:bg-emerald-950/30 dark:hover:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 font-semibold h-8 px-3 text-xs gap-1.5 transition-colors"
+                title="Open Live Voice Intake Room"
+              >
+                <Headphones className="size-3.5" />
+                <span>Voice Intake</span>
+              </Link>
 
               <Button
                 size="sm"
@@ -1182,52 +1225,56 @@ export function MemberDashboardView({
               <div className="flex-1 overflow-y-auto space-y-4 pr-1 min-h-0">
                 {/* Welcoming Hero Banner when message count is low */}
                 {chatMessages.length <= 1 && (
-                  <div className="text-center py-6 sm:py-8 max-w-lg mx-auto space-y-3">
-                    <div className="size-14 rounded-3xl bg-gradient-to-tr from-emerald-500 to-teal-600 text-white flex items-center justify-center mx-auto shadow-md">
-                      <Sparkles className="size-7" />
+                  <div className="text-center py-3 sm:py-5 max-w-xl mx-auto space-y-2.5">
+                    <div className="size-11 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-600 text-white flex items-center justify-center mx-auto shadow-md">
+                      <Sparkles className="size-5" />
                     </div>
-                    <h2 className="text-xl sm:text-2xl font-bold font-serif text-foreground">
+                    <h2 className="text-lg sm:text-2xl font-bold font-serif text-foreground">
                       Member Sanctuary Companion
                     </h2>
                     <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-md mx-auto">
-                      Welcome to your safe sanctuary. Share how you are feeling, talk through physical or emotional symptoms, and connect directly with verified peer listeners or doctors.
+                      Welcome to your safe harbor. Share how you are feeling, talk through stress or sleep, and connect with verified peer listeners.
                     </p>
 
-                    {/* 4 Clinical Starter Prompt Cards matching video */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-3 text-left">
+                    {/* 4 Starter Prompt Cards */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 text-left">
                       {[
                         {
-                          title: "🤕 Persistent headache & tension",
-                          desc: "3-day headache, neck stiffness & fatigue",
-                          prompt: "I've had a persistent tension headache for the past 3 days with neck stiffness, fatigue, and feeling anxious.",
+                          title: "🌿 Guided 4-7-8 Grounding",
+                          desc: "Calm your nervous system in 60 seconds",
+                          prompt: "Can you guide me through a gentle 4-7-8 breathing exercise right now?",
+                          action: "chat" as const,
                         },
                         {
-                          title: "⚡ Severe anxiety & burnout",
-                          desc: "Chronic stress, palpitations & overwhelm",
-                          prompt: "I am experiencing severe situational anxiety, heart palpitations, and trouble concentrating at work.",
+                          title: "⚡ Anxiety & Work Burnout",
+                          desc: "Unpack stress, overwhelm & racing thoughts",
+                          prompt: "I am experiencing strong anxiety and burnout from work and feeling overwhelmed.",
+                          action: "chat" as const,
                         },
                         {
-                          title: "😴 Sleep issues & restlessness",
-                          desc: "Disrupted sleep cycle & morning fatigue",
-                          prompt: "I've been waking up multiple times every night with racing thoughts and feeling exhausted during the day.",
+                          title: "😴 Sleep & Restlessness",
+                          desc: "Disrupted sleep cycle & late-night overthinking",
+                          prompt: "I've been waking up at night with racing thoughts and feeling exhausted during the day.",
+                          action: "chat" as const,
                         },
                         {
-                          title: "📅 Schedule Doctor / Peer Session",
-                          desc: "May 11th with Dr. Vikram Sen or Peer Match",
-                          prompt: "I'd like to book an appointment with Dr. Vikram Sen for May 11th.",
+                          title: "📅 Schedule Peer / Care Session",
+                          desc: "Book a video, voice, or text listening room",
+                          prompt: "",
+                          action: "book" as const,
                         },
                       ].map((card, i) => (
                         <button
                           key={i}
                           type="button"
                           onClick={() => {
-                            if (card.title.includes("Book Doctor")) {
+                            if (card.action === "book") {
                               setIsBookModalOpen(true);
                             } else {
                               handleSendChatMessage(card.prompt);
                             }
                           }}
-                          className="p-3.5 rounded-2xl border border-border/60 bg-card/60 hover:border-emerald-500/60 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 transition-all text-left space-y-1 group"
+                          className="p-3 rounded-2xl border border-border/60 bg-card/60 hover:border-emerald-500/60 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 transition-all text-left space-y-0.5 group"
                         >
                           <p className="text-xs font-semibold text-foreground group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition-colors">
                             {card.title}

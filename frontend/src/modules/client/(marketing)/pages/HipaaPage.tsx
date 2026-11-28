@@ -1,18 +1,22 @@
 /**
- * HipaaPage — dedicated marketing page explaining PeerCove's HIPAA compliance.
+ * HipaaPage — dedicated marketing page explaining PeerCove's privacy-first,
+ * HIPAA-aligned security architecture.
  *
  * Layer: client / (marketing) / pages
  *
- * Covers: what HIPAA requires, how PeerCove implements each safeguard,
- * PHI handling policy, encryption standards, BAA availability,
- * and audit trail architecture.
+ * Covers: AES-256-GCM envelope encryption + KMS key rotation, zero-knowledge
+ * admin isolation, 5-role Ed25519 JWKS RBAC, immutable AuditEvent logging,
+ * explicit intake/voice consent with transcript-only storage & /api/v1/privacy-requests,
+ * Engine 2 agent DB isolation, read-only FastMCP gateway, and Crisis Sentinel governance.
  */
 
 "use client";
 
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Link } from "@/i18n/navigation";
 import { OAuthPkceButton } from "@/modules/client/auth/components/OAuthPkceButton";
 import {
   ShieldCheck,
@@ -23,143 +27,180 @@ import {
   Users,
   KeyRound,
   FileCheck,
-  AlertTriangle,
+  ShieldAlert,
   CheckCircle2,
   ArrowRight,
 } from "lucide-react";
 import type { AuthResponse } from "@/modules/server/auth/types";
 
-// ── HIPAA safeguard pillars ────────────────────────────────────────────────
+// ── Security & privacy pillars ──────────────────────────────────────────────
 
 const safeguards = [
   {
-    icon: <Lock className="w-6 h-6 text-blue-500" />,
-    color: "bg-blue-500/10 border-blue-500/20",
-    title: "Technical Safeguards",
-    badge: "Encryption",
+    icon: <Lock className="w-6 h-6 text-primary" />,
+    title: "AES-256-GCM Envelope Encryption & KMS",
+    badge: "Technical Safeguard",
     points: [
-      "TLS 1.3 for all data in transit — no exceptions",
-      "AES-256 encryption for all data at rest",
-      "Automatic session timeouts and re-authentication",
-      "Unique user IDs — no shared login credentials",
+      "Application-layer AES-256-GCM (12-byte IV + 16-byte AuthTag + Ciphertext) before PostgreSQL storage",
+      "Versioned KMS key ring with live rotation (/api/v1/admin/kms/rotate) and backward decryption",
+      "Protects mood notes, journal titles/bodies, goals, intakes, conduct audits, and safety notes",
+      "TLS encryption in transit with bounded sessions (480 min max, 60 min idle, token rotation)",
     ],
   },
   {
-    icon: <Server className="w-6 h-6 text-emerald-500" />,
-    color: "bg-emerald-500/10 border-emerald-500/20",
-    title: "Physical Safeguards",
-    badge: "Infrastructure",
+    icon: <Users className="w-6 h-6 text-primary" />,
+    title: "Zero-Knowledge Admin & 5-Role RBAC",
+    badge: "Access Control",
     points: [
-      "Hosted on SOC 2-certified infrastructure providers",
-      "Isolated per-organization data environments",
-      "No PHI stored on local client devices",
-      "Geographically redundant, encrypted backups",
+      "Asymmetric Ed25519 JWT signing + /.well-known/jwks.json verification in peercove-iam-py",
+      "Least-privilege RBAC across Member, Listener, Supervisor, Safety Ops, and Platform Admin",
+      "Platform Administrators oversee health & telemetry with zero access to private journals or chats",
+      "Non-clinical Peer Listeners remain bound by PC-BE-201 scope and consented context only",
     ],
   },
   {
-    icon: <Users className="w-6 h-6 text-violet-500" />,
-    color: "bg-violet-500/10 border-violet-500/20",
-    title: "Administrative Safeguards",
-    badge: "Governance",
+    icon: <ClipboardList className="w-6 h-6 text-primary" />,
+    title: "Immutable AuditEvent Trail",
+    badge: "Audit Controls",
     points: [
-      "Role-based access control (RBAC) for all PHI",
-      "Workforce access limited to minimum necessary PHI",
-      "Business Associate Agreements (BAA) available",
-      "Documented security policies and procedures",
+      "Append-only AuditEvent records for role changes, KMS key rotation, and eligibility signoffs",
+      "Logs occurred_at, actor_user_id, action_code, resource_type, resource_id, and outcome",
+      "Excludes private conversational plaintext and encrypted journal content from admin logs",
+      "Compliance-ready telemetry via /api/v1/admin/audit-events",
     ],
   },
   {
-    icon: <ClipboardList className="w-6 h-6 text-amber-500" />,
-    color: "bg-amber-500/10 border-amber-500/20",
-    title: "Audit Controls",
-    badge: "Traceability",
+    icon: <Eye className="w-6 h-6 text-primary" />,
+    title: "Explicit Consent & Privacy Requests",
+    badge: "Member Rights",
     points: [
-      "Every PHI access and modification timestamped",
-      "Immutable audit logs stored separately from clinical data",
-      "AI recommendations logged with clinician review status",
-      "Export-ready audit reports for compliance reviews",
+      "PeerCoveIntakeGate enforces explicit consent before text intake or live voice streaming",
+      "Voice intake stores encrypted transcript text only — never raw audio recordings",
+      "Self-service /api/v1/privacy-requests tracks export_data state and fulfillment timestamps",
+      "Clear non-clinical notices prior to every AI-guided session",
     ],
   },
   {
-    icon: <Eye className="w-6 h-6 text-rose-500" />,
-    color: "bg-rose-500/10 border-rose-500/20",
-    title: "Patient Rights",
-    badge: "Transparency",
+    icon: <Server className="w-6 h-6 text-primary" />,
+    title: "Agent & Interop Isolation",
+    badge: "Architecture",
     points: [
-      "Patients can access their own FHIR records at any time",
-      "Data rectification requests supported via patient portal",
-      "Consent management for data sharing and AI processing",
-      "Clear privacy notices before any AI data processing",
+      "Engine 2 LangGraph service (:8018) holds zero database credentials",
+      "All persistence passes through Engine 3 (:8080) authenticated REST endpoints",
+      "Auxiliary FastMCP gateway (:8002/mcp) enforces strictly read-only (GET) access via MCPType.EXCLUDE",
+      "JWKS AuthForwardingMiddleware validates and scopes multi-tenant FHIR tokens",
     ],
   },
   {
-    icon: <AlertTriangle className="w-6 h-6 text-orange-500" />,
-    color: "bg-orange-500/10 border-orange-500/20",
-    title: "Breach Notification",
-    badge: "Response",
+    icon: <ShieldAlert className="w-6 h-6 text-primary" />,
+    title: "Safety Sentinel & Escalation Governance",
+    badge: "Crisis Safety",
     points: [
-      "Automated anomaly detection on PHI access patterns",
-      "72-hour breach notification procedures in place",
-      "Incident response playbook maintained and tested",
-      "Risk assessments conducted on all system changes",
+      "Deterministic <2ms pre-inference Safety Sentinel runs before any LLM response",
+      "Safety Operations queue uses redacted notes and encrypted SafetyCaseAction logs",
+      "Verified regional crisis helplines: Tele-MANAS 14416, 988, KIRAN 1800-599-0019, 112",
+      "BAA-ready architecture for covered-entity deployments using the auxiliary FHIR R4 tier",
     ],
   },
 ];
 
-// ── PHI handling practices ────────────────────────────────────────────────
+// ── Privacy practices ───────────────────────────────────────────────────────
 
 const phiPractices = [
-  { title: "Minimum Necessary", description: "Only the PHI required for the specific clinical task is ever accessed, processed, or transmitted." },
-  { title: "Zero Third-Party Sharing", description: "PHI is never shared with third parties for advertising, analytics, or AI training without explicit consent." },
-  { title: "AI Processing Boundaries", description: "AI agents process PHI only within the secure PeerCove environment. No PHI leaves your organization's data boundary." },
-  { title: "Data Residency", description: "Clinical data is stored in the region you configure. Cross-region PHI transfer is disabled by default." },
+  {
+    title: "Zero-Knowledge Separation",
+    description:
+      "Platform Administrators manage KMS rotation, P01–P09 workflows, and service health without ever reading private member conversations or journals.",
+  },
+  {
+    title: "Transcript-Only Voice Consent",
+    description:
+      "LiveKit and WebSocket voice intake processes audio in real time and retains only encrypted transcript text after explicit consent — never raw audio.",
+  },
+  {
+    title: "No Third-Party Ad or Model Training Sharing",
+    description:
+      "Member reflections, mood pulse data, and clinical interop payloads are never sold or shared for advertising.",
+  },
+  {
+    title: "HIPAA-Aligned Safeguards & BAA Readiness",
+    description:
+      "Technical, administrative, and physical controls align with HIPAA Security, Privacy, and Breach Notification rules when deployed with the auxiliary FHIR R4 tier.",
+  },
 ];
 
 // ── Animation ──────────────────────────────────────────────────────────────
 
 const fade = {
   hidden: { opacity: 0, y: 20 },
-  visible: (i = 0) => ({ opacity: 1, y: 0, transition: { delay: i * 0.07, duration: 0.5 } }),
+  visible: (i = 0) => ({
+    opacity: 1,
+    y: 0,
+    transition: { delay: i * 0.07, duration: 0.5 },
+  }),
 };
 
 // ── Component ──────────────────────────────────────────────────────────────
 
 /**
- * HIPAA compliance dedicated marketing page.
+ * HIPAA & Privacy Architecture dedicated marketing page.
  *
  * @param session - Active auth session for CTA variant.
  */
 export function HipaaPage({ session }: { session: AuthResponse | null }) {
+  const dashboardHref =
+    (session?.session.activeRoleRedirectUrl ?? "/peercove/member").replace(
+      /^\/(?:en|hi|ta)/,
+      "",
+    ) || "/peercove/member";
+
   return (
     <div className="pt-20">
-
       {/* ── Hero ── */}
       <section className="py-20 sm:py-28 bg-background relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-[400px] h-[400px] bg-emerald-500/5 rounded-full blur-3xl opacity-50 pointer-events-none" />
+        <div className="absolute top-0 left-0 w-[400px] h-[400px] bg-primary/10 rounded-full blur-3xl opacity-50 pointer-events-none" />
         <div className="max-w-[110rem] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <motion.div className="max-w-3xl" initial="hidden" animate="visible" variants={fade}>
             <div className="flex items-center gap-2 mb-4">
-              <Badge variant="outline" className="border-emerald-500/30 text-emerald-600 text-xs">
-                HIPAA Compliant
+              <Badge variant="outline" className="border-primary/30 text-primary text-xs">
+                Zero-Knowledge Privacy &amp; HIPAA Alignment
               </Badge>
-              <Badge variant="secondary" className="text-xs">Healthcare Data Security</Badge>
+              <Badge variant="secondary" className="text-xs">
+                AES-256-GCM · Ed25519 JWKS
+              </Badge>
             </div>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground tracking-tight leading-[1.08] mb-6">
-              HIPAA Compliance Built Into Every Layer of PeerCove
+              Privacy-First Security Built Into Every Layer of PeerCove
             </h1>
             <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed mb-8">
-              The Health Insurance Portability and Accountability Act (HIPAA) sets the
-              legal standard for protecting patient health information in the US.
-              PeerCove is designed to satisfy every HIPAA safeguard requirement — not as
-              a checklist, but as a fundamental architectural principle.
+              PeerCove combines application-layer AES-256-GCM envelope encryption,
+              live KMS key rotation, 5-role Ed25519 RBAC, zero-knowledge admin
+              isolation, and immutable AuditEvent logs to protect mental wellness
+              spaces and optional clinical FHIR interoperability.
             </p>
             <div className="flex flex-wrap gap-3">
-              {!session && (
-                <OAuthPkceButton size="lg" className="rounded-full px-8">
-                  Get Started Free <ArrowRight className="ml-2 w-4 h-4" />
-                </OAuthPkceButton>
+              {!session ? (
+                <>
+                  <OAuthPkceButton href="/signup" size="lg" className="rounded-full px-8">
+                    Get started <ArrowRight className="ml-2 w-4 h-4" />
+                  </OAuthPkceButton>
+                  <Link href="/demo-login">
+                    <Button variant="outline" size="lg" className="rounded-full px-7">
+                      Explore 5-role demo
+                    </Button>
+                  </Link>
+                </>
+              ) : (
+                <Link href={dashboardHref as any}>
+                  <Button size="lg" className="rounded-full px-8">
+                    Open Dashboard <ArrowRight className="ml-2 w-4 h-4" />
+                  </Button>
+                </Link>
               )}
-              <a href="#safeguards" className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-border text-sm font-medium hover:bg-secondary transition-colors">
+              <a
+                href="#safeguards"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-border text-sm font-medium text-foreground hover:bg-secondary transition-colors"
+              >
                 View Safeguards <ArrowRight className="w-4 h-4" />
               </a>
             </div>
@@ -173,10 +214,10 @@ export function HipaaPage({ session }: { session: AuthResponse | null }) {
             className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-6 p-8 rounded-2xl bg-secondary/40 border border-border/50"
           >
             {[
-              { icon: <ShieldCheck className="w-5 h-5 text-primary" />, value: "HIPAA", label: "All safeguards covered" },
-              { icon: <Lock className="w-5 h-5 text-primary" />, value: "AES-256", label: "Encryption standard" },
-              { icon: <KeyRound className="w-5 h-5 text-primary" />, value: "RBAC", label: "Access control model" },
-              { icon: <FileCheck className="w-5 h-5 text-primary" />, value: "BAA", label: "Available on request" },
+              { icon: <Lock className="w-5 h-5 text-primary" />, value: "AES-256-GCM", label: "Envelope encryption + KMS" },
+              { icon: <KeyRound className="w-5 h-5 text-primary" />, value: "Ed25519", label: "JWKS 5-role RBAC" },
+              { icon: <ShieldCheck className="w-5 h-5 text-primary" />, value: "Zero-Knowledge", label: "Admin journal isolation" },
+              { icon: <FileCheck className="w-5 h-5 text-primary" />, value: "BAA Ready", label: "HIPAA-aligned controls" },
             ].map((f, i) => (
               <div key={i} className="text-center">
                 <div className="flex justify-center mb-2">{f.icon}</div>
@@ -188,7 +229,7 @@ export function HipaaPage({ session }: { session: AuthResponse | null }) {
         </div>
       </section>
 
-      {/* ── What HIPAA requires + how PeerCove implements ── */}
+      {/* ── Safeguards grid ── */}
       <section id="safeguards" className="py-20 sm:py-24 bg-secondary/30">
         <div className="max-w-[110rem] mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
@@ -198,14 +239,16 @@ export function HipaaPage({ session }: { session: AuthResponse | null }) {
             variants={fade}
             className="text-center max-w-3xl mx-auto mb-16"
           >
-            <span className="text-primary font-semibold tracking-wider uppercase text-sm">HIPAA Safeguards</span>
+            <span className="text-primary font-semibold tracking-wider uppercase text-sm">
+              Security &amp; HIPAA Safeguards
+            </span>
             <h2 className="mt-2 text-3xl sm:text-4xl font-bold text-foreground">
-              Six Safeguard Areas, Fully Addressed
+              Six Implemented Control Domains
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              HIPAA defines six safeguard categories for protecting PHI. PeerCove
-              implements controls across all six — from infrastructure encryption to
-              patient rights management.
+              Aligning with HIPAA Technical, Physical, and Administrative
+              Safeguards alongside member privacy rights, AI isolation, and
+              Crisis Sentinel governance.
             </p>
           </motion.div>
 
@@ -219,18 +262,25 @@ export function HipaaPage({ session }: { session: AuthResponse | null }) {
                 viewport={{ once: true }}
                 variants={fade}
               >
-                <Card className={`h-full border ${s.color}`}>
+                <Card className="h-full border border-border bg-card">
                   <CardContent className="pt-6 space-y-4">
                     <div className="flex items-start justify-between">
-                      <div className="w-11 h-11 rounded-xl bg-background border border-border flex items-center justify-center">
+                      <div className="w-11 h-11 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center">
                         {s.icon}
                       </div>
-                      <Badge variant="secondary" className="text-[10px]">{s.badge}</Badge>
+                      <Badge variant="secondary" className="text-[10px]">
+                        {s.badge}
+                      </Badge>
                     </div>
-                    <h3 className="font-bold text-lg text-foreground">{s.title}</h3>
+                    <h3 className="font-bold text-lg text-card-foreground">
+                      {s.title}
+                    </h3>
                     <ul className="space-y-2">
                       {s.points.map((p, j) => (
-                        <li key={j} className="flex items-start gap-2 text-sm text-muted-foreground">
+                        <li
+                          key={j}
+                          className="flex items-start gap-2 text-sm text-muted-foreground"
+                        >
                           <CheckCircle2 className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0" />
                           {p}
                         </li>
@@ -244,7 +294,7 @@ export function HipaaPage({ session }: { session: AuthResponse | null }) {
         </div>
       </section>
 
-      {/* ── PHI handling ── */}
+      {/* ── Privacy & Governance Practices ── */}
       <section className="py-20 sm:py-24 bg-background">
         <div className="max-w-[110rem] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
@@ -254,14 +304,17 @@ export function HipaaPage({ session }: { session: AuthResponse | null }) {
               viewport={{ once: true }}
               transition={{ duration: 0.7 }}
             >
-              <span className="text-primary font-semibold tracking-wider uppercase text-sm">PHI Handling</span>
+              <span className="text-primary font-semibold tracking-wider uppercase text-sm">
+                Data Minimization
+              </span>
               <h2 className="mt-2 text-3xl sm:text-4xl font-bold text-foreground mb-6">
-                How PeerCove Treats Patient Health Information
+                How PeerCove Protects Sensitive Mental Wellness Data
               </h2>
               <p className="text-muted-foreground leading-relaxed mb-8">
-                Protected Health Information (PHI) is the most sensitive data a healthcare
-                system handles. PeerCove applies strict data minimization, isolation, and
-                transparency principles to every PHI interaction.
+                Whether operating as a non-clinical peer sanctuary or connected to
+                an organization&apos;s auxiliary FHIR R4 tier, PeerCove enforces
+                cryptographic isolation, explicit consent, and minimum-necessary
+                access across every service.
               </p>
               <div className="space-y-5">
                 {phiPractices.map((p, i) => (
@@ -277,7 +330,9 @@ export function HipaaPage({ session }: { session: AuthResponse | null }) {
                     <CheckCircle2 className="w-5 h-5 text-primary shrink-0 mt-0.5" />
                     <div>
                       <p className="font-semibold text-foreground">{p.title}</p>
-                      <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{p.description}</p>
+                      <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
+                        {p.description}
+                      </p>
                     </div>
                   </motion.div>
                 ))}
@@ -292,19 +347,22 @@ export function HipaaPage({ session }: { session: AuthResponse | null }) {
               className="space-y-6"
             >
               {/* BAA card */}
-              <Card className="border-emerald-500/20 bg-emerald-500/5">
+              <Card className="border-primary/20 bg-primary/5">
                 <CardContent className="pt-6">
                   <div className="flex items-start gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                      <FileCheck className="w-5 h-5 text-emerald-500" />
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                      <FileCheck className="w-5 h-5 text-primary" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-foreground mb-2">Business Associate Agreement (BAA)</h3>
+                      <h3 className="font-bold text-foreground mb-2">
+                        Covered-Entity &amp; BAA Readiness
+                      </h3>
                       <p className="text-sm text-muted-foreground leading-relaxed">
-                        A signed BAA is required under HIPAA whenever a business associate
-                        handles PHI on behalf of a covered entity. PeerCove provides a
-                        standard BAA on request — making your organization&apos;s HIPAA
-                        compliance straightforward from day one.
+                        For organizations pairing PeerCove&apos;s stepped-care
+                        sanctuary with the auxiliary HL7 FHIR R4 interoperability
+                        tier, PeerCove&apos;s encryption, KMS rotation, RBAC, and
+                        audit controls support Business Associate Agreement (BAA)
+                        deployments.
                       </p>
                     </div>
                   </div>
@@ -312,38 +370,43 @@ export function HipaaPage({ session }: { session: AuthResponse | null }) {
               </Card>
 
               {/* Audit trails card */}
-              <Card className="border-border/50">
+              <Card className="border-border bg-card">
                 <CardContent className="pt-6">
                   <div className="flex items-start gap-4">
                     <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center">
                       <ClipboardList className="w-5 h-5 text-primary" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-foreground mb-2">Immutable Audit Trails</h3>
+                      <h3 className="font-bold text-card-foreground mb-2">
+                        Immutable AuditEvent Logs
+                      </h3>
                       <p className="text-sm text-muted-foreground leading-relaxed">
-                        Every read, write, update, and delete operation on PHI is logged
-                        with a timestamp, user ID, action type, and resource reference.
-                        Audit logs are stored in append-only storage and are included in
-                        your compliance reports.
+                        Every administrative action, KMS rotation, training
+                        signoff, privacy request, and safety escalation writes an
+                        append-only AuditEvent record — without exposing
+                        conversational plaintext.
                       </p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Human oversight card */}
-              <Card className="border-border/50">
+              {/* Non-clinical & Crisis boundary card */}
+              <Card className="border-border bg-card">
                 <CardContent className="pt-6">
                   <div className="flex items-start gap-4">
                     <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center">
-                      <Eye className="w-5 h-5 text-primary" />
+                      <ShieldAlert className="w-5 h-5 text-primary" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-foreground mb-2">Human Oversight on AI Decisions</h3>
+                      <h3 className="font-bold text-card-foreground mb-2">
+                        Deterministic Safety &amp; Zero-DB AI Isolation
+                      </h3>
                       <p className="text-sm text-muted-foreground leading-relaxed">
-                        No AI-generated clinical content is written to a FHIR record without
-                        explicit clinician review and approval. AI recommendations are advisory
-                        — all PHI-affecting decisions remain with the licensed clinician.
+                        Engine 2 agents carry zero database credentials and run
+                        a &lt;2ms deterministic Crisis Sentinel before any model
+                        inference, while auxiliary FastMCP access remains strictly
+                        read-only (GET).
                       </p>
                     </div>
                   </div>
@@ -364,17 +427,32 @@ export function HipaaPage({ session }: { session: AuthResponse | null }) {
             transition={{ duration: 0.7 }}
           >
             <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
-              Build on a Platform That Takes HIPAA Seriously
+              Privacy-Preserving Stepped Care From Day One
             </h2>
             <p className="text-lg text-muted-foreground max-w-xl mx-auto mb-10">
-              Request our BAA, review our security documentation, or start your free
-              trial today.
+              Inspect zero-knowledge KMS rotation, RBAC boundaries, and consent
+              controls directly inside the 5-role demo.
             </p>
-            {!session && (
-              <OAuthPkceButton size="lg" className="rounded-full px-10 h-12">
-                Get Started Free <ArrowRight className="ml-2 w-4 h-4" />
-              </OAuthPkceButton>
-            )}
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              {!session ? (
+                <>
+                  <OAuthPkceButton href="/signup" size="lg" className="rounded-full px-10 h-12">
+                    Get started <ArrowRight className="ml-2 w-4 h-4" />
+                  </OAuthPkceButton>
+                  <Link href="/demo-login">
+                    <Button variant="outline" size="lg" className="rounded-full px-8 h-12">
+                      Explore 5-role demo
+                    </Button>
+                  </Link>
+                </>
+              ) : (
+                <Link href={dashboardHref as any}>
+                  <Button size="lg" className="rounded-full px-10 h-12">
+                    Open Dashboard <ArrowRight className="ml-2 w-4 h-4" />
+                  </Button>
+                </Link>
+              )}
+            </div>
           </motion.div>
         </div>
       </section>

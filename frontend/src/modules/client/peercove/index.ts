@@ -3,7 +3,7 @@
  * Layer: modules / client / peercove
  */
 
-// Member Workspaces & Remapped Telemedicine Workflows
+// Member Workspaces & PeerCove Member Workflows
 export * from "./member/components/MemberDashboardView";
 export * from "./member/components/MemberAppointmentsView";
 export * from "./member/components/MemberRecordsView";
@@ -18,7 +18,7 @@ export * from "./member/components/MemberMatchingQueueModal";
 export * from "./member/components/MemberSessionRoomModal";
 export * from "./member/components/MemberReportModal";
 
-// Listener Workspace & Remapped Doctor Workflows
+// Listener Workspace & Peer Listener Workflows
 export * from "./listener/components/ListenerDashboardView";
 export * from "./listener/components/ListenerConsultationsView";
 export * from "./listener/components/ListenerReviewModal";
@@ -38,7 +38,5 @@ export * from "./intake/PeerCoveTextIntake";
 export * from "./intake/PeerCoveVoiceIntake";
 export * from "./intake/PeerCoveIntakeGate";
 export * from "./intake/TextIntake";
-export * from "./intake/VoiceIntake";
 export * from "./intake/ConversationChat";
-export * from "./intake/IntakeChoice";
 export * from "./intake/IntakeCompleteModal";

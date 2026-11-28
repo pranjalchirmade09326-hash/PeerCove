@@ -15,6 +15,6 @@ export const config = {
     // Explicitly match root path for locale redirection
     "/",
     // Match all localized and general application paths
-    "/((?!api|trpc|_next|_vercel|docs|.*\\..*).*)",
+    "/((?!api|trpc|_next|_vercel|docs|apple-icon|.*\\..*).*)",
   ],
 };

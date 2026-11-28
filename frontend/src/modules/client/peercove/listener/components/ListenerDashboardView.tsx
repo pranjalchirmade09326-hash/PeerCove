@@ -83,35 +83,7 @@ export interface TQueueMember {
   status: "waiting" | "in_call" | "completed";
 }
 
-const INITIAL_QUEUE_MEMBERS: TQueueMember[] = [
-  {
-    id: "req-1",
-    displayName: "Ananya Sharma",
-    topic: "Persistent tension headaches (3 days) & situational workplace fatigue (May 11th Intake)",
-    waitingMinutes: 3,
-    channel: "video",
-    urgency: "routine",
-    status: "waiting",
-  },
-  {
-    id: "req-2",
-    displayName: "Rohan Verma",
-    topic: "In-Person Consultation (Ambient Capture & Waveform Demo)",
-    waitingMinutes: 7,
-    channel: "voice",
-    urgency: "routine",
-    status: "waiting",
-  },
-  {
-    id: "req-3",
-    displayName: "Simran Kaur",
-    topic: "Completed Consultation • SOAP Note & FHIR extractions (Acetaminophen, CBC)",
-    waitingMinutes: 12,
-    channel: "chat",
-    urgency: "support",
-    status: "completed",
-  },
-];
+const INITIAL_QUEUE_MEMBERS: TQueueMember[] = [];
 
 export const CRISIS_HOTLINES = [
   {
@@ -699,25 +671,26 @@ export function ListenerDashboardView({
           <div className="flex items-center gap-2 mb-1">
             <span className="flex size-2 rounded-full bg-emerald-500 animate-pulse" />
             <p className="text-xs font-semibold uppercase tracking-wider text-emerald-800 dark:text-emerald-400">
-              Doctor & Listener Clinical Hub
+              Peer Listener Sanctuary Hub
             </p>
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl font-serif">
-            Consultations & Ambient Capture
+            Peer Listening &amp; Live Queue
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Practitioner: <strong className="text-foreground">{activeListenerName}</strong> • Ambient AI Data Capture & Clinical Decision Support.
+            Verified Peer Listener: <strong className="text-foreground">{activeListenerName}</strong> • Non-Clinical Emotional Support &amp; Guided Reflection.
           </p>
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap">
           <Button
             size="sm"
-            onClick={() => setIsInPersonModalOpen(true)}
-            className="rounded-xl text-xs h-9 px-3.5 font-semibold bg-[#236B54] hover:bg-[#1a5240] text-white gap-2 shadow-xs"
+            variant="outline"
+            onClick={() => (cooldownActive ? handleEndCooldown() : handleStartCooldown())}
+            className="rounded-xl text-xs h-9 px-3.5 font-semibold gap-2"
           >
-            <Stethoscope className="size-4" />
-            <span>In-Person Consultation (Ambient Capture)</span>
+            <Wind className="size-4 text-emerald-600" />
+            <span>{cooldownActive ? "End Decompression Break" : "Take Decompression Break"}</span>
           </Button>
 
           <Button

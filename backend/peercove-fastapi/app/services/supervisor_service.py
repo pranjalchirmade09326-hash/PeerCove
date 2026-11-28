@@ -193,9 +193,10 @@ class SupervisorService(BaseService):
             
             output = []
             title_map = {
-                "MS-BE-201": "Non-Clinical Peer Boundaries & Ethical Care",
-                "MS-SS-202": "Crisis De-escalation & Safety Operations Alerting",
-                "MS-SC-301": "Caregiver Resilience & Vicarious Trauma Self-Care",
+                "PC-AL-101": "Active Listening & Empathetic Validation",
+                "PC-BE-201": "Non-Clinical Peer Boundaries & Ethical Care",
+                "PC-SS-202": "Crisis De-escalation & Safety Operations Alerting",
+                "PC-SC-301": "Caregiver Resilience & Vicarious Trauma Self-Care",
                 "boundaries_and_escalation": "Non-Clinical Peer Boundaries & Ethical Care",
                 "active_listening": "Active Listening & Empathetic Validation",
                 "safety_escalation": "Crisis De-escalation & Safety Operations Alerting",

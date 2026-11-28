@@ -12,7 +12,7 @@
 import fs from "fs";
 import { format as dateFnsFormat } from "date-fns";
 import winston from "winston";
-import "winston-daily-rotate-file";
+import DailyRotateFile from "winston-daily-rotate-file";
 
 /** Directory where rotating log files are stored. */
 const LOG_DIR = process.env.LOG_DIR ?? "./logs/peercove";
@@ -56,7 +56,7 @@ const exactLevel = (level: string) =>
  * @param level - Log level for this transport ("info" | "error" | "warn" | "debug").
  */
 const createDailyRotateTransport = (level: string) =>
-  new winston.transports.DailyRotateFile({
+  new DailyRotateFile({
     dirname: LOG_DIR,
     filename: `${level}-%DATE%.log`,
     datePattern: "DD-MM-YYYY",

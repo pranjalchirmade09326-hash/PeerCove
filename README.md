@@ -1,24 +1,13 @@
 # PeerCove 🏥 🌊
 **AI-Native Peer Support, Mental Wellness & Connected Telehealth Platform**
-
 PeerCove is an AI-assisted mental wellness and collaborative care platform designed to provide a calm, supportive harbor for individuals seeking guided conversations, peer-to-peer listening, and professional telehealth care.
 
 The platform seamlessly connects citizens, peer listeners, healthcare providers, and clinical supervisors through guided intake, real-time matching, encrypted telehealth rooms, and FHIR-compliant electronic health records.
-
 ---
-
 ## 🌐 Live Deployments
 
 - **Production URL:** [https://peercove.space](https://peercove.space)
 - **Alternate Domain:** [https://www.peercove.space](https://www.peercove.space)
-
----
-
-## 🌐 Live Deployments
-
-- **Production URL:** [https://peercove.space](https://peercove.space)
-- **Alternate Domain:** [https://www.peercove.space](https://www.peercove.space)
-
 
 ---
 

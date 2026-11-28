@@ -13,7 +13,7 @@ export async function GET() {
       {
         id: "tr-01",
         listenerName: "Kabir Das",
-        moduleCode: "MS-BE-201",
+        moduleCode: "PC-BE-201",
         moduleTitle: "Non-Clinical Peer Boundaries & Ethical Care",
         score: "94%",
         status: "pending_supervisor_signoff",
@@ -22,7 +22,7 @@ export async function GET() {
       {
         id: "tr-02",
         listenerName: "Meera Rao",
-        moduleCode: "MS-SS-202",
+        moduleCode: "PC-SS-202",
         moduleTitle: "Crisis De-escalation & Safety Operations Alerting",
         score: "98%",
         status: "pending_supervisor_signoff",
@@ -31,7 +31,7 @@ export async function GET() {
       {
         id: "tr-03",
         listenerName: "Priya Nair",
-        moduleCode: "MS-SC-301",
+        moduleCode: "PC-SC-301",
         moduleTitle: "Caregiver Resilience & Vicarious Trauma Self-Care",
         score: "100%",
         status: "verified",

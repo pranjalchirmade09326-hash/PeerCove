@@ -781,7 +781,7 @@ export function MemberSessionRoomModal({
             {/* Privacy Guarantee Pill */}
             <div className="mt-6 flex items-center gap-2 text-xs text-slate-400">
               <Lock className="size-3.5 text-emerald-400" />
-              <span>AES-256-GCM Envelope Encrypted • Non-Clinical Sanctuary Room</span>
+              <span>Peer Support Only • Not therapy or clinical treatment • AES-256-GCM Encrypted</span>
             </div>
 
             {/* Actions */}
@@ -1200,8 +1200,8 @@ export function MemberSessionRoomModal({
                   <ShieldCheck className={`size-4 shrink-0 ${isCrisisTriggered ? "text-rose-400" : "text-emerald-400"}`} />
                   <span>
                     {isCrisisTriggered
-                      ? "Clinical Sentinel: Crisis Safeguards Active • Helplines Shown • Incident Dispatched"
-                      : "Clinical Sentinel: Status Clean. Crisis escalation idle (<2ms monitoring active)."}
+                      ? "Safety Sentinel: Crisis Safeguards Active • Helplines Shown • Incident Dispatched"
+                      : "Safety Sentinel: Status Clean. Crisis escalation idle (<2ms monitoring active)."}
                   </span>
                 </div>
               </div>

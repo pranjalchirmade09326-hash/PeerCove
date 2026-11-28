@@ -78,6 +78,26 @@ export const dashboardRoles: DashboardRole[] = [
     ],
     sections: [
       {
+        id: "chat",
+        title: "Text Intake Chat",
+        description: "Guided conversational text intake with streaming AI companion and encrypted transcript storage.",
+        icon: MessagesSquare,
+        columns: ["Session", "Channel", "Focus", "Status"],
+        rows: [
+          { values: ["Guided Wellbeing Intake", "Text Chat", "Stress & Reflection", "Ready"], status: "Available" },
+        ],
+      },
+      {
+        id: "voice",
+        title: "Live Voice Intake",
+        description: "Real-time voice conversation with live transcription, spoken replies, and encrypted intake summary.",
+        icon: Headphones,
+        columns: ["Session", "Channel", "Focus", "Status"],
+        rows: [
+          { values: ["Live Voice Sanctuary", "Voice Call", "Hands-Free Reflection", "Ready"], status: "Available" },
+        ],
+      },
+      {
         id: "appointments",
         title: "Peer Sessions & Booking",
         description: "Schedule peer support sessions, book slots with verified volunteer listeners, and join online calls.",
@@ -284,8 +304,8 @@ export const dashboardRoles: DashboardRole[] = [
         icon: BookOpen,
         columns: ["Listener", "Module", "Due"],
         rows: [
-          { values: ["Kabir Das", "MS-BE-201 · Peer Boundaries", "Signoff Pending"], status: "Due Soon" },
-          { values: ["Meera Rao", "MS-SS-202 · Crisis Alerting", "Signoff Pending"], status: "Review Due" },
+          { values: ["Kabir Das", "PC-BE-201 · Peer Boundaries", "Signoff Pending"], status: "Due Soon" },
+          { values: ["Meera Rao", "PC-SS-202 · Crisis Alerting", "Signoff Pending"], status: "Review Due" },
           { values: ["Monthly Pod Check-in", "All Supervised Listeners", "Nov 24, 2026"], status: "Scheduled" },
         ],
       },

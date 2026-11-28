@@ -83,7 +83,7 @@ interface EMRChatContainerProps {
   initialSession?: TEmrChatSessionFull;
   /**
    * Base path for session routing (without locale prefix), e.g.
-   * "/bezs/telemedicine/doctor/emr". Used to build session and new-chat URLs.
+   * "/peercove/listener/emr". Used to build session and new-chat URLs.
    */
   basePath: string;
   /**

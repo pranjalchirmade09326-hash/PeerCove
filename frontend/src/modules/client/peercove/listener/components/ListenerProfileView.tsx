@@ -287,25 +287,25 @@ export function ListenerProfileView({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 {[
                   {
-                    code: "MS-AL-101",
+                    code: "PC-AL-101",
                     title: "Active Listening & Empathetic Validation",
                     score: "98% (Distinction)",
                     date: "Oct 2026",
                   },
                   {
-                    code: "MS-BE-201",
+                    code: "PC-BE-201",
                     title: "Non-Clinical Peer Boundaries & Ethical Care",
                     score: "100% (Perfect)",
                     date: "Oct 2026",
                   },
                   {
-                    code: "MS-SS-202",
+                    code: "PC-SS-202",
                     title: "Crisis De-escalation & Safety Operations Alerting",
                     score: "100% (Certified)",
                     date: "Nov 2026",
                   },
                   {
-                    code: "MS-SC-301",
+                    code: "PC-SC-301",
                     title: "Caregiver Resilience & Vicarious Trauma Self-Care",
                     score: "96% (Passed)",
                     date: "Nov 2026",

@@ -79,6 +79,7 @@ const ONLINE_LISTENERS = [
 ];
 
 export function MemberConsultationView() {
+  const [listeners, setListeners] = useState(ONLINE_LISTENERS);
   const [isRoomModalOpen, setIsRoomModalOpen] = useState(false);
   const [isBookModalOpen, setIsBookModalOpen] = useState(false);
   const [isQueueModalOpen, setIsQueueModalOpen] = useState(false);
@@ -101,6 +102,40 @@ export function MemberConsultationView() {
     channel: SupportChannel;
     topic: SupportTopic;
   } | null>(null);
+
+  // Fetch live available peer listeners from FastAPI/PostgreSQL
+  useEffect(() => {
+    let active = true;
+    fetch("/api/peercove/member/listeners")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!active || !data?.listeners?.length) return;
+        const mapped = data.listeners.map((l: Record<string, unknown>, idx: number) => {
+          const name = String(l.display_name || l.name || `Peer Listener ${idx + 1}`);
+          const initials = name
+            .split(" ")
+            .map((p) => p[0])
+            .join("")
+            .slice(0, 2)
+            .toUpperCase();
+          return {
+            id: String(l.id || l.user_id || `l-${idx}`),
+            name,
+            specialty: String(l.bio || l.specialties || "Active Listening & Grounding"),
+            topic: "general" as SupportTopic,
+            rating: "4.9 ★",
+            avatar: initials || "PL",
+            status: l.is_available === false ? "In Session" : "Available Now",
+            channel: "video" as SupportChannel,
+          };
+        });
+        setListeners(mapped);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // Live timer tick for queue waiting state
   useEffect(() => {
@@ -361,7 +396,7 @@ export function MemberConsultationView() {
           </div>
 
           <Button
-            onClick={() => startInstantCall(ONLINE_LISTENERS[0])}
+            onClick={() => startInstantCall(listeners[0] || ONLINE_LISTENERS[0])}
             disabled={queueState === "queued" || queueState === "matching"}
             className="w-full rounded-xl bg-[#236B54] hover:bg-[#1a5240] text-white text-xs h-9 font-semibold gap-1.5 disabled:opacity-50"
           >
@@ -385,7 +420,7 @@ export function MemberConsultationView() {
           </div>
 
           <Button
-            onClick={() => startInstantCall(ONLINE_LISTENERS[1])}
+            onClick={() => startInstantCall(listeners[1] || ONLINE_LISTENERS[1])}
             disabled={queueState === "queued" || queueState === "matching"}
             variant="outline"
             className="w-full rounded-xl border-teal-300 dark:border-teal-800 text-teal-800 dark:text-teal-300 hover:bg-teal-50 text-xs h-9 font-semibold gap-1.5 disabled:opacity-50"
@@ -410,7 +445,7 @@ export function MemberConsultationView() {
           </div>
 
           <Button
-            onClick={() => startInstantCall(ONLINE_LISTENERS[2])}
+            onClick={() => startInstantCall(listeners[2] || ONLINE_LISTENERS[2])}
             disabled={queueState === "queued" || queueState === "matching"}
             variant="outline"
             className="w-full rounded-xl border-blue-300 dark:border-blue-800 text-blue-800 dark:text-blue-300 hover:bg-blue-50 text-xs h-9 font-semibold gap-1.5 disabled:opacity-50"
@@ -438,7 +473,7 @@ export function MemberConsultationView() {
         </div>
 
         <div className="space-y-3">
-          {ONLINE_LISTENERS.map((listener) => (
+          {listeners.map((listener) => (
             <div
               key={listener.id}
               className="flex items-center justify-between p-3.5 rounded-2xl border border-border/60 bg-muted/20 hover:bg-muted/40 transition-colors"

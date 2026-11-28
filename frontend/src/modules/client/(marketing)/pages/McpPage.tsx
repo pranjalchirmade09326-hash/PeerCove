@@ -1,18 +1,22 @@
 /**
- * McpPage — dedicated marketing page explaining the PeerCove MCP Server.
+ * McpPage — dedicated marketing page explaining PeerCove's Auxiliary Read-Only FastMCP Gateway.
  *
  * Layer: client / (marketing) / pages
  *
- * Covers: what the Model Context Protocol (MCP) is, how PeerCove exposes FHIR
- * resources as AI-callable tools, the available MCP tools, use cases, and
- * HIPAA-scoped security. Intentionally generic — no specific AI products named.
+ * Accurately documents backend/fhir-mcp (:8002, /mcp streamable-http):
+ * dynamically generated from fhir-server:8000/openapi.json via FastMCP.from_openapi(),
+ * strictly restricted to read-only (GET) tools across 16 FHIR resource groups
+ * (all POST/PATCH/DELETE excluded via MCPType.EXCLUDE), with JWKS AuthForwardingMiddleware.
+ * Generic across MCP clients — no specific third-party AI products named.
  */
 
 "use client";
 
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Link } from "@/i18n/navigation";
 import { OAuthPkceButton } from "@/modules/client/auth/components/OAuthPkceButton";
 import {
   Server,
@@ -24,48 +28,54 @@ import {
   CheckCircle2,
   Plug,
   Code2,
-  Activity,
+  Lock,
 } from "lucide-react";
 import type { AuthResponse } from "@/modules/server/auth/types";
 
-// ── MCP tool definitions ──────────────────────────────────────────────────
+// ── Read-only MCP tool groups (16 FHIR resource groups from openapi.json) ───
 
-const mcpTools = [
+const mcpToolGroups = [
   {
-    name: "get_patient",
-    description: "Retrieve full FHIR Patient resource by ID or identifier",
-    returns: "Patient (name, demographics, contact, identifiers)",
-    hipaa: "Scoped to authenticated organization",
+    name: "GET · Patients & Practitioners",
+    description:
+      "Read-only OpenAPI GET tools for Patients, Practitioners, and PractitionerRoles.",
+    returns: "FHIR R4 Patient / Practitioner / PractitionerRole bundles",
+    scope: "JWKS Bearer forwarded; scoped to user_id & org_id",
   },
   {
-    name: "list_appointments",
-    description: "List FHIR Appointments with optional status, date, and practitioner filters",
-    returns: "Appointment[] (status, start, end, participants)",
-    hipaa: "Patient-scoped or practitioner-scoped",
+    name: "GET · Scheduling & Organizations",
+    description:
+      "Inspect Organizations, Locations, HealthcareServices, Schedules, and Slots.",
+    returns: "Availability and organization metadata via GET only",
+    scope: "Tenant-scoped read access; zero mutations",
   },
   {
-    name: "get_intake_summary",
-    description: "Retrieve AI-generated intake summary and FHIR Observations for an appointment",
-    returns: "Observation[], AI SOAP note, risk assessment",
-    hipaa: "Appointment-scoped — no cross-patient access",
+    name: "GET · Appointments & Encounters",
+    description:
+      "Query Appointments and Encounters generated during consented clinical handoffs.",
+    returns: "Appointment[] and Encounter[] (read-only)",
+    scope: "AuthForwardingMiddleware verifies IAM JWKS",
   },
   {
-    name: "get_encounter",
-    description: "Retrieve a completed FHIR Encounter with clinical notes and diagnoses",
-    returns: "Encounter (SOAP note, conditions, assessment plan)",
-    hipaa: "Encounter-scoped read access",
+    name: "GET · Observations & Conditions",
+    description:
+      "Read structured FHIR R4 Observations and Conditions for authorized reviews.",
+    returns: "Observation[] and Condition[] resources",
+    scope: "All POST/PATCH/DELETE excluded via MCPType.EXCLUDE",
   },
   {
-    name: "create_observation",
-    description: "Create a new FHIR Observation resource from AI-extracted clinical data",
-    returns: "Created Observation (id, status, effectiveDateTime)",
-    hipaa: "Requires clinician-approved session token",
+    name: "GET · Service & Medication Requests",
+    description:
+      "Retrieve ServiceRequests and MedicationRequests from auxiliary FHIR storage.",
+    returns: "ServiceRequest[] and MedicationRequest[]",
+    scope: "Strict GET-only RouteMap enforcement",
   },
   {
-    name: "list_conditions",
-    description: "List active FHIR Conditions for a patient, with SNOMED CT codes",
-    returns: "Condition[] (code, severity, onsetDateTime, clinicalStatus)",
-    hipaa: "Patient-scoped with minimum necessary access",
+    name: "GET · Diagnostics & Documents",
+    description:
+      "Inspect DiagnosticReports and DocumentReferences over streamable-HTTP /mcp.",
+    returns: "DiagnosticReport[] and DocumentReference[]",
+    scope: "Read-only; 401 on missing or expired JWT",
   },
 ];
 
@@ -74,33 +84,33 @@ const mcpTools = [
 const howItWorks = [
   {
     step: "01",
-    title: "AI Tool Client Connects",
+    title: "OpenAPI Schema Ingestion at Startup",
     description:
-      "Any MCP-compatible AI tool client connects to the PeerCove MCP Server using a HIPAA-scoped authentication token issued to your organization.",
+      "peercove-fhir-mcp (:8002) fetches /openapi.json from fhir-server (:8000) and builds typed tools via FastMCP.from_openapi().",
   },
   {
     step: "02",
-    title: "Tools Are Discovered",
+    title: "Strict GET-Only RouteMap Filtering",
     description:
-      "The AI tool client receives the list of available FHIR tools — what they do, what they return, and what permissions they require.",
+      "RouteMap(methods=[\"GET\"], mcp_type=MCPType.TOOL) exposes 16 FHIR resource groups while MCPType.EXCLUDE blocks every POST, PATCH, and DELETE route.",
   },
   {
     step: "03",
-    title: "AI Calls FHIR Tools",
+    title: "JWKS JWT Validation & Forwarding",
     description:
-      "The AI tool client calls tools like get_patient or list_appointments. Each call is validated, logged, and executed against the live FHIR EMR.",
+      "AuthForwardingMiddleware validates incoming Bearer tokens against IAM JWKS (decode_token), rejecting missing or expired tokens with 401.",
   },
   {
     step: "04",
-    title: "Structured FHIR Data Returned",
+    title: "Streamable-HTTP Execution at /mcp",
     description:
-      "The tool returns structured FHIR R4 resources — not raw text or unstructured exports. The AI can reason over clean, queryable clinical data.",
+      "Authorized MCP clients call GET tools over streamable-HTTP (/mcp), forwarding the caller's token via ContextVar and BearerAuth to fhir-server.",
   },
   {
     step: "05",
-    title: "Human Oversight Enforced",
+    title: "Isolated From Core Peer Sanctuary",
     description:
-      "Any tool call that writes or modifies FHIR resources requires a clinician-approved session. Read-only tool calls work within the authenticated scope.",
+      "Private member journals, mood notes, and peer listening chats remain encrypted inside Engine 3 (peercove-fastapi) and are never exposed as MCP tools.",
   },
 ];
 
@@ -108,63 +118,71 @@ const howItWorks = [
 
 const useCases = [
   {
-    icon: <Activity className="w-5 h-5 text-primary" />,
-    title: "Clinical Decision Support",
+    icon: <ShieldCheck className="w-5 h-5 text-primary" />,
+    title: "Auditable Read-Only Clinical Context",
     description:
-      "An AI tool queries patient history, active conditions, and recent observations to surface risk factors and suggest evidence-based next steps — before the doctor enters the room.",
+      "Authorized clinical systems inspect auxiliary FHIR R4 resources over MCP with zero risk of unapproved writes or record tampering.",
   },
   {
     icon: <Database className="w-5 h-5 text-primary" />,
-    title: "Automated Record Summarization",
+    title: "Zero-Drift OpenAPI Tool Generation",
     description:
-      "An AI tool retrieves all encounters and observations for a patient over the last 12 months and generates a concise clinical summary — in seconds, not minutes.",
+      "FastMCP.from_openapi() keeps MCP tool schemas synchronized with fhir-server's OpenAPI specification automatically.",
   },
   {
     icon: <Code2 className="w-5 h-5 text-primary" />,
-    title: "Custom Clinical Workflows",
+    title: "Standards-Based Streamable-HTTP",
     description:
-      "Healthcare developers can build custom AI workflows that read from and write to FHIR resources using standard MCP tool calls — no custom API contracts needed.",
+      "Connect any MCP-compatible client to :8002/mcp using standard Bearer JWTs issued by peercove-iam-py.",
   },
   {
     icon: <Plug className="w-5 h-5 text-primary" />,
-    title: "Third-Party AI Integration",
+    title: "Multi-Tenant Security Boundary",
     description:
-      "Connect any MCP-compatible AI system to your FHIR EMR. Your existing AI tooling can query PeerCove clinical data without proprietary integrations or data exports.",
+      "Token forwarding preserves the caller's user_id and org_id permissions all the way down to fhir-server.",
   },
 ];
 
 // ── Terminal log lines ─────────────────────────────────────────────────────
 
 const terminalLines = [
-  { label: "[MCP]  ", text: "Server started. Exposing 6 FHIR tools.", color: "text-muted-foreground" },
-  { label: "[AUTH] ", text: "Token validated → org-0028, scope: read:patient read:appointment", color: "text-emerald-400" },
-  { label: "[TOOL] ", text: "list_appointments called (practitioner_id: PRC-041, date: today)", color: "text-violet-400" },
-  { label: "[FHIR] ", text: "→ Returned 4 Appointment resources", color: "text-blue-400" },
-  { label: "[TOOL] ", text: "get_intake_summary called (appointment_id: APT-00872)", color: "text-violet-400" },
-  { label: "[FHIR] ", text: "→ Returned 3 Observations + AI SOAP note", color: "text-blue-400" },
-  { label: "[AI]   ", text: "Reasoning: Patient reports 3-day headache, severity 7/10. Risk: moderate.", color: "text-primary" },
-  { label: "[TOOL] ", text: "create_observation called → requires clinician approval", color: "text-amber-400" },
-  { label: "[AUTH] ", text: "Clinician session confirmed → Observation written to FHIR", color: "text-emerald-400" },
+  { label: "[INIT] ", text: "peercove-fhir-mcp started on :8002 (streamable-http /mcp)" },
+  { label: "[SPEC] ", text: "FastMCP.from_openapi() loaded fhir-server:8000/openapi.json" },
+  { label: "[RULE] ", text: "RouteMap applied: GET-only across 16 groups (mutations EXCLUDED)" },
+  { label: "[AUTH] ", text: "AuthForwardingMiddleware verified Ed25519 JWT via IAM JWKS" },
+  { label: "[TOOL] ", text: "GET /api/fhir/v1/patients/PAT-00241 -> 200 OK" },
+  { label: "[TOOL] ", text: "GET /api/fhir/v1/observations?patient=PAT-00241 -> 3 records" },
+  { label: "[TOOL] ", text: "GET /api/fhir/v1/encounters?patient=PAT-00241 -> 1 record" },
+  { label: "[SAFE] ", text: "Write/mutation requests blocked by MCPType.EXCLUDE (read-only)" },
 ];
 
 // ── Animation ──────────────────────────────────────────────────────────────
 
 const fade = {
   hidden: { opacity: 0, y: 20 },
-  visible: (i = 0) => ({ opacity: 1, y: 0, transition: { delay: i * 0.07, duration: 0.5 } }),
+  visible: (i = 0) => ({
+    opacity: 1,
+    y: 0,
+    transition: { delay: i * 0.07, duration: 0.5 },
+  }),
 };
 
 // ── Component ──────────────────────────────────────────────────────────────
 
 /**
- * MCP Server dedicated marketing page — all AI tool references are generic.
+ * FastMCP Gateway dedicated marketing page — strictly read-only (GET) auxiliary tier.
  *
  * @param session - Active auth session for CTA variant.
  */
 export function McpPage({ session }: { session: AuthResponse | null }) {
+  const dashboardHref =
+    (session?.session.activeRoleRedirectUrl ?? "/peercove/member").replace(
+      /^\/(?:en|hi|ta)/,
+      "",
+    ) || "/peercove/member";
+
   return (
     <div className="pt-20">
-
       {/* ── Hero ── */}
       <section className="py-20 sm:py-28 bg-background relative overflow-hidden">
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl opacity-50 pointer-events-none" />
@@ -172,27 +190,48 @@ export function McpPage({ session }: { session: AuthResponse | null }) {
           <motion.div className="max-w-3xl" initial="hidden" animate="visible" variants={fade}>
             <div className="flex items-center gap-2 mb-4">
               <Badge variant="outline" className="border-primary/30 text-primary text-xs">
-                Model Context Protocol
+                Auxiliary FastMCP Gateway (:8002/mcp)
               </Badge>
-              <Badge variant="secondary" className="text-xs">FHIR AI Integration</Badge>
+              <Badge variant="secondary" className="text-xs">
+                Read-Only (GET) · 16 Resource Groups
+              </Badge>
             </div>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground tracking-tight leading-[1.08] mb-6">
-              Connect Any AI Tool to Your FHIR EMR with MCP
+              Read-Only FastMCP Gateway for Auxiliary FHIR R4 Data
             </h1>
             <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed mb-8">
-              The Model Context Protocol (MCP) is an open standard that lets AI tools
-              call external systems in a structured, secure way. PeerCove ships with a
-              built-in MCP server that exposes your entire FHIR EMR as a queryable,
-              AI-accessible tool layer — with HIPAA compliance enforced at every call.
+              PeerCove&apos;s auxiliary Model Context Protocol (MCP) service (
+              <span className="font-mono">fhir-mcp</span>) exposes 16 HL7 FHIR R4
+              resource groups over streamable-HTTP
+              at <span className="font-mono">:8002/mcp</span>. Generated via{" "}
+              <span className="font-mono">FastMCP.from_openapi()</span>, it
+              enforces strictly read-only (<span className="font-mono">GET</span>)
+              access and forwards validated JWKS Bearer tokens.
             </p>
             <div className="flex flex-wrap gap-3">
-              {!session && (
-                <OAuthPkceButton size="lg" className="rounded-full px-8">
-                  Get Started Free <ArrowRight className="ml-2 w-4 h-4" />
-                </OAuthPkceButton>
+              {!session ? (
+                <>
+                  <OAuthPkceButton href="/signup" size="lg" className="rounded-full px-8">
+                    Get started <ArrowRight className="ml-2 w-4 h-4" />
+                  </OAuthPkceButton>
+                  <Link href="/demo-login">
+                    <Button variant="outline" size="lg" className="rounded-full px-7">
+                      Explore 5-role demo
+                    </Button>
+                  </Link>
+                </>
+              ) : (
+                <Link href={dashboardHref as any}>
+                  <Button size="lg" className="rounded-full px-8">
+                    Open Dashboard <ArrowRight className="ml-2 w-4 h-4" />
+                  </Button>
+                </Link>
               )}
-              <a href="#tools" className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-border text-sm font-medium hover:bg-secondary transition-colors">
-                Browse MCP Tools <ArrowRight className="w-4 h-4" />
+              <a
+                href="#tools"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-border text-sm font-medium text-foreground hover:bg-secondary transition-colors"
+              >
+                Browse 16 Tool Groups <ArrowRight className="w-4 h-4" />
               </a>
             </div>
           </motion.div>
@@ -205,10 +244,10 @@ export function McpPage({ session }: { session: AuthResponse | null }) {
             className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-6 p-8 rounded-2xl bg-secondary/40 border border-border/50"
           >
             {[
-              { icon: <Server className="w-5 h-5 text-primary" />, value: "MCP", label: "Open interoperability standard" },
-              { icon: <Database className="w-5 h-5 text-primary" />, value: "6+", label: "FHIR tools available" },
-              { icon: <ShieldCheck className="w-5 h-5 text-primary" />, value: "HIPAA", label: "Scoped at every tool call" },
-              { icon: <Zap className="w-5 h-5 text-primary" />, value: "Real-time", label: "Live FHIR data, no exports" },
+              { icon: <Server className="w-5 h-5 text-primary" />, value: ":8002/mcp", label: "Streamable-HTTP endpoint" },
+              { icon: <Database className="w-5 h-5 text-primary" />, value: "16 Groups", label: "FHIR R4 GET resources" },
+              { icon: <Lock className="w-5 h-5 text-primary" />, value: "GET Only", label: "All mutations excluded" },
+              { icon: <Zap className="w-5 h-5 text-primary" />, value: "JWKS", label: "AuthForwardingMiddleware" },
             ].map((f, i) => (
               <div key={i} className="text-center">
                 <div className="flex justify-center mb-2">{f.icon}</div>
@@ -220,7 +259,7 @@ export function McpPage({ session }: { session: AuthResponse | null }) {
         </div>
       </section>
 
-      {/* ── What is MCP ── */}
+      {/* ── What is FastMCP in PeerCove ── */}
       <section className="py-20 sm:py-24 bg-secondary/30">
         <div className="max-w-[110rem] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
@@ -230,29 +269,33 @@ export function McpPage({ session }: { session: AuthResponse | null }) {
               viewport={{ once: true }}
               transition={{ duration: 0.7 }}
             >
-              <span className="text-primary font-semibold tracking-wider uppercase text-sm">What Is MCP?</span>
+              <span className="text-primary font-semibold tracking-wider uppercase text-sm">
+                Read-Only Design
+              </span>
               <h2 className="mt-2 text-3xl sm:text-4xl font-bold text-foreground mb-6">
-                The Standard for Connecting AI Tools to External Systems
+                OpenAPI-Driven MCP Tools With Zero Write Surface
               </h2>
               <p className="text-muted-foreground leading-relaxed mb-6">
-                The Model Context Protocol (MCP) is an open standard that defines how AI
-                systems can discover and call tools exposed by external servers. Instead
-                of building custom integrations for every AI system, you expose one MCP
-                server — and any compatible AI tool can connect to it.
-              </p>
-              <p className="text-muted-foreground leading-relaxed mb-8">
-                PeerCove&apos;s MCP server turns your FHIR EMR into a set of callable tools.
-                An AI system can call <span className="font-mono text-xs bg-secondary px-1.5 py-0.5 rounded">get_patient</span>,{" "}
-                <span className="font-mono text-xs bg-secondary px-1.5 py-0.5 rounded">list_appointments</span>, or{" "}
-                <span className="font-mono text-xs bg-secondary px-1.5 py-0.5 rounded">get_intake_summary</span>{" "}
-                and receive structured FHIR data — no custom API contracts, no data exports, no PHI leakage.
+                Rather than hand-coding brittle tool wrappers or allowing AI
+                clients to mutate records, PeerCove&apos;s{" "}
+                <span className="font-mono text-xs bg-secondary px-1.5 py-0.5 rounded">
+                  fhir-mcp
+                </span>{" "}
+                reads <span className="font-mono text-xs bg-secondary px-1.5 py-0.5 rounded">
+                  fhir-server:8000/openapi.json
+                </span>{" "}
+                and restricts exposed operations strictly to{" "}
+                <span className="font-mono text-xs bg-secondary px-1.5 py-0.5 rounded">
+                  GET
+                </span>{" "}
+                routes.
               </p>
               <div className="space-y-3">
                 {[
-                  "One MCP server, compatible with any MCP-capable AI tool",
-                  "Structured FHIR R4 data returned — not raw text",
-                  "Every tool call is authenticated, scoped, and audited",
-                  "Read and write tools available (writes require clinician approval)",
+                  "Generated dynamically via FastMCP.from_openapi() on :8002/mcp",
+                  "Strictly read-only (GET) across 16 FHIR R4 resource groups",
+                  "All POST, PATCH, and DELETE operations blocked via MCPType.EXCLUDE",
+                  "AuthForwardingMiddleware verifies Bearer JWTs via IAM JWKS",
                 ].map((point, i) => (
                   <div key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
                     <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
@@ -272,15 +315,17 @@ export function McpPage({ session }: { session: AuthResponse | null }) {
             >
               <div className="flex items-center justify-between px-5 py-3 border-b border-border bg-muted/40">
                 <div className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 rounded-full bg-red-400/80" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-yellow-400/80" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-green-400/80" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/30" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-muted-foreground/30" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-primary/60" />
                 </div>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground font-mono">
                   <Terminal className="w-3.5 h-3.5" />
-                  peercove-mcp-server
+                  peercove-fhir-mcp (:8002/mcp)
                 </div>
-                <Badge variant="outline" className="text-[10px] border-emerald-500/30 text-emerald-500">Running</Badge>
+                <Badge variant="outline" className="text-[10px] border-primary/30 text-primary">
+                  Read-Only
+                </Badge>
               </div>
               <div className="p-5 font-mono text-[11px] space-y-2 bg-background/50 min-h-[320px]">
                 {terminalLines.map((line, i) => (
@@ -293,14 +338,14 @@ export function McpPage({ session }: { session: AuthResponse | null }) {
                     variants={fade}
                     className="flex gap-2 leading-relaxed"
                   >
-                    <span className="text-muted-foreground/50 shrink-0">{line.label}</span>
-                    <span className={line.color}>{line.text}</span>
+                    <span className="text-muted-foreground shrink-0">{line.label}</span>
+                    <span className="text-foreground">{line.text}</span>
                   </motion.div>
                 ))}
                 <div className="flex gap-2 pt-1">
-                  <span className="text-muted-foreground/50">{"[WAIT] "}</span>
+                  <span className="text-muted-foreground">{"[WAIT] "}</span>
                   <span className="text-muted-foreground">
-                    Listening for next tool call
+                    Listening for GET tool calls on /mcp
                     <span className="inline-block w-1.5 h-3.5 bg-primary ml-1 animate-pulse" />
                   </span>
                 </div>
@@ -320,16 +365,18 @@ export function McpPage({ session }: { session: AuthResponse | null }) {
             variants={fade}
             className="text-center max-w-3xl mx-auto mb-16"
           >
-            <span className="text-primary font-semibold tracking-wider uppercase text-sm">How It Works</span>
+            <span className="text-primary font-semibold tracking-wider uppercase text-sm">
+              Execution Flow
+            </span>
             <h2 className="mt-2 text-3xl sm:text-4xl font-bold text-foreground">
-              From AI Tool Call to FHIR Response in Milliseconds
+              From OpenAPI Discovery to Scoped Read Responses
             </h2>
           </motion.div>
 
           <div className="max-w-3xl mx-auto space-y-6">
             {howItWorks.map((step, i) => (
               <motion.div
-                key={i}
+                key={step.step}
                 custom={i}
                 initial="hidden"
                 whileInView="visible"
@@ -342,7 +389,9 @@ export function McpPage({ session }: { session: AuthResponse | null }) {
                 </div>
                 <div>
                   <h3 className="font-bold text-foreground mb-1">{step.title}</h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    {step.description}
+                  </p>
                 </div>
               </motion.div>
             ))}
@@ -350,7 +399,7 @@ export function McpPage({ session }: { session: AuthResponse | null }) {
         </div>
       </section>
 
-      {/* ── Available tools ── */}
+      {/* ── Available tool groups ── */}
       <section id="tools" className="py-20 sm:py-24 bg-secondary/30">
         <div className="max-w-[110rem] mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
@@ -360,18 +409,20 @@ export function McpPage({ session }: { session: AuthResponse | null }) {
             variants={fade}
             className="text-center max-w-3xl mx-auto mb-16"
           >
-            <span className="text-primary font-semibold tracking-wider uppercase text-sm">Available Tools</span>
+            <span className="text-primary font-semibold tracking-wider uppercase text-sm">
+              16 Resource Groups
+            </span>
             <h2 className="mt-2 text-3xl sm:text-4xl font-bold text-foreground">
-              MCP Tools Available on PeerCove
+              Read-Only (GET) FHIR Resource Groups on /mcp
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              Each tool returns structured FHIR R4 data and is scoped to the
-              authenticated organization to prevent cross-organization PHI access.
+              Every generated tool maps exclusively to an OpenAPI GET route on
+              fhir-server (:8000) and requires a valid IAM JWKS Bearer token.
             </p>
           </motion.div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {mcpTools.map((tool, i) => (
+            {mcpToolGroups.map((tool, i) => (
               <motion.div
                 key={tool.name}
                 custom={i}
@@ -380,23 +431,25 @@ export function McpPage({ session }: { session: AuthResponse | null }) {
                 viewport={{ once: true }}
                 variants={fade}
               >
-                <Card className="h-full border-border/50 hover:border-border transition-colors">
+                <Card className="h-full border-border bg-card hover:border-primary/40 transition-colors">
                   <CardContent className="pt-5 space-y-3">
                     <div className="flex items-start justify-between gap-2">
                       <span className="font-mono text-sm font-bold text-primary bg-primary/10 px-2.5 py-1 rounded-lg">
                         {tool.name}
                       </span>
-                      <ShieldCheck className="w-4 h-4 text-emerald-500 shrink-0 mt-1" />
+                      <ShieldCheck className="w-4 h-4 text-primary shrink-0 mt-1" />
                     </div>
-                    <p className="text-sm text-foreground font-medium">{tool.description}</p>
+                    <p className="text-sm text-card-foreground font-medium">
+                      {tool.description}
+                    </p>
                     <div className="space-y-1">
                       <p className="text-[11px] text-muted-foreground">
-                        <span className="font-semibold text-foreground/70">Returns: </span>
+                        <span className="font-semibold text-foreground">Returns: </span>
                         {tool.returns}
                       </p>
                       <p className="text-[11px] text-muted-foreground">
-                        <span className="font-semibold text-emerald-600">HIPAA: </span>
-                        {tool.hipaa}
+                        <span className="font-semibold text-primary">Security: </span>
+                        {tool.scope}
                       </p>
                     </div>
                   </CardContent>
@@ -418,7 +471,7 @@ export function McpPage({ session }: { session: AuthResponse | null }) {
             className="text-center max-w-3xl mx-auto mb-16"
           >
             <h2 className="text-3xl sm:text-4xl font-bold text-foreground">
-              What You Can Build with PeerCove MCP
+              Designed for Safe, Standards-Based Tool Access
             </h2>
           </motion.div>
           <div className="grid md:grid-cols-2 gap-6">
@@ -431,14 +484,16 @@ export function McpPage({ session }: { session: AuthResponse | null }) {
                 viewport={{ once: true }}
                 variants={fade}
               >
-                <Card className="h-full border-border/50">
+                <Card className="h-full border-border bg-card">
                   <CardContent className="pt-6 flex items-start gap-4">
                     <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                       {uc.icon}
                     </div>
                     <div>
-                      <h3 className="font-bold text-foreground mb-2">{uc.title}</h3>
-                      <p className="text-sm text-muted-foreground leading-relaxed">{uc.description}</p>
+                      <h3 className="font-bold text-card-foreground mb-2">{uc.title}</h3>
+                      <p className="text-sm text-muted-foreground leading-relaxed">
+                        {uc.description}
+                      </p>
                     </div>
                   </CardContent>
                 </Card>
@@ -458,17 +513,32 @@ export function McpPage({ session }: { session: AuthResponse | null }) {
             transition={{ duration: 0.7 }}
           >
             <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
-              Ready to Connect Your AI Tooling to FHIR?
+              Explore PeerCove&apos;s Stepped Care &amp; Auxiliary Interop
             </h2>
             <p className="text-lg text-muted-foreground max-w-xl mx-auto mb-10">
-              Start using the PeerCove MCP server to query live FHIR records from any
-              MCP-compatible AI tool — securely and without custom integrations.
+              Try the 5-role PeerCove demo or review how our read-only FastMCP
+              gateway pairs with the 34-resource HL7 FHIR R4 tier.
             </p>
-            {!session && (
-              <OAuthPkceButton size="lg" className="rounded-full px-10 h-12">
-                Get Started Free <ArrowRight className="ml-2 w-4 h-4" />
-              </OAuthPkceButton>
-            )}
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              {!session ? (
+                <>
+                  <OAuthPkceButton href="/signup" size="lg" className="rounded-full px-10 h-12">
+                    Get started <ArrowRight className="ml-2 w-4 h-4" />
+                  </OAuthPkceButton>
+                  <Link href="/demo-login">
+                    <Button variant="outline" size="lg" className="rounded-full px-8 h-12">
+                      Explore 5-role demo
+                    </Button>
+                  </Link>
+                </>
+              ) : (
+                <Link href={dashboardHref as any}>
+                  <Button size="lg" className="rounded-full px-10 h-12">
+                    Open Dashboard <ArrowRight className="ml-2 w-4 h-4" />
+                  </Button>
+                </Link>
+              )}
+            </div>
           </motion.div>
         </div>
       </section>

@@ -1,8 +1,8 @@
 /**
- * VoiceIntakeTest — patient-facing voice intake powered by a custom WebSocket
+ * VoiceIntakeTest — member-facing voice intake powered by a custom WebSocket
  * voice agent (INTAKE_VOICE_AGENT_URL).
  *
- * Layer: client / telemedicine / patient / intake
+ * Layer: client / peercove / member / intake
  *
  * Flow:
  *  1. Patient clicks "Start Call":
@@ -317,6 +317,10 @@ export function VoiceIntakeTest({
 
   // WebSocket
   const wsRef = useRef<WebSocket | null>(null);
+  const wsOpenedRef = useRef(false);
+  const browserFallbackActiveRef = useRef(false);
+  const fallbackSessionIdRef = useRef<string | null>(null);
+  const isProcessingTurnRef = useRef(false);
 
   /** Lets restartCall bypass startCall's "already disconnected?" guard —
    *  set right before calling it, consumed (reset) on the very next call. */
@@ -456,6 +460,9 @@ export function VoiceIntakeTest({
       wsRef.current.close();
     }
     wsRef.current = null;
+    wsOpenedRef.current = false;
+    browserFallbackActiveRef.current = false;
+    isProcessingTurnRef.current = false;
   }, []);
 
   // Ensure cleanup on unmount
@@ -543,12 +550,152 @@ export function VoiceIntakeTest({
       // 2. Open WebSocket — wsUrl may already carry ?patient_context=..., so
       // add the token via the URL API rather than string-concatenating a
       // second "?".
+      wsOpenedRef.current = false;
+      browserFallbackActiveRef.current = false;
       const wsUrlObj = new URL(wsUrl);
       wsUrlObj.searchParams.set("token", token);
       // console.log("[VoiceIntakeTest] connecting to WS:", wsUrlObj.toString());
       const ws = new WebSocket(wsUrlObj.toString());
       wsRef.current = ws;
       ws.binaryType = "arraybuffer";
+
+      // Helper for browser-native voice fallback when WebSocket server (:8018) is offline
+      const startBrowserVoiceFallback = async () => {
+        if (browserFallbackActiveRef.current) return;
+        browserFallbackActiveRef.current = true;
+        wsRef.current = null;
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+          toast.error("Live voice server is offline and browser speech recognition is not supported.");
+          teardown();
+          setStatus("disconnected");
+          return;
+        }
+
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          mediaStreamRef.current = stream;
+        } catch {
+          toast.error("Microphone access denied");
+          teardown();
+          setStatus("disconnected");
+          return;
+        }
+
+        setStatus("connected");
+        toast.info("Connected via Browser Voice Mode");
+
+        const greetingText = `Hello ${userName}. Welcome to your PeerCove voice sanctuary. I'm listening whenever you're ready to share how you're feeling.`;
+        addMessage({ key: nanoid(), from: "assistant", content: greetingText });
+        setAgentPhase("speaking");
+        speakBrowserFallback(greetingText, () => {
+          if (browserFallbackActiveRef.current) setAgentPhase("ready");
+        });
+
+        const rec = new SpeechRecognition();
+        rec.continuous = true;
+        rec.interimResults = true;
+        rec.lang = "en-IN";
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        rec.onresult = async (event: any) => {
+          let interim = "";
+          let final = "";
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            const res = event.results[i];
+            if (res.isFinal) {
+              final += res[0].transcript;
+            } else {
+              interim += res[0].transcript;
+            }
+          }
+
+          if (interim.trim()) {
+            pendingUserTranscriptRef.current = interim.trim();
+            setLiveTranscript(interim.trim());
+            setLiveRole("user");
+          }
+
+          if (final.trim() && !isProcessingTurnRef.current) {
+            const userText = final.trim();
+            isProcessingTurnRef.current = true;
+            pendingUserTranscriptRef.current = "";
+            setLiveTranscript("");
+            setLiveRole(null);
+            addMessage({ key: nanoid(), from: "user", content: userText });
+            setAgentPhase("thinking");
+
+            try {
+              const res = await fetch("/api/intake-agent", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  message: userText,
+                  session_id: fallbackSessionIdRef.current ?? undefined,
+                }),
+              });
+
+              let replyText = "";
+              if (res.ok && res.body) {
+                const reader = res.body.getReader();
+                const decoder = new TextDecoder();
+                let leftover = "";
+                while (true) {
+                  const { done, value } = await reader.read();
+                  if (done) break;
+                  const lines = (leftover + decoder.decode(value, { stream: true })).split("\n");
+                  leftover = lines.pop() ?? "";
+                  for (const raw of lines) {
+                    const trimmed = raw.trim().replace(/^data:\s*/i, "");
+                    if (!trimmed || trimmed === "[DONE]") continue;
+                    try {
+                      const parsed = JSON.parse(trimmed);
+                      if (parsed.type === "text_delta" && parsed.data?.content) {
+                        replyText += parsed.data.content;
+                      } else if (parsed.type === "agent_end" && parsed.session_id) {
+                        fallbackSessionIdRef.current = parsed.session_id;
+                      }
+                    } catch {
+                      // ignore non-JSON SSE lines
+                    }
+                  }
+                }
+              }
+
+              if (!replyText.trim()) {
+                replyText = "Thank you for sharing that. I'm listening — take your time and tell me more about what's on your mind.";
+              }
+
+              addMessage({ key: nanoid(), from: "assistant", content: replyText });
+              setAgentPhase("speaking");
+              speakBrowserFallback(replyText, () => {
+                if (browserFallbackActiveRef.current) setAgentPhase("ready");
+              });
+            } catch {
+              const errReply = "I hear you. Please continue whenever you feel ready.";
+              addMessage({ key: nanoid(), from: "assistant", content: errReply });
+              setAgentPhase("ready");
+            } finally {
+              isProcessingTurnRef.current = false;
+            }
+          }
+        };
+
+        rec.onend = () => {
+          if (browserFallbackActiveRef.current) {
+            try {
+              rec.start();
+            } catch {
+              // ignore restart error if already stopped
+            }
+          }
+        };
+        rec.onerror = () => {};
+        rec.start();
+        speechRecRef.current = rec;
+      };
 
       // 3. Playback context — 24 kHz matches the backend TTS output rate
       const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
@@ -561,6 +708,7 @@ export function VoiceIntakeTest({
 
       ws.onopen = async () => {
         console.log("[VoiceIntakeTest] WS connected");
+        wsOpenedRef.current = true;
         setStatus("connected");
 
         try {
@@ -819,8 +967,12 @@ export function VoiceIntakeTest({
       };
 
       ws.onerror = (err) => {
-        console.error("[VoiceIntakeTest] WS error:", err);
-        toast.error("Connection error with voice agent");
+        console.warn("[VoiceIntakeTest] WS error:", err);
+        if (!wsOpenedRef.current) {
+          void startBrowserVoiceFallback();
+        } else {
+          toast.error("Connection error with voice agent");
+        }
       };
 
       ws.onclose = (event) => {
@@ -830,7 +982,11 @@ export function VoiceIntakeTest({
           "reason:",
           event.reason,
         );
-        setStatus((prev) => (prev === "connected" ? "disconnected" : prev));
+        if (!wsOpenedRef.current) {
+          void startBrowserVoiceFallback();
+          return;
+        }
+        setStatus("disconnected");
         setAgentPhase("idle");
         setLiveTranscript("");
         setLiveRole(null);

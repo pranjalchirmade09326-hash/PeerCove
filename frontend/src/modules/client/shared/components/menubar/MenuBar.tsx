@@ -19,7 +19,7 @@ import { NavGroup } from "./NavGroup";
 import { AppTitle } from "./AppTitle";
 import { SidebarNavUser } from "../SidebarNavUser";
 import { type NavGroup as NavGroupProps } from "./types";
-import { settingsSidebarData, telemedicineSidebarData } from "./menu-datas";
+import { settingsSidebarData, peercoveSidebarData } from "./menu-datas";
 
 type TUser = {
   name: string;
@@ -157,18 +157,18 @@ function getRoleNavGroups(
     normalizedRole.includes("safety");
 
   if (isAdminOrOperations) {
-    return telemedicineSidebarData.navGroups.filter((group) =>
+    return peercoveSidebarData.navGroups.filter((group) =>
       group.title.toLowerCase().includes("administration"),
     ) as NavGroupProps[];
   }
 
   if (isListener) {
-    return telemedicineSidebarData.navGroups.filter((group) =>
+    return peercoveSidebarData.navGroups.filter((group) =>
       group.title.toLowerCase().includes("listener"),
     ) as NavGroupProps[];
   }
 
-  return telemedicineSidebarData.navGroups.filter((group) =>
+  return peercoveSidebarData.navGroups.filter((group) =>
     group.title.toLowerCase().includes("member"),
   ) as NavGroupProps[];
 }
@@ -236,7 +236,7 @@ export function MenuBar(user: TUser) {
   const segments = pathname.split("/").filter(Boolean);
   const isSettings = pathname.includes("/settings");
   const currentSlug =
-    segments.find((s) => s === "telemedicine" || s === "settings") ??
+    segments.find((s) => s === "peercove" || s === "settings") ??
     (segments[1] ?? "");
 
   const currentApp = allApps.find((a) => a.slug === currentSlug);
@@ -246,9 +246,7 @@ export function MenuBar(user: TUser) {
     : currentApp && buildNavGroups(currentApp).length > 0
       ? normalizeNavGroups(buildNavGroups(currentApp), user.role, pathname)
       : roleGroups;
-  const isMemberWorkspace =
-    pathname.includes("/telemedicine/patient") ||
-    pathname.includes("/peercove/member");
+  const isMemberWorkspace = pathname.includes("/peercove/member");
   const navGroups =
     !isSettings && isMemberWorkspace
       ? withPatientIntakeLinks(baseNavGroups)

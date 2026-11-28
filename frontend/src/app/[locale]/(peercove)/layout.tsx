@@ -1,5 +1,5 @@
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { getServerSession, getDevSession } from "@/modules/server/auth/get-session";
+import { getServerSession } from "@/modules/server/auth/get-session";
 import AppNavbar from "@/modules/client/shared/components/navbar/AppNavbar";
 import { PeerCoveSidebar } from "@/modules/client/peercove-dashboard/PeerCoveSidebar";
 import { redirect } from "@/i18n/navigation";
